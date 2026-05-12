@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: zentra-api
+    runtime: node
+    plan: free
+    buildCommand: cd apps/api && npm ci && npx prisma generate && npm run build
+    startCommand: cd apps/api && npx prisma db push --skip-generate && node dist/main
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: FRONTEND_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SMTP_FROM
+        value: Zentra <onboarding@resend.dev>
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
