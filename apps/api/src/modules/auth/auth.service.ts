@@ -99,7 +99,7 @@ export class AuthService {
       data: { resetToken, resetTokenExp },
     });
 
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
 
     await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
 

@@ -48,5 +48,14 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 Server running on http://0.0.0.0:${port}`);
+
+  if (process.env.NODE_ENV === 'production') {
+    const selfUrl = `http://localhost:${port}`;
+    setInterval(async () => {
+      try {
+        await fetch(`${selfUrl}/api/health`);
+      } catch {}
+    }, 13 * 60 * 1000);
+  }
 }
 bootstrap();
