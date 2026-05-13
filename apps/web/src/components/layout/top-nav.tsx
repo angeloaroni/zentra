@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   PartyPopper,
+  Shield,
 } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { FamilySwitcher } from "./family-switcher"
@@ -95,6 +96,20 @@ export function TopNav() {
               </Link>
             )
           })}
+          {mounted && user?.role === "ADMIN" && (
+            <Link
+              href="/dashboard/admin"
+              className={cn(
+                "px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5",
+                pathname.startsWith("/dashboard/admin")
+                  ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+              )}
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          )}
         </nav>
 
         {/* Right side */}
@@ -175,6 +190,15 @@ export function TopNav() {
               )
             })}
             <div className="border-t border-gray-100 dark:border-gray-800 pt-2 mt-2">
+              {mounted && user?.role === "ADMIN" && (
+                <Link
+                  href="/dashboard/admin"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                >
+                  <Shield className="h-5 w-5" />
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/dashboard/settings"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"

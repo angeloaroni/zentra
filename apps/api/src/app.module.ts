@@ -12,6 +12,7 @@ import { AccountsModule } from './modules/accounts/accounts.module';
 import { RecurringModule } from './modules/recurring/recurring.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SubscriptionsModule } from './modules/subscriptions/subscriptions.modul
     RecurringModule,
     TagsModule,
     SubscriptionsModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
