@@ -103,9 +103,9 @@ export class FamiliesService {
   }
 
   async inviteMember(familyId: string, userId: string, email: string) {
-    // Find user by email
-    const user = await this.prisma.user.findUnique({
-      where: { email },
+    // Find user by email (case-insensitive)
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
     });
 
     if (!user) {
