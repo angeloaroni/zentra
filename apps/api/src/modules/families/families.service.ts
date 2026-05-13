@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
@@ -92,7 +92,7 @@ export class FamiliesService {
       });
 
       if (!member || member.role !== 'ADMIN') {
-        throw new Error('Not authorized');
+        throw new ForbiddenException('Not authorized');
       }
     }
 
@@ -109,7 +109,7 @@ export class FamiliesService {
     });
 
     if (!user) {
-      throw new Error('No se encontro ningun usuario con ese email. El usuario debe estar registrado en Zentra para poder invitarlo.');
+      throw new NotFoundException('No se encontro ningun usuario con ese email. El usuario debe estar registrado en Zentra para poder invitarlo.');
     }
 
     // Check if already a member
@@ -121,12 +121,12 @@ export class FamiliesService {
     });
 
     if (existing) {
-      throw new Error('Este usuario ya es miembro de la familia');
+      throw new BadRequestException('Este usuario ya es miembro de la familia');
     }
 
     // Check if user already belongs to another family
     if (user.familyId && user.familyId !== familyId) {
-      throw new Error('Este usuario ya pertenece a otra familia');
+      throw new BadRequestException('Este usuario ya pertenece a otra familia');
     }
 
     // Add member and set user's familyId
@@ -167,7 +167,7 @@ export class FamiliesService {
       });
 
       if (!member || member.role !== 'ADMIN') {
-        throw new Error('Not authorized');
+        throw new ForbiddenException('Not authorized');
       }
     }
 
@@ -182,12 +182,12 @@ export class FamiliesService {
     });
 
     if (!memberToRemove) {
-      throw new Error('Member not found');
+      throw new NotFoundException('Member not found');
     }
 
     // Check if trying to remove creator
     if (family.createdById === memberUserId) {
-      throw new Error('Cannot remove family creator');
+      throw new BadRequestException('Cannot remove family creator');
     }
 
     return this.prisma.familyMember.delete({
