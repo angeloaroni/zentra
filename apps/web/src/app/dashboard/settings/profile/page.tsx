@@ -70,7 +70,7 @@ export default function ProfilePage() {
       api("/users/account", { method: "DELETE", body: JSON.stringify(data) }),
     onSuccess: () => {
       clearToken()
-      window.location.href = "/"
+      window.location.href = "/login"
     },
     onError: (err: Error) => {
       setError(err.message)

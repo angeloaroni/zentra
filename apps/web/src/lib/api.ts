@@ -40,7 +40,7 @@ export async function api<T>(
 
   if (res.status === 401) {
     clearToken()
-    window.location.href = "/"
+    window.location.href = "/login"
     throw new Error("Unauthorized")
   }
 

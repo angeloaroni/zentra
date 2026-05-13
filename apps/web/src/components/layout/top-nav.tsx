@@ -51,7 +51,7 @@ export function TopNav() {
 
   function logout() {
     clearToken()
-    window.location.href = "/"
+    window.location.href = "/login"
   }
 
   return (

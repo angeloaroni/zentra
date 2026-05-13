@@ -16,7 +16,7 @@ export default function DashboardLayout({
   useEffect(() => {
     const user = getUser()
     if (!user) {
-      router.push("/")
+      router.push("/login")
     }
   }, [router])
 

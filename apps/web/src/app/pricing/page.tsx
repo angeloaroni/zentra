@@ -90,7 +90,7 @@ export default function PricingPage() {
 
   async function handleSelect(planId: string) {
     if (!user) {
-      router.push("/")
+      router.push("/login")
       return
     }
     if (planId === currentPlan) return
