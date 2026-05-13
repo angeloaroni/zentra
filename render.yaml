@@ -3,7 +3,7 @@ services:
     name: zentra-api
     runtime: node
     plan: free
-    buildCommand: npm ci && npx prisma generate --schema=apps/api/prisma/schema.prisma && cd apps/api && npx nest build
+    buildCommand: npm ci && npx prisma generate --schema=apps/api/prisma/schema.prisma && cd apps/api && npx tsc
     startCommand: cd apps/api && npx prisma db push --skip-generate && node dist/main
     envVars:
       - key: DATABASE_URL
