@@ -23,6 +23,16 @@ export function FamilySwitcher() {
     setUser(getUser())
   }, [])
 
+  useEffect(() => {
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false)
+    }
+    if (open) {
+      document.addEventListener("keydown", handleEsc)
+      return () => document.removeEventListener("keydown", handleEsc)
+    }
+  }, [open])
+
   const { data: families } = useQuery<Family[]>({
     queryKey: ["families"],
     queryFn: () => api("/families"),
@@ -61,7 +71,7 @@ export function FamilySwitcher() {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
           <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
             {/* Personal account option */}
             <button

@@ -244,7 +244,7 @@ export function TagInput({ selectedTagIds, onTagsChange, allTags = [], excludeTa
 
             {showDropdown && availableTags.length > 0 && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
+                <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} aria-hidden="true" />
                 <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto">
                   {availableTags.map((tag) => (
                     <button

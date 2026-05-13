@@ -55,6 +55,17 @@ export function TopNav() {
     window.location.href = "/login"
   }
 
+  useEffect(() => {
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setShowUserMenu(false)
+        setMobileOpen(false)
+      }
+    }
+    document.addEventListener("keydown", handleEsc)
+    return () => document.removeEventListener("keydown", handleEsc)
+  }, [])
+
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
       <div className="flex items-center justify-between h-16 px-4 max-w-[1400px] mx-auto">
@@ -140,7 +151,7 @@ export function TopNav() {
 
             {showUserMenu && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} aria-hidden="true" />
                 <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
                   <Link
                     href="/dashboard/settings"

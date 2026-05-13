@@ -297,7 +297,7 @@ export default function AdminPage() {
                         </button>
                         {openMenu === u.id && (
                           <>
-                            <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
+                            <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} aria-hidden="true" />
                             <div className="fixed z-20 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 w-48"
                               style={{ top: 'auto', left: 'auto' }}
                               ref={(el) => {

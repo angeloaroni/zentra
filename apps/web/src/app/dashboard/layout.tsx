@@ -22,8 +22,11 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950">
+      <a href="#main-content" className="skip-link">
+        Saltar al contenido
+      </a>
       <TopNav />
-      <main className="max-w-[1400px] mx-auto p-4 sm:p-6">
+      <main id="main-content" className="max-w-[1400px] mx-auto p-4 sm:p-6">
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>
     </div>
