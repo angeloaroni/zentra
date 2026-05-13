@@ -1,10 +1,9 @@
 services:
   - type: web
     name: zentra-api
-    runtime: node
+    runtime: docker
     plan: free
-    buildCommand: cd apps/api && npm ci && npx prisma generate && npm run build
-    startCommand: cd apps/api && npx prisma db push --skip-generate && node dist/main
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -20,5 +19,3 @@ services:
         value: Zentra <onboarding@resend.dev>
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3001
