@@ -1,11 +1,14 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PlanGuard } from '../subscriptions/plan.guard';
+import { Plan } from '../subscriptions/plan.decorator';
 import { TagsService } from './tags.service';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 
 @Controller('tags')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PlanGuard)
+@Plan('pro')
 export class TagsController {
   constructor(private tagsService: TagsService) {}
 

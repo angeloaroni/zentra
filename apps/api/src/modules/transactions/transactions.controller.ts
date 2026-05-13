@@ -1,10 +1,12 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PlanGuard } from '../subscriptions/plan.guard';
+import { Plan } from '../subscriptions/plan.decorator';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto';
 
 @Controller('transactions')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PlanGuard)
 export class TransactionsController {
   constructor(private transactionsService: TransactionsService) {}
 
@@ -62,6 +64,7 @@ export class TransactionsController {
   }
 
   @Get('cashflow')
+  @Plan('pro')
   getCashflow(
     @Req() req: any,
     @Query('months') months?: string,
@@ -71,6 +74,7 @@ export class TransactionsController {
   }
 
   @Get('comparison')
+  @Plan('pro')
   getComparison(
     @Req() req: any,
     @Query('familyId') familyId?: string,
@@ -93,6 +97,7 @@ export class TransactionsController {
   }
 
   @Get('by-tag/:tagId')
+  @Plan('pro')
   findByTag(@Param('tagId') tagId: string, @Req() req: any, @Query('familyId') familyId?: string) {
     return this.transactionsService.findByTag(tagId, req.user.id, familyId);
   }

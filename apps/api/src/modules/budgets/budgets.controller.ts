@@ -1,10 +1,13 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PlanGuard } from '../subscriptions/plan.guard';
+import { Plan } from '../subscriptions/plan.decorator';
 import { BudgetsService } from './budgets.service';
 import { CreateBudgetDto, UpdateBudgetDto } from './dto';
 
 @Controller('budgets')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PlanGuard)
+@Plan('pro')
 export class BudgetsController {
   constructor(private budgetsService: BudgetsService) {}
 

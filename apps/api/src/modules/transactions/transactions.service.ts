@@ -2,12 +2,16 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../database/prisma.service';
 import { CreateTransactionDto } from './dto';
 import { getScopeUserIds, isFamilyMember } from '../families/family-access.helper';
+import { PlanLimitsService } from '../subscriptions/plan-limits.service';
 
 @Injectable()
 export class TransactionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private planLimits: PlanLimitsService) {}
 
   async create(userId: string, dto: CreateTransactionDto) {
+    if (!dto.familyId) {
+      await this.planLimits.checkTransactionLimit(userId);
+    }
     // familyId ONLY set when explicitly passed from frontend (family view)
     // Personal transactions always have familyId: null
     const familyId = dto.familyId || null;

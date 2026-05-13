@@ -1,10 +1,13 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PlanGuard } from '../subscriptions/plan.guard';
+import { Plan } from '../subscriptions/plan.decorator';
 import { FamiliesService } from './families.service';
 import { CreateFamilyDto, UpdateFamilyDto, InviteMemberDto } from './dto';
 
 @Controller('families')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PlanGuard)
+@Plan('family')
 export class FamiliesController {
   constructor(private familiesService: FamiliesService) {}
 

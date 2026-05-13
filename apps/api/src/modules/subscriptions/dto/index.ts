@@ -8,7 +8,6 @@ export class CreateSubscriptionDto {
 
 export class CheckoutSessionDto {
   @IsString()
-  @IsIn(['pro', 'family'])
   priceId!: string
 
   @IsOptional()

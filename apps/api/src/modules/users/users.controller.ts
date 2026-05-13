@@ -1,5 +1,7 @@
 import { Controller, Get, Patch, Post, Delete, Body, UseGuards, UploadedFile, UseInterceptors, Req } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PlanGuard } from '../subscriptions/plan.guard';
+import { Plan } from '../subscriptions/plan.decorator';
 import { UsersService } from './users.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateProfileDto, ChangePasswordDto, DeleteAccountDto, JoinFamilyDto } from './dto';
@@ -37,11 +39,15 @@ export class UsersController {
   }
 
   @Post('join-family')
+  @UseGuards(PlanGuard)
+  @Plan('family')
   joinFamily(@Req() req: any, @Body() data: JoinFamilyDto) {
     return this.usersService.joinFamily(req.user.id, data.familyId);
   }
 
   @Post('leave-family')
+  @UseGuards(PlanGuard)
+  @Plan('family')
   leaveFamily(@Req() req: any) {
     return this.usersService.leaveFamily(req.user.id);
   }

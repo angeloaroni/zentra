@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { getUser } from "@/lib/api"
-import { Users, User } from "lucide-react"
+import { Users, User, CreditCard } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -96,6 +96,24 @@ export default function SettingsPage() {
           >
             <Users className="h-4 w-4" />
             Gestionar familia
+          </Link>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Plan y facturacion</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">
+            Administra tu plan de suscripcion y metodo de pago.
+          </p>
+          <Link
+            href="/dashboard/settings/billing"
+            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            <CreditCard className="h-4 w-4" />
+            Gestionar plan
           </Link>
         </CardContent>
       </Card>

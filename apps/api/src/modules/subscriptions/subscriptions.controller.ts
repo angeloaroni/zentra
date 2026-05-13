@@ -9,17 +9,26 @@ import {
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { SubscriptionsService } from './subscriptions.service'
+import { PlanLimitsService } from './plan-limits.service'
 import { CreateSubscriptionDto, CheckoutSessionDto } from './dto'
 import { Request } from 'express'
 
 @Controller('subscriptions')
 @UseGuards(JwtAuthGuard)
 export class SubscriptionsController {
-  constructor(private readonly subscriptionsService: SubscriptionsService) {}
+  constructor(
+    private readonly subscriptionsService: SubscriptionsService,
+    private readonly planLimitsService: PlanLimitsService,
+  ) {}
 
   @Get()
   async getMySubscription(@Req() req: Request) {
     return this.subscriptionsService.findByUserId((req as any).user.id)
+  }
+
+  @Get('usage')
+  async getUsage(@Req() req: Request) {
+    return this.planLimitsService.getUsage((req as any).user.id)
   }
 
   @Post('checkout')

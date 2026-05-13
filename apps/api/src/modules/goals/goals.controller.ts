@@ -11,11 +11,14 @@ import {
   Query,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PlanGuard } from '../subscriptions/plan.guard';
+import { Plan } from '../subscriptions/plan.decorator';
 import { GoalsService } from './goals.service';
 import { CreateGoalDto, UpdateGoalDto, ContributeToGoalDto } from './dto';
 
 @Controller('goals')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PlanGuard)
+@Plan('pro')
 export class GoalsController {
   constructor(private goalsService: GoalsService) {}
 
