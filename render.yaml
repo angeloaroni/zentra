@@ -1,9 +1,10 @@
 services:
   - type: web
     name: zentra-api
-    runtime: docker
+    runtime: node
     plan: free
-    dockerfilePath: ./Dockerfile
+    buildCommand: npm ci && npx prisma generate --schema=apps/api/prisma/schema.prisma && cd apps/api && npx nest build
+    startCommand: cd apps/api && npx prisma db push --skip-generate && node dist/main
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -11,8 +12,6 @@ services:
         sync: false
       - key: JWT_EXPIRES_IN
         value: 7d
-      - key: FRONTEND_URL
-        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: SMTP_FROM
