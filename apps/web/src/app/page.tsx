@@ -389,7 +389,7 @@ function FeaturesSection() {
               Funciones
             </span>
             <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              disenado para que lo uses, no para que lo mires
+              Diseñado para que lo uses, no para que lo mires
             </h2>
           </div>
         </FadeIn>
