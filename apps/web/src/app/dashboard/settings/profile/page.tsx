@@ -240,30 +240,32 @@ export default function ProfilePage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Para confirmar, ingresa tu contraseña:
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="password"
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
                   placeholder="Tu contraseña"
-                  className="flex-1"
+                  className="flex-1 min-w-0"
                 />
-                <Button
-                  onClick={handleDeleteAccount}
-                  disabled={deleteAccount.isPending || !deletePassword}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  {deleteAccount.isPending ? "Eliminando..." : "Confirmar"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowDeleteConfirm(false)
-                    setDeletePassword("")
-                  }}
-                >
-                  Cancelar
-                </Button>
+                <div className="flex gap-2 shrink-0">
+                  <Button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteAccount.isPending || !deletePassword}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {deleteAccount.isPending ? "Eliminando..." : "Confirmar"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDeleteConfirm(false)
+                      setDeletePassword("")
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
               </div>
             </div>
           )}

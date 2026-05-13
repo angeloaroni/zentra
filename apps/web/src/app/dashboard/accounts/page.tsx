@@ -208,7 +208,7 @@ export default function AccountsPage() {
 
               <div className="space-y-2">
                 <Label>Color</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {PRESET_COLORS.map((c) => (
                     <button
                       key={c}

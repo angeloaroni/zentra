@@ -198,10 +198,10 @@ export default function DashboardPage() {
           <Wallet className="h-5 w-5 opacity-70" />
           <span className="text-sm opacity-70">Balance del periodo</span>
         </div>
-        <p className="text-4xl font-bold tracking-tight">
+        <p className="text-2xl sm:text-4xl font-bold tracking-tight break-words">
           {formatMoney(totalIncome - totalExpense, currency)}
         </p>
-        <div className="flex gap-6 mt-4">
+        <div className="flex gap-3 sm:gap-6 mt-4 flex-wrap">
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
               <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
@@ -237,7 +237,7 @@ export default function DashboardPage() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ingresos</p>
-            <p className="text-xl font-bold text-emerald-600">
+            <p className="text-lg sm:text-xl font-bold text-emerald-600 truncate">
               {formatMoney(totalIncome, currency)}
             </p>
             {comparison && (
@@ -248,7 +248,7 @@ export default function DashboardPage() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Gastos</p>
-            <p className="text-xl font-bold text-rose-600">
+            <p className="text-lg sm:text-xl font-bold text-rose-600 truncate">
               {formatMoney(totalExpense, currency)}
             </p>
             {comparison && (
@@ -259,7 +259,7 @@ export default function DashboardPage() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Balance</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">
+            <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
               {formatMoney(totalIncome - totalExpense, currency)}
             </p>
             {comparison && (
@@ -336,7 +336,7 @@ export default function DashboardPage() {
             {pieData.length === 0 ? (
               <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-8">Sin datos</p>
             ) : (
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                 <ResponsiveContainer width={140} height={140}>
                   <PieChart>
                     <Pie
@@ -360,7 +360,7 @@ export default function DashboardPage() {
                     <div key={item.name} className="flex items-center gap-2 text-sm">
                       <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                       <span className="flex-1 text-gray-600 dark:text-gray-400 truncate">{item.name}</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{formatMoney(item.value, currency)}</span>
+                      <span className="font-medium text-gray-900 dark:text-white min-w-0 truncate">{formatMoney(item.value, currency)}</span>
                     </div>
                   ))}
                 </div>
@@ -482,29 +482,29 @@ export default function DashboardPage() {
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 {txData.transactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="h-10 w-10 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0"
-                        style={{ backgroundColor: tx.category?.color || "#6b7280" }}
-                      >
-                        {tx.category?.icon?.charAt(0)?.toUpperCase() || "$"}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{tx.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {tx.category?.name} · {formatDate(tx.date)}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`text-sm font-semibold ${
-                        tx.type === "INCOME" ? "text-emerald-600" : "text-gray-900 dark:text-white"
-                      }`}
-                    >
-                      {tx.type === "INCOME" ? "+" : "-"}{formatMoney(tx.amount, tx.currency || currency)}
-                    </span>
-                  </div>
+<div key={tx.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors gap-2">
+                     <div className="flex items-center gap-3 min-w-0 flex-1">
+                       <div
+                         className="h-10 w-10 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0"
+                         style={{ backgroundColor: tx.category?.color || "#6b7280" }}
+                       >
+                         {tx.category?.icon?.charAt(0)?.toUpperCase() || "$"}
+                       </div>
+                       <div className="min-w-0">
+                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{tx.title}</p>
+                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                           {tx.category?.name} · {formatDate(tx.date)}
+                         </p>
+                       </div>
+                     </div>
+                     <span
+                       className={`text-sm font-semibold shrink-0 ${
+                         tx.type === "INCOME" ? "text-emerald-600" : "text-gray-900 dark:text-white"
+                       }`}
+                     >
+                       {tx.type === "INCOME" ? "+" : "-"}{formatMoney(tx.amount, tx.currency || currency)}
+                     </span>
+                   </div>
                 ))}
               </div>
             )}

@@ -165,7 +165,7 @@ export default function GoalsPage() {
 
               <div className="space-y-2">
                 <Label>Color</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {PRESET_COLORS.map((c) => (
                     <button
                       key={c}
@@ -282,7 +282,7 @@ export default function GoalsPage() {
                   </div>
 
                   {contributeId === goal.id ? (
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex flex-col sm:flex-row gap-2">
                       <Input
                         type="number"
                         step="0.01"

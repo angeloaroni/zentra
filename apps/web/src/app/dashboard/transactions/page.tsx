@@ -448,7 +448,7 @@ export default function TransactionsPage() {
           placeholder="Buscar transacciones..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-[200px]"
+          className="w-full sm:w-[200px]"
         />
         <div className="flex gap-1">
           {(["all", "INCOME", "EXPENSE"] as const).map((t) => (
@@ -618,67 +618,67 @@ export default function TransactionsPage() {
           ) : (
             <div className="divide-y">
               {txData.transactions.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-accent/50">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                      style={{ backgroundColor: tx.category?.color || "#6b7280" }}
-                    >
-                      {tx.category?.icon?.charAt(0)?.toUpperCase() || "$"}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{tx.title}</p>
-                        {tx.isRecurring && (
-                          <Badge variant="secondary" className="text-xs">
-                            <Repeat className="h-3 w-3 mr-1" />
-                            {getFreqLabel(tx.recurringFreq)}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {tx.category?.name}
-                        {tx.tags && tx.tags.length > 0 && (
-                          <span className="ml-2">
-                            · {tx.tags.map((t) => (
-                              <Link
-                                key={t.id}
-                                href={`/dashboard/events/${t.id}`}
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs text-white ml-1"
-                                style={{ backgroundColor: t.color }}
-                              >
-                                {renderTxIcon(t.icon)} {t.name}
-                              </Link>
-                            ))}
-                          </span>
-                        )}
-                        · {formatDate(tx.date)}
-                        {activeFamilyId && (tx as any).user && ` · ${(tx as any).user.name}`}
-                        {tx.paymentMethod && ` · ${tx.paymentMethod}`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-sm font-semibold ${tx.type === "INCOME" ? "text-emerald-600" : "text-red-600"}`}>
-                      {tx.type === "INCOME" ? "+" : "-"}
-                      {formatMoney(tx.amount, tx.currency || currency)}
-                    </span>
-                    <button
-                      onClick={() => startEdit(tx)}
-                      className="text-muted-foreground hover:text-blue-500 transition-colors"
-                      title="Editar"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => deleteMutation.mutate(tx.id)}
-                      className="text-muted-foreground hover:text-red-500 transition-colors"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+<div key={tx.id} className="flex items-center justify-between p-4 hover:bg-accent/50 gap-2">
+                   <div className="flex items-center gap-3 min-w-0 flex-1">
+                     <div
+                       className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                       style={{ backgroundColor: tx.category?.color || "#6b7280" }}
+                     >
+                       {tx.category?.icon?.charAt(0)?.toUpperCase() || "$"}
+                     </div>
+                     <div className="min-w-0">
+                       <div className="flex items-center gap-2 min-w-0">
+                         <p className="text-sm font-medium truncate">{tx.title}</p>
+                         {tx.isRecurring && (
+                           <Badge variant="secondary" className="text-xs shrink-0">
+                             <Repeat className="h-3 w-3 mr-1" />
+                             {getFreqLabel(tx.recurringFreq)}
+                           </Badge>
+                         )}
+                       </div>
+                       <p className="text-xs text-muted-foreground truncate">
+                         {tx.category?.name}
+                         {tx.tags && tx.tags.length > 0 && (
+                           <span className="ml-2">
+                             · {tx.tags.map((t) => (
+                               <Link
+                                 key={t.id}
+                                 href={`/dashboard/events/${t.id}`}
+                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs text-white ml-1"
+                                 style={{ backgroundColor: t.color }}
+                               >
+                                 {renderTxIcon(t.icon)} {t.name}
+                               </Link>
+                             ))}
+                           </span>
+                         )}
+                         · {formatDate(tx.date)}
+                         {activeFamilyId && (tx as any).user && ` · ${(tx as any).user.name}`}
+                         {tx.paymentMethod && ` · ${tx.paymentMethod}`}
+                       </p>
+                     </div>
+                   </div>
+                   <div className="flex items-center gap-2 shrink-0">
+                     <span className={`text-sm font-semibold whitespace-nowrap ${tx.type === "INCOME" ? "text-emerald-600" : "text-red-600"}`}>
+                       {tx.type === "INCOME" ? "+" : "-"}
+                       {formatMoney(tx.amount, tx.currency || currency)}
+                     </span>
+                     <button
+                       onClick={() => startEdit(tx)}
+                       className="text-muted-foreground hover:text-blue-500 transition-colors shrink-0"
+                       title="Editar"
+                     >
+                       <Pencil className="h-4 w-4" />
+                     </button>
+                     <button
+                       onClick={() => deleteMutation.mutate(tx.id)}
+                       className="text-muted-foreground hover:text-red-500 transition-colors shrink-0"
+                       title="Eliminar"
+                     >
+                       <Trash2 className="h-4 w-4" />
+                     </button>
+                   </div>
+                 </div>
               ))}
             </div>
           )}

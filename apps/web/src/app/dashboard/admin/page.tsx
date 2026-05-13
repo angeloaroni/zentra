@@ -237,9 +237,9 @@ export default function AdminPage() {
             />
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <CardContent className="p-0 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-800">
                   <th className="text-left text-xs font-medium text-muted-foreground p-4">Nombre</th>
@@ -288,18 +288,28 @@ export default function AdminPage() {
                       <td className="p-4 text-sm text-muted-foreground hidden md:table-cell">
                         {new Date(u.createdAt).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}
                       </td>
-                      <td className="p-4 text-right">
-                        <div className="relative inline-block">
-                          <button
-                            onClick={() => setOpenMenu(openMenu === u.id ? null : u.id)}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          >
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          </button>
-                          {openMenu === u.id && (
-                            <>
-                              <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20">
+                      <td className="p-4 text-right relative">
+                        <button
+                          onClick={() => setOpenMenu(openMenu === u.id ? null : u.id)}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                        {openMenu === u.id && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
+                            <div className="fixed z-20 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 w-48"
+                              style={{ top: 'auto', left: 'auto' }}
+                              ref={(el) => {
+                                if (el && openMenu === u.id) {
+                                  const rect = el.parentElement?.getBoundingClientRect();
+                                  if (rect) {
+                                    el.style.top = `${rect.bottom + 4}px`;
+                                    el.style.left = `${Math.min(rect.right - 192, window.innerWidth - 200)}px`;
+                                  }
+                                }
+                              }}
+                            >
                                 <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Cambiar plan</p>
                                 {["free", "pro", "family"].map((plan) => (
                                   <button
@@ -321,10 +331,9 @@ export default function AdminPage() {
                                 >
                                   Eliminar cuenta
                                 </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
+</div>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))

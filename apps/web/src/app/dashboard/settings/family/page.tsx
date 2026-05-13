@@ -169,10 +169,11 @@ export default function FamilyPage() {
                 <Input
                   readOnly
                   value={currentFamily.id}
-                  className="font-mono text-xs"
+                  className="font-mono text-xs min-w-0"
                 />
                 <Button
                   variant="outline"
+                  className="shrink-0"
                   onClick={() => {
                     navigator.clipboard.writeText(currentFamily.id)
                     setCopied(true)
@@ -200,8 +201,10 @@ export default function FamilyPage() {
                   placeholder="email@ejemplo.com"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
+                  className="flex-1 min-w-0"
                 />
                 <Button
+                  className="shrink-0"
                   onClick={() => {
                     if (inviteEmail.trim()) {
                       inviteMember.mutate({ familyId: currentFamily.id, email: inviteEmail.trim() })
