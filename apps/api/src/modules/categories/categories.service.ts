@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { getScopeUserIds, isFamilyMember } from '../families/family-access.helper';
 
@@ -86,8 +86,11 @@ export class CategoriesService {
       throw new NotFoundException('Category not found');
     }
 
-    // Check access
-    if (category.userId !== userId && !category.isDefault) {
+    if (category.isDefault) {
+      throw new BadRequestException('Cannot edit default categories');
+    }
+
+    if (category.userId !== userId) {
       if (category.familyId) {
         const hasAccess = await isFamilyMember(this.prisma, userId, category.familyId);
         if (!hasAccess) throw new NotFoundException('Category not found');
@@ -111,8 +114,11 @@ export class CategoriesService {
       throw new NotFoundException('Category not found');
     }
 
-    // Check access
-    if (category.userId !== userId && !category.isDefault) {
+    if (category.isDefault) {
+      throw new BadRequestException('Cannot delete default categories');
+    }
+
+    if (category.userId !== userId) {
       if (category.familyId) {
         const hasAccess = await isFamilyMember(this.prisma, userId, category.familyId);
         if (!hasAccess) throw new NotFoundException('Category not found');
@@ -127,7 +133,7 @@ export class CategoriesService {
     });
 
     if (transactionCount > 0) {
-      throw new Error('Cannot delete category with existing transactions');
+      throw new BadRequestException('Cannot delete category with existing transactions');
     }
 
     return this.prisma.category.delete({ where: { id } });

@@ -14,9 +14,9 @@ export class CreateCategoryDto {
   @IsString()
   color: string;
 
-  @ApiProperty({ enum: ['INCOME', 'EXPENSE'] })
-  @IsEnum(['INCOME', 'EXPENSE'] as const)
-  type: 'INCOME' | 'EXPENSE';
+  @ApiProperty({ enum: ['INCOME', 'EXPENSE', 'BOTH'] })
+  @IsEnum(['INCOME', 'EXPENSE', 'BOTH'] as const)
+  type: 'INCOME' | 'EXPENSE' | 'BOTH';
 
   @ApiProperty({ required: false })
   @IsString()
@@ -40,8 +40,8 @@ export class UpdateCategoryDto {
   @IsOptional()
   color?: string;
 
-  @ApiProperty({ enum: ['INCOME', 'EXPENSE'], required: false })
-  @IsEnum(['INCOME', 'EXPENSE'] as const)
+  @ApiProperty({ enum: ['INCOME', 'EXPENSE', 'BOTH'], required: false })
+  @IsEnum(['INCOME', 'EXPENSE', 'BOTH'] as const)
   @IsOptional()
-  type?: 'INCOME' | 'EXPENSE';
+  type?: 'INCOME' | 'EXPENSE' | 'BOTH';
 }

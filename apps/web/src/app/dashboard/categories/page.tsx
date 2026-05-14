@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Pencil } from "lucide-react"
 import { useMounted } from "@/lib/settings"
 
 const PRESET_COLORS = [
@@ -33,15 +33,12 @@ export default function CategoriesPage() {
   const familyHydrated = useFamilyHydrated()
   const mounted = useMounted()
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [filterType, setFilterType] = useState("all")
   const [formError, setFormError] = useState("")
 
-  const [form, setForm] = useState({
-    name: "",
-    icon: "",
-    color: PRESET_COLORS[0],
-    type: "EXPENSE",
-  })
+  const defaultForm = { name: "", icon: "", color: PRESET_COLORS[0], type: "EXPENSE" }
+  const [form, setForm] = useState(defaultForm)
 
   const { data: categories, isLoading, error: fetchError } = useQuery<Category[]>({
     queryKey: ["categories", filterType, activeFamilyId],
@@ -61,10 +58,25 @@ export default function CategoriesPage() {
       queryClient.invalidateQueries({ queryKey: ["categories"] })
       setShowForm(false)
       setFormError("")
-      setForm({ name: "", icon: "", color: PRESET_COLORS[0], type: "EXPENSE" })
+      setForm(defaultForm)
     },
     onError: (err: Error) => {
       setFormError(err.message || "Error al crear la categoria")
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      api(`/categories/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] })
+      setEditingId(null)
+      setShowForm(false)
+      setFormError("")
+      setForm(defaultForm)
+    },
+    onError: (err: Error) => {
+      setFormError(err.message || "Error al actualizar la categoria")
     },
   })
 
@@ -79,6 +91,18 @@ export default function CategoriesPage() {
     },
   })
 
+  function startEdit(cat: Category) {
+    setEditingId(cat.id)
+    setShowForm(true)
+    setFormError("")
+    setForm({
+      name: cat.name,
+      icon: cat.icon,
+      color: cat.color,
+      type: cat.type,
+    })
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormError("")
@@ -88,13 +112,25 @@ export default function CategoriesPage() {
       return
     }
 
-    createMutation.mutate({
-      name: form.name.trim(),
-      icon: form.icon.trim() || "tag",
-      color: form.color,
-      type: form.type,
-      familyId: activeFamilyId ? activeFamilyId : null,
-    })
+    if (editingId) {
+      updateMutation.mutate({
+        id: editingId,
+        data: {
+          name: form.name.trim(),
+          icon: form.icon.trim() || "tag",
+          color: form.color,
+          type: form.type,
+        },
+      })
+    } else {
+      createMutation.mutate({
+        name: form.name.trim(),
+        icon: form.icon.trim() || "tag",
+        color: form.color,
+        type: form.type,
+        familyId: activeFamilyId ? activeFamilyId : null,
+      })
+    }
   }
 
   if (!mounted || !familyHydrated) {
@@ -105,7 +141,7 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Categorias</h1>
-        <Button onClick={() => { setShowForm(!showForm); setFormError("") }}>
+        <Button onClick={() => { setShowForm(!showForm); setFormError(""); setEditingId(null); setForm(defaultForm) }}>
           <Plus className="h-4 w-4 mr-2" />
           Nueva
         </Button>
@@ -114,7 +150,9 @@ export default function CategoriesPage() {
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Nueva categoria</CardTitle>
+            <CardTitle className="text-sm">
+              {editingId ? "Editar categoria" : "Nueva categoria"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -177,13 +215,15 @@ export default function CategoriesPage() {
               )}
 
               <div className="md:col-span-2 flex gap-2">
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Guardando..." : "Guardar"}
+                <Button type="submit" disabled={editingId ? updateMutation.isPending : createMutation.isPending}>
+                  {editingId
+                    ? (updateMutation.isPending ? "Actualizando..." : "Actualizar")
+                    : (createMutation.isPending ? "Guardando..." : "Guardar")}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => { setShowForm(false); setFormError("") }}
+                  onClick={() => { setShowForm(false); setFormError(""); setEditingId(null); setForm(defaultForm) }}
                 >
                   Cancelar
                 </Button>
@@ -254,16 +294,24 @@ export default function CategoriesPage() {
                   </div>
                 </div>
                 {!cat.isDefault && (
-                  <button
-                    onClick={() => {
-                      if (confirm("Eliminar esta categoria?")) {
-                        deleteMutation.mutate(cat.id)
-                      }
-                    }}
-                    className="text-muted-foreground hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => startEdit(cat)}
+                      className="text-muted-foreground hover:text-blue-500 transition-colors"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm("Eliminar esta categoria?")) {
+                          deleteMutation.mutate(cat.id)
+                        }
+                      }}
+                      className="text-muted-foreground hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 )}
               </CardContent>
             </Card>

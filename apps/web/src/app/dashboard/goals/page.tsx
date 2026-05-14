@@ -4,13 +4,13 @@ import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { useFamilyStore } from "@/lib/family"
-import { useSettings, getCurrencySymbol, formatMoney, useHasHydrated, useMounted } from "@/lib/settings"
+import { useSettings, formatMoney, useHasHydrated, useMounted } from "@/lib/settings"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2, Target } from "lucide-react"
+import { Plus, Trash2, Target, Lock } from "lucide-react"
+import Link from "next/link"
 
 interface Goal {
   id: string
@@ -37,6 +37,7 @@ export default function GoalsPage() {
   const [showForm, setShowForm] = useState(false)
   const [contributeId, setContributeId] = useState<string | null>(null)
   const [contributeAmount, setContributeAmount] = useState("")
+  const [formError, setFormError] = useState("")
 
   const [form, setForm] = useState({
     name: "",
@@ -46,7 +47,7 @@ export default function GoalsPage() {
     color: PRESET_COLORS[0],
   })
 
-  const { data: goals, isLoading } = useQuery<Goal[]>({
+  const { data: goals, isLoading, isError } = useQuery<Goal[]>({
     queryKey: ["goals", activeFamilyId],
     queryFn: () => {
       const params = new URLSearchParams()
@@ -61,7 +62,11 @@ export default function GoalsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals"] })
       setShowForm(false)
+      setFormError("")
       setForm({ name: "", description: "", targetAmount: "", deadline: "", color: PRESET_COLORS[0] })
+    },
+    onError: (err: Error) => {
+      setFormError(err.message || "Error al crear la meta")
     },
   })
 
@@ -69,6 +74,9 @@ export default function GoalsPage() {
     mutationFn: (id: string) => api(`/goals/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals"] })
+    },
+    onError: (err: Error) => {
+      alert(err.message || "Error al eliminar la meta")
     },
   })
 
@@ -83,6 +91,9 @@ export default function GoalsPage() {
       setContributeId(null)
       setContributeAmount("")
     },
+    onError: (err: Error) => {
+      alert(err.message || "Error al aportar")
+    },
   })
 
   if (!mounted || !hydrated) {
@@ -91,6 +102,7 @@ export default function GoalsPage() {
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault()
+    setFormError("")
     createMutation.mutate({
       ...form,
       targetAmount: parseFloat(form.targetAmount),
@@ -105,11 +117,33 @@ export default function GoalsPage() {
     }
   }
 
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Metas</h1>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Lock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="font-semibold">Plan Pro requerido</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Las metas estan disponibles en el plan Pro y superior.
+            </p>
+            <Link href="/dashboard/settings/billing">
+              <Button className="mt-4">Ver planes</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Metas</h1>
-        <Button onClick={() => setShowForm(!showForm)}>
+        <Button onClick={() => { setShowForm(!showForm); setFormError("") }}>
           <Plus className="h-4 w-4 mr-2" />
           Nueva
         </Button>
@@ -182,6 +216,14 @@ export default function GoalsPage() {
                 </div>
               </div>
 
+              {formError && (
+                <div className="md:col-span-2">
+                  <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-2 rounded">
+                    {formError}
+                  </p>
+                </div>
+              )}
+
               <div className="md:col-span-2 flex gap-2">
                 <Button type="submit" disabled={createMutation.isPending}>
                   {createMutation.isPending ? "Guardando..." : "Guardar"}
@@ -189,7 +231,7 @@ export default function GoalsPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => { setShowForm(false); setFormError("") }}
                 >
                   Cancelar
                 </Button>
