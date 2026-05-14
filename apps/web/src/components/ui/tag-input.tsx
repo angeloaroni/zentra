@@ -149,7 +149,7 @@ export function TagInput({ selectedTagIds, onTagsChange, allTags = [], excludeTa
                 <Input
                   placeholder="Ej: Cumpleaños de Sofía"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
 
@@ -164,7 +164,7 @@ export function TagInput({ selectedTagIds, onTagsChange, allTags = [], excludeTa
                         form.color === c ? "border-foreground scale-110" : "border-transparent"
                       }`}
                       style={{ backgroundColor: c }}
-                      onClick={() => setForm({ ...form, color: c })}
+                      onClick={() => setForm(prev => ({ ...prev, color: c }))}
                     />
                   ))}
                 </div>
@@ -182,7 +182,7 @@ export function TagInput({ selectedTagIds, onTagsChange, allTags = [], excludeTa
                           ? "border-primary bg-primary/10"
                           : "border-transparent bg-secondary"
                       }`}
-                      onClick={() => setForm({ ...form, icon: iconName })}
+                      onClick={() => setForm(prev => ({ ...prev, icon: iconName }))}
                     >
                       {renderIcon(iconName, "h-4 w-4")}
                     </button>
@@ -197,7 +197,7 @@ export function TagInput({ selectedTagIds, onTagsChange, allTags = [], excludeTa
                   step="0.01"
                   placeholder="Sin límite"
                   value={form.budget}
-                  onChange={(e) => setForm({ ...form, budget: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, budget: e.target.value }))}
                 />
               </div>
 

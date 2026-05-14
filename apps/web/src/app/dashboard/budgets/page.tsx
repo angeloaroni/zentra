@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { useFamilyStore } from "@/lib/family"
@@ -47,13 +47,17 @@ export default function BudgetsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formError, setFormError] = useState("")
 
-  const now = new Date()
   const [form, setForm] = useState({
     amount: "",
-    month: now.getMonth() + 1,
-    year: now.getFullYear(),
+    month: 1,
+    year: 2024,
     categoryId: "",
   })
+
+  useEffect(() => {
+    const now = new Date()
+    setForm(prev => ({ ...prev, month: now.getMonth() + 1, year: now.getFullYear() }))
+  }, [])
 
   const [editForm, setEditForm] = useState({
     amount: "",
@@ -86,7 +90,7 @@ export default function BudgetsPage() {
       queryClient.invalidateQueries({ queryKey: ["budgets-summary"] })
       setShowForm(false)
       setFormError("")
-      setForm({ amount: "", month: now.getMonth() + 1, year: now.getFullYear(), categoryId: "" })
+      setForm(prev => ({ ...prev, amount: "", categoryId: "" }))
     },
     onError: (err: Error) => {
       setFormError(err.message || "Error al guardar")
@@ -208,7 +212,7 @@ export default function BudgetsPage() {
                 <Label>Categoria</Label>
                 <Select
                   value={form.categoryId}
-                  onValueChange={(v) => setForm({ ...form, categoryId: v })}
+                  onValueChange={(v) => setForm(prev => ({ ...prev, categoryId: v }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar..." />
@@ -231,7 +235,7 @@ export default function BudgetsPage() {
                   min="0"
                   placeholder="0.00"
                   value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
                 />
               </div>
 
@@ -239,7 +243,7 @@ export default function BudgetsPage() {
                 <Label>Mes</Label>
                 <Select
                   value={String(form.month)}
-                  onValueChange={(v) => setForm({ ...form, month: parseInt(v) })}
+                  onValueChange={(v) => setForm(prev => ({ ...prev, month: parseInt(v) }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -261,7 +265,7 @@ export default function BudgetsPage() {
                   min="2020"
                   max="2030"
                   value={form.year}
-                  onChange={(e) => setForm({ ...form, year: parseInt(e.target.value) })}
+                  onChange={(e) => setForm(prev => ({ ...prev, year: parseInt(e.target.value) }))}
                 />
               </div>
 

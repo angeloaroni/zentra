@@ -103,16 +103,20 @@ export default function DashboardPage() {
   const { activeFamilyId } = useFamilyStore()
   const [user, setUser] = useState<any>(null)
   const [mounted, setMounted] = useState(false)
-  const now = new Date()
 
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0],
-    endDate: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0],
+    startDate: "",
+    endDate: "",
   })
 
   useEffect(() => {
     setUser(getUser())
     setMounted(true)
+    const now = new Date()
+    setDateRange({
+      startDate: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0],
+      endDate: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0],
+    })
   }, [])
 
   const familyParam = activeFamilyId ? `&familyId=${activeFamilyId}` : ""
@@ -121,18 +125,21 @@ export default function DashboardPage() {
     queryKey: ["summary", dateRange.startDate, dateRange.endDate, activeFamilyId],
     queryFn: () =>
       api(`/transactions/summary?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}${familyParam}`),
+    enabled: !!dateRange.startDate,
   })
 
   const { data: txData } = useQuery<{ transactions: Transaction[] }>({
     queryKey: ["transactions-recent", dateRange.startDate, dateRange.endDate, activeFamilyId],
     queryFn: () =>
       api(`/transactions?take=8&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}${familyParam}`),
+    enabled: !!dateRange.startDate,
   })
 
   const { data: byCategory } = useQuery<CategoryBreakdown[]>({
     queryKey: ["by-category", dateRange.startDate, dateRange.endDate, activeFamilyId],
     queryFn: () =>
       api(`/transactions/by-category?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}${familyParam}`),
+    enabled: !!dateRange.startDate,
   })
 
   const { data: goals } = useQuery<Goal[]>({
@@ -348,8 +355,8 @@ export default function DashboardPage() {
                       paddingAngle={3}
                       dataKey="value"
                     >
-                      {pieData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
+                      {pieData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(v: number) => formatMoney(v, currency)} />

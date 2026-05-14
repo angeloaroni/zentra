@@ -127,7 +127,7 @@ export default function GoalsPage() {
                 <Input
                   placeholder="Ej: Viaje a Europa"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
                   required
                 />
               </div>
@@ -140,7 +140,7 @@ export default function GoalsPage() {
                   min="0"
                   placeholder="0.00"
                   value={form.targetAmount}
-                  onChange={(e) => setForm({ ...form, targetAmount: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, targetAmount: e.target.value }))}
                   required
                 />
               </div>
@@ -150,7 +150,7 @@ export default function GoalsPage() {
                 <Input
                   type="date"
                   value={form.deadline}
-                  onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, deadline: e.target.value }))}
                 />
               </div>
 
@@ -159,7 +159,7 @@ export default function GoalsPage() {
                 <Input
                   placeholder="Descripcion..."
                   value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
                 />
               </div>
 
@@ -176,7 +176,7 @@ export default function GoalsPage() {
                           : "border-transparent"
                       }`}
                       style={{ backgroundColor: c }}
-                      onClick={() => setForm({ ...form, color: c })}
+                      onClick={() => setForm(prev => ({ ...prev, color: c }))}
                     />
                   ))}
                 </div>

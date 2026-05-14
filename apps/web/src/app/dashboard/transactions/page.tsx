@@ -313,7 +313,7 @@ export default function TransactionsPage() {
                 <Label>Tipo</Label>
                 <select
                   value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value, categoryId: "" })}
+                  onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value, categoryId: "" }))}
                   className={selectClass}
                 >
                   <option value="EXPENSE">Gasto</option>
@@ -326,7 +326,7 @@ export default function TransactionsPage() {
                 <Input
                   placeholder="Ej: Supermercado"
                   value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
                 />
               </div>
 
@@ -338,7 +338,7 @@ export default function TransactionsPage() {
                   min="0"
                   placeholder="0.00"
                   value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
                 />
               </div>
 
@@ -347,7 +347,7 @@ export default function TransactionsPage() {
                 <Input
                   type="date"
                   value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
                 />
               </div>
 
@@ -355,7 +355,7 @@ export default function TransactionsPage() {
                 <Label>Categoria</Label>
                 <select
                   value={form.categoryId}
-                  onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, categoryId: e.target.value }))}
                   className={selectClass}
                 >
                   <option value="">{catLoading ? "Cargando..." : "Seleccionar..."}</option>
@@ -370,7 +370,7 @@ export default function TransactionsPage() {
                 <Input
                   placeholder="Ej: Tarjeta de credito"
                   value={form.paymentMethod}
-                  onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
                 />
               </div>
 
@@ -379,7 +379,7 @@ export default function TransactionsPage() {
                 <Input
                   placeholder="Descripcion..."
                   value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
                 />
               </div>
 
@@ -388,7 +388,7 @@ export default function TransactionsPage() {
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, isRecurring: !form.isRecurring })}
+                    onClick={() => setForm(prev => ({ ...prev, isRecurring: !prev.isRecurring }))}
                     className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors ${
                       form.isRecurring
                         ? "bg-primary text-primary-foreground border-primary"
@@ -406,7 +406,7 @@ export default function TransactionsPage() {
                   <Label>Frecuencia</Label>
                   <select
                     value={form.recurringFreq}
-                    onChange={(e) => setForm({ ...form, recurringFreq: e.target.value })}
+                    onChange={(e) => setForm(prev => ({ ...prev, recurringFreq: e.target.value }))}
                     className={selectClass}
                   >
                     {FREQUENCIES.map((f) => (
@@ -419,7 +419,7 @@ export default function TransactionsPage() {
               <div className="md:col-span-2">
                 <TagInput
                   selectedTagIds={form.tagIds}
-                  onTagsChange={(tagIds) => setForm({ ...form, tagIds })}
+                  onTagsChange={(tagIds) => setForm(prev => ({ ...prev, tagIds }))}
                   allTags={allTags || []}
                 />
               </div>

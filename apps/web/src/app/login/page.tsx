@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { setToken } from "@/lib/api"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -40,8 +42,8 @@ export default function LoginPage() {
         return
       }
 
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("user", JSON.stringify(data.user))
+      setToken(data.token)
+      localStorage.setItem("zentra-user:v1", JSON.stringify(data.user))
       window.location.href = "/dashboard"
     } catch {
       setError("No se pudo conectar al servidor")
@@ -54,9 +56,9 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="space-y-1 text-center">
-          <a href="/" className="mx-auto h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-2">
+          <Link href="/" className="mx-auto h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-2">
             <span className="text-white font-bold text-lg">Z</span>
-          </a>
+          </Link>
           <CardTitle className="text-2xl font-bold">
             Zentra
           </CardTitle>
@@ -65,7 +67,7 @@ export default function LoginPage() {
           </CardDescription>
           {!isLogin && (
             <p className="text-xs text-gray-400 mt-1">
-              Plan gratis disponible — <a href="/pricing" className="text-blue-500 hover:underline">ver planes</a>
+              Plan gratis disponible — <Link href="/pricing" className="text-blue-500 hover:underline">ver planes</Link>
             </p>
           )}
         </CardHeader>

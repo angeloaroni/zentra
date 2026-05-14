@@ -123,7 +123,7 @@ export default function CategoriesPage() {
                 <Input
                   placeholder="Ej: Restaurantes"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
 
@@ -132,7 +132,7 @@ export default function CategoriesPage() {
                 <Input
                   placeholder="Ej: coffee, car, home"
                   value={form.icon}
-                  onChange={(e) => setForm({ ...form, icon: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, icon: e.target.value }))}
                 />
               </div>
 
@@ -140,7 +140,7 @@ export default function CategoriesPage() {
                 <Label>Tipo</Label>
                 <select
                   value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value }))}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
                   <option value="EXPENSE">Gasto</option>
@@ -162,7 +162,7 @@ export default function CategoriesPage() {
                           : "border-transparent"
                       }`}
                       style={{ backgroundColor: c }}
-                      onClick={() => setForm({ ...form, color: c })}
+                      onClick={() => setForm(prev => ({ ...prev, color: c }))}
                     />
                   ))}
                 </div>

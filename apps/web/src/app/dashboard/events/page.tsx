@@ -116,8 +116,7 @@ export default function EventsPage() {
     })
   }
 
-  const now = new Date()
-  const monthName = formatMonthYear(now)
+  const monthName = formatMonthYear(new Date())
 
   if (!mounted || !hydrated) {
     return <div className="space-y-6"><p className="text-center text-muted-foreground py-8">Cargando...</p></div>
@@ -148,7 +147,7 @@ export default function EventsPage() {
                 <Input
                   placeholder="Ej: Cumpleanos de Sofia"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
 
@@ -163,7 +162,7 @@ export default function EventsPage() {
                         form.color === c ? "border-foreground scale-110" : "border-transparent"
                       }`}
                       style={{ backgroundColor: c }}
-                      onClick={() => setForm({ ...form, color: c })}
+                      onClick={() => setForm(prev => ({ ...prev, color: c }))}
                     />
                   ))}
                 </div>
@@ -181,7 +180,7 @@ export default function EventsPage() {
                           ? "border-primary bg-primary/10"
                           : "border-transparent bg-secondary"
                       }`}
-                      onClick={() => setForm({ ...form, icon: iconName })}
+                      onClick={() => setForm(prev => ({ ...prev, icon: iconName }))}
                     >
                       {renderTagIcon(iconName)}
                     </button>
@@ -196,7 +195,7 @@ export default function EventsPage() {
                   step="0.01"
                   placeholder="Sin limite"
                   value={form.budget}
-                  onChange={(e) => setForm({ ...form, budget: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, budget: e.target.value }))}
                 />
               </div>
 

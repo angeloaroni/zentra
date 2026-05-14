@@ -36,7 +36,7 @@ export default function ProfilePage() {
     mutationFn: (data: { name: string }) =>
       api("/users/profile", { method: "PATCH", body: JSON.stringify(data) }),
     onSuccess: (updated: any) => {
-      localStorage.setItem("user", JSON.stringify(updated))
+      localStorage.setItem("zentra-user:v1", JSON.stringify(updated))
       setUser(updated)
       setSuccess("Nombre actualizado")
       setError("")

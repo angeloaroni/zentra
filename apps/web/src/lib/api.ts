@@ -1,22 +1,25 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
 
+const TOKEN_KEY = "zentra-token:v1"
+const USER_KEY = "zentra-user:v1"
+
 function getToken(): string | null {
   if (typeof window === "undefined") return null
-  return localStorage.getItem("token")
+  return localStorage.getItem(TOKEN_KEY)
 }
 
 export function setToken(token: string) {
-  localStorage.setItem("token", token)
+  localStorage.setItem(TOKEN_KEY, token)
 }
 
 export function clearToken() {
-  localStorage.removeItem("token")
-  localStorage.removeItem("user")
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
 }
 
 export function getUser() {
   if (typeof window === "undefined") return null
-  const raw = localStorage.getItem("user")
+  const raw = localStorage.getItem(USER_KEY)
   return raw ? JSON.parse(raw) : null
 }
 

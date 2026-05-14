@@ -215,7 +215,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 <Label>Nombre</Label>
                 <Input
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
 
@@ -230,7 +230,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                         form.color === c ? "border-foreground scale-110" : "border-transparent"
                       }`}
                       style={{ backgroundColor: c }}
-                      onClick={() => setForm({ ...form, color: c })}
+                      onClick={() => setForm(prev => ({ ...prev, color: c }))}
                     />
                   ))}
                 </div>
@@ -248,7 +248,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                           ? "border-primary bg-primary/10"
                           : "border-transparent bg-secondary"
                       }`}
-                      onClick={() => setForm({ ...form, icon: iconName })}
+                      onClick={() => setForm(prev => ({ ...prev, icon: iconName }))}
                     >
                       {renderTagIcon(iconName)}
                     </button>
@@ -263,7 +263,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   step="0.01"
                   placeholder="Sin límite"
                   value={form.budget}
-                  onChange={(e) => setForm({ ...form, budget: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, budget: e.target.value }))}
                 />
               </div>
 

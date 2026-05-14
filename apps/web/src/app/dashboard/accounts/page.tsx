@@ -177,13 +177,13 @@ export default function AccountsPage() {
                 <Input
                   placeholder="Ej: Banco principal"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+                <Select value={form.type} onValueChange={(v) => setForm(prev => ({ ...prev, type: v }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -202,7 +202,7 @@ export default function AccountsPage() {
                   step="0.01"
                   placeholder="0.00"
                   value={form.balance}
-                  onChange={(e) => setForm({ ...form, balance: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, balance: e.target.value }))}
                 />
               </div>
 
@@ -217,7 +217,7 @@ export default function AccountsPage() {
                         form.color === c ? "border-foreground scale-110" : "border-transparent"
                       }`}
                       style={{ backgroundColor: c }}
-                      onClick={() => setForm({ ...form, color: c })}
+                      onClick={() => setForm(prev => ({ ...prev, color: c }))}
                     />
                   ))}
                 </div>

@@ -620,7 +620,7 @@ function FAQSection() {
         </FadeIn>
         <div className="space-y-3">
           {faqs.map((faq, i) => (
-            <FadeIn key={i} delay={i * 0.05}>
+            <FadeIn key={faq.q.slice(0, 20)} delay={i * 0.05}>
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <button
                   onClick={() => setOpenIndex(openIndex === i ? null : i)}
