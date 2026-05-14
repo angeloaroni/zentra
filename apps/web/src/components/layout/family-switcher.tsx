@@ -33,17 +33,18 @@ export function FamilySwitcher() {
     }
   }, [open])
 
-  const { data: families } = useQuery<Family[]>({
+  const { data: families, isError } = useQuery<Family[]>({
     queryKey: ["families"],
     queryFn: () => api("/families"),
     enabled: !!user,
+    retry: false,
   })
 
   if (!mounted || !familyHydrated) {
     return null
   }
 
-  if (!families || families.length === 0) return null
+  const familyList = isError ? [] : (families || [])
 
   return (
     <div className="relative">
@@ -91,12 +92,12 @@ export function FamilySwitcher() {
               {!activeFamilyId && <Check className="h-4 w-4 text-blue-600" />}
             </button>
 
-            {families.length > 0 && (
-              <div className="border-t border-gray-100 dark:border-gray-800 mt-1 pt-1">
-                <p className="px-4 py-1.5 text-xs font-medium text-gray-400 uppercase">
-                  Familias
-                </p>
-                {families.map((family) => (
+{familyList.length > 0 && (
+               <div className="border-t border-gray-100 dark:border-gray-800 mt-1 pt-1">
+                 <p className="px-4 py-1.5 text-xs font-medium text-gray-400 uppercase">
+                   Familias
+                 </p>
+                 {familyList.map((family) => (
                   <button
                     key={family.id}
                     onClick={() => {
