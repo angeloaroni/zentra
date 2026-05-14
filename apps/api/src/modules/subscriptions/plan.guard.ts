@@ -25,6 +25,9 @@ export class PlanGuard implements CanActivate {
     const userId = request.user?.id
     if (!userId) return false
 
+    const user = await this.prisma.user.findUnique({ where: { id: userId } })
+    if (user?.role === 'ADMIN') return true
+
     const subscription = await this.prisma.subscription.findUnique({
       where: { userId },
     })

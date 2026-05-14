@@ -19,6 +19,9 @@ export class PlanLimitsService {
   constructor(private prisma: PrismaService) {}
 
   private async getPlan(userId: string): Promise<string> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } })
+    if (user?.role === 'ADMIN') return 'pro'
+
     const subscription = await this.prisma.subscription.findUnique({
       where: { userId },
     })
