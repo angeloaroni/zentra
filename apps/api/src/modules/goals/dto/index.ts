@@ -1,6 +1,5 @@
 import { IsString, IsNumber, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
 
 export class CreateGoalDto {
   @ApiProperty({ example: 'Vacaciones' })
@@ -19,7 +18,6 @@ export class CreateGoalDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  @Transform(({ value }) => (value ? new Date(value) : undefined))
   deadline?: string;
 
   @ApiPropertyOptional({ example: 'plane' })
@@ -57,7 +55,6 @@ export class UpdateGoalDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  @Transform(({ value }) => (value ? new Date(value) : undefined))
   deadline?: string;
 
   @ApiPropertyOptional()
