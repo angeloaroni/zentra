@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { FamilySwitcher } from "./family-switcher"
+import { NotificationBell } from "./notification-bell"
 
 const navItems = [
   { href: "/dashboard", label: "Panel", icon: LayoutDashboard },
@@ -126,6 +127,7 @@ export function TopNav() {
         {/* Right side */}
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <NotificationBell />
           <FamilySwitcher />
           <Link
             href="/dashboard/transactions"

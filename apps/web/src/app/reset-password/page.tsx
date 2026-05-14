@@ -57,7 +57,7 @@ function ResetPasswordForm() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           Contrasena actualizada
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
@@ -109,7 +109,7 @@ export default function ResetPasswordPage() {
             <span className="text-xl font-bold text-gray-900 dark:text-white">Zentra</span>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2 text-center">
             Nueva contrasena
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 text-center">

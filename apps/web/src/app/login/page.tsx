@@ -44,7 +44,7 @@ export default function LoginPage() {
 
       setToken(data.token)
       localStorage.setItem("zentra-user:v1", JSON.stringify(data.user))
-      window.location.href = "/dashboard"
+      window.location.href = isLogin ? "/dashboard" : "/dashboard/onboarding"
     } catch {
       setError("No se pudo conectar al servidor")
     } finally {
@@ -59,7 +59,7 @@ export default function LoginPage() {
           <Link href="/" className="mx-auto h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-2">
             <span className="text-white font-bold text-lg">Z</span>
           </Link>
-          <CardTitle className="text-2xl font-bold">
+          <CardTitle className="text-2xl font-semibold">
             Zentra
           </CardTitle>
           <CardDescription>

@@ -128,7 +128,7 @@ export default function AdminPage() {
           <Shield className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Panel de Administracion</h1>
+          <h1 className="text-2xl font-semibold">Panel de Administracion</h1>
           <p className="text-sm text-muted-foreground">Gestiona usuarios, planes y estadisticas</p>
         </div>
       </div>

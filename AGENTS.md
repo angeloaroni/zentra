@@ -165,12 +165,24 @@ npm run db:studio      # Open Prisma Studio
 - Stripe raw body handling via `bodyParser: false` + custom verify in `main.ts`
 - CheckoutSessionDto accepts real Stripe price IDs (removed `@IsIn` validation)
 
+### Notifications
+- `NotificationsModule` with controller, service
+- `GET /notifications` - list user notifications (with read/unread filter)
+- `GET /notifications/unread-count` - badge count for top-nav
+- `PATCH /notifications/mark-all-read` - mark all as read
+- `PATCH /notifications/:id/read` - mark single as read
+- `DELETE /notifications/:id` - delete single notification
+- `DELETE /notifications` - clear all notifications
+- Auto-created on tag budget alerts (80% and 100%)
+- Top-nav bell icon with unread badge count and dropdown
+
 ### Admin
 - `GET /admin/stats` - total users, by plan, transactions, families, income/expense
 - `GET /admin/users` - list all users with search, includes plan, family, transaction count
 - `PATCH /admin/users/:id/plan` - change user plan (free/pro/family)
 - `DELETE /admin/users/:id` - delete user account (cascade)
 - Protected by `AdminGuard` (requires `user.role === 'ADMIN'`)
+- `{PlanGuard}`: ADMIN role bypasses all plan restrictions
 - Accessible via `/dashboard/admin` (visible in top-nav only for ADMIN role)
 
 ### Email (Resend)
@@ -206,12 +218,13 @@ npm run db:studio      # Open Prisma Studio
 - `/dashboard/settings/profile` - Edit name, change password, delete account
 - `/dashboard/settings/family` - Family management (create, join, invite, leave)
 - `/dashboard/settings/billing` - Billing/subscription management (current plan, upgrade, cancel)
+- `/dashboard/onboarding` - First-use setup wizard (create account, first transaction)
 - `/dashboard/admin` - Admin panel (users, stats, plan changes) - ADMIN role only
 - `/pricing` - Pricing page (3 tiers: Gratis, Pro, Familia)
 
 ### Key Components
 - `providers.tsx` - QueryClient + ThemeProvider (dark mode)
-- `top-nav.tsx` - Horizontal top nav with mobile hamburger menu, "Admin" link visible only for ADMIN role
+- `top-nav.tsx` - Horizontal top nav with mobile hamburger menu, "Admin" link visible only for ADMIN role, notification bell
 - `theme-toggle.tsx` - Dark/light mode toggle button
 - `family-switcher.tsx` - Personal/family view toggle in top nav
 - `date-range-picker.tsx` - Preset date ranges (current month, last month, last 3/6 months, current year, all)
@@ -220,7 +233,7 @@ npm run db:studio      # Open Prisma Studio
 - `toast.tsx` - Custom toast system with success/error/warning variants
 
 ### Lib
-- `lib/api.ts` - API client with JWT auth, 401 redirect to `/login`
+- `lib/api.ts` - API client with JWT auth, 401 redirect to `/login`, versioned localStorage keys (`zentra-token:v1`, `zentra-user:v1`)
 - `lib/settings.ts` - Zustand store for global currency, `formatMoney(n, currency)` with symbol at END
 - `lib/family.ts` - Zustand store for active family (persists to localStorage)
 - `lib/utils.ts` - `cn()` helper for className merging
@@ -276,7 +289,7 @@ npm run db:studio      # Open Prisma Studio
 - Route ordering fixes
 - CSV export
 - Recurring transaction auto-generation
-- **Family data sharing** - all services (transactions, categories, budgets, goals, accounts) support family-aware queries
+- **Family switcher** - shows "Mi cuenta" always + family list when available; gracefully handles 403 from PlanGuard
 - Family management UI (create, join, invite, leave) at `/dashboard/settings/family`
 - Family switcher in top nav (personal/family view toggle)
 - Profile settings (edit name, change password, delete account)
@@ -290,6 +303,13 @@ npm run db:studio      # Open Prisma Studio
 - **Subscriptions module** - Stripe checkout/portal/cancel/webhook with PlanGuard
 - **Plan enforcement** - PlanGuard + @Plan() decorator on protected routes; PlanLimitsService for free-tier limits
 - **Billing page** - `/dashboard/settings/billing` with plan cards, usage, manage billing, cancel
+- **Notifications UI** - bell icon with unread badge, dropdown with mark-as-read, delete, clear all
+- **Onboarding flow** - `/dashboard/onboarding` 3-step wizard (welcome, create account, first transaction)
+- **Accessibility** - skip link, Escape key handlers on dropdowns, `aria-hidden` on backdrops, `prefers-reduced-motion` CSS + framer-motion, alt text on AvatarImage
+- **React quality** - functional setState (no stale closures), localStorage key versioning, escaped `new Date()` hydration mismatches, `<Link>` for internal nav
+- **SEO** - Open Graph meta, Twitter cards, sitemap.xml, robots.txt, metadataBase
+- **Stripe setup guide** - `STRIPE_SETUP.md` with product/price/webhook configuration steps
+- **Admin bypass** - ADMIN role bypasses PlanGuard and PlanLimitsService restrictions
 - **Landing page** - Hero, Problems, Features, Pricing, FAQ, CTA, Footer with framer-motion
 - **Admin panel** - `/dashboard/admin` with stats, user table, plan changes, delete user (ADMIN role only)
 - **Edit functionality** - transactions, accounts, budgets can be edited inline
@@ -306,10 +326,10 @@ npm run db:studio      # Open Prisma Studio
 - **Mobile overflow**: dashboard balance card, transaction rows, action buttons, color pickers, contribute forms all properly responsified
 - **CheckoutSessionDto**: removed `@IsIn(['pro', 'family'])` validation - now accepts real Stripe price IDs
 - **PlanGuard activation**: registered in SubscriptionsModule, `@Plan()` decorator applied to tags, budgets, goals, families, transactions (cashflow/comparison/by-tag), users (join-family/leave-family)
+- **Admin PlanGuard bypass**: ADMIN role returns true immediately, skipping plan checks
+- **Notification bell**: FamilySwitcher always visible (shows "Mi cuenta" when no families or 403)
 
 ### Next
 - Group expense splitting (Splitwise-style)
-- Onboarding flow
 - Export to PDF
-- Notification system
-- Notification UI page to view and manage notifications
+- Stripe live mode activation (create products, prices, webhook in Stripe dashboard)

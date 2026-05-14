@@ -120,7 +120,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1, ease: [0.25, 0.4, 0.3, 1] }}
-          className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight tracking-tight max-w-3xl"
+          className="text-4xl sm:text-5xl md:text-6xl font-semibold text-white leading-tight tracking-tight max-w-3xl"
         >
           Tus finanzas,{" "}
           <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
@@ -257,7 +257,7 @@ function ProblemsSection() {
             <span className="text-sm font-medium text-blue-600 bg-blue-50 rounded-full px-4 py-1.5">
               El problema
             </span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+            <h2 className="mt-4 text-3xl sm:text-4xl font-semibold text-gray-900 tracking-tight">
               Tu dinero merece mas que una hoja de calculo
             </h2>
           </div>
@@ -271,7 +271,7 @@ function ProblemsSection() {
                   <div className={`w-14 h-14 rounded-xl ${p.iconBg} border flex items-center justify-center mb-5`}>
                     {p.icon}
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{p.title}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{p.title}</h3>
                   <p className="text-gray-500 leading-relaxed">{p.text}</p>
                 </div>
               </div>
@@ -389,7 +389,7 @@ function FeaturesSection() {
             <span className="text-sm font-medium text-blue-400 bg-blue-500/10 rounded-full px-4 py-1.5 border border-blue-500/20">
               Funciones
             </span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white tracking-tight">
+            <h2 className="mt-4 text-3xl sm:text-4xl font-semibold text-white tracking-tight">
               Diseñado para que lo uses, no para que lo mires
             </h2>
           </div>
@@ -403,7 +403,7 @@ function FeaturesSection() {
                     {f.icon}
                     {f.badge}
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                  <h3 className="text-2xl sm:text-3xl font-semibold text-white leading-tight">
                     {f.title}
                   </h3>
                   <p className="text-gray-400 text-lg leading-relaxed">
@@ -522,7 +522,7 @@ function PricingSection() {
             <span className="text-sm font-medium text-blue-400 bg-blue-500/10 rounded-full px-4 py-1.5 border border-blue-500/20">
               Precios
             </span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white tracking-tight">
+            <h2 className="mt-4 text-3xl sm:text-4xl font-semibold text-white tracking-tight">
               Empieza gratis, escala cuando quieras
             </h2>
             <p className="mt-4 text-gray-400 text-lg">Sin tarjeta de credito. Sin compromiso.</p>
@@ -613,7 +613,7 @@ function FAQSection() {
             <span className="text-sm font-medium text-blue-600 bg-blue-50 rounded-full px-4 py-1.5">
               FAQ
             </span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+            <h2 className="mt-4 text-3xl sm:text-4xl font-semibold text-gray-900 tracking-tight">
               Preguntas frecuentes
             </h2>
           </div>
@@ -663,7 +663,7 @@ function CTASection() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-600/10 via-transparent to-transparent" />
       <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
         <FadeIn>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">
             Empieza a gestionar tu dinero en minutos
           </h2>
           <p className="mt-4 text-gray-400 text-lg">

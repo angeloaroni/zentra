@@ -168,7 +168,7 @@ export default function BudgetsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Presupuestos</h1>
+        <h1 className="text-2xl font-semibold">Presupuestos</h1>
         <Button onClick={() => { setShowForm(!showForm); setFormError("") }}>
           <Plus className="h-4 w-4 mr-2" />
           Nuevo

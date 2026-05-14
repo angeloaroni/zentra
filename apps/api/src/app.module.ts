@@ -13,6 +13,7 @@ import { RecurringModule } from './modules/recurring/recurring.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AdminModule } from './modules/admin/admin.module';
     TagsModule,
     SubscriptionsModule,
     AdminModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

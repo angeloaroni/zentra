@@ -138,7 +138,7 @@ export default function PricingPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
+          <h1 className="text-4xl font-semibold text-gray-900 dark:text-white mb-3">
             Elige tu plan
           </h1>
           <p className="text-lg text-gray-500 dark:text-gray-400">
@@ -177,11 +177,11 @@ export default function PricingPage() {
                   <Icon className="h-6 w-6 text-white" />
                 </div>
 
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                   {plan.name}
                 </h3>
                 <div className="mt-2 mb-1">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <span className="text-3xl font-semibold text-gray-900 dark:text-white">
                     {plan.price}
                   </span>
                   <span className="text-gray-500 dark:text-gray-400">{plan.period}</span>

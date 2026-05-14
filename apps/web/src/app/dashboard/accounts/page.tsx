@@ -150,7 +150,7 @@ export default function AccountsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Cuentas</h1>
+        <h1 className="text-2xl font-semibold">Cuentas</h1>
         <Button onClick={() => { setShowForm(!showForm); setFormError(""); setEditingId(null); setForm(defaultForm) }}>
           <Plus className="h-4 w-4 mr-2" />
           Nueva

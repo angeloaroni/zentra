@@ -123,7 +123,7 @@ export default function ProfilePage() {
         <Link href="/dashboard/settings" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mi perfil</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Mi perfil</h1>
       </div>
 
       {success && (
