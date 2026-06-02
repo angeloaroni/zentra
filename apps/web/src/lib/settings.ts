@@ -58,7 +58,7 @@ interface SettingsState {
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
-      currency: "USD",
+      currency: "EUR",
       setCurrency: (currency) => set({ currency }),
       _hasHydrated: false,
     }),

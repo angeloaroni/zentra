@@ -38,16 +38,16 @@ const STEPS = [
 ]
 
 const ACCOUNT_TYPES = [
-  { value: "CASH", label: "Efectivo", icon: "💵" },
-  { value: "BANK", label: "Cuenta bancaria", icon: "🏦" },
-  { value: "SAVINGS", label: "Ahorros", icon: "piggy" },
-  { value: "DIGITAL", label: "Billetera digital", icon: "📱" },
+  { value: "cash", label: "Efectivo", icon: "💵" },
+  { value: "checking", label: "Cuenta bancaria", icon: "🏦" },
+  { value: "savings", label: "Ahorros", icon: "piggy" },
+  { value: "investment", label: "Inversiones", icon: "📈" },
 ]
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(0)
   const [accountName, setAccountName] = useState("")
-  const [accountType, setAccountType] = useState("BANK")
+  const [accountType, setAccountType] = useState("checking")
   const [accountBalance, setAccountBalance] = useState("")
   const [txTitle, setTxTitle] = useState("")
   const [txAmount, setTxAmount] = useState("")
