@@ -160,6 +160,7 @@ npm run db:studio      # Open Prisma Studio
   - **Families**: all endpoints require `family` plan
   - **Transactions**: `cashflow`, `comparison`, `by-tag/:tagId` require `pro` plan
   - **Users**: `join-family`, `leave-family` require `family` plan
+  - **Splits**: all endpoints require `pro` plan
 - Webhook handler for Stripe events (checkout.session.completed, subscription.updated, subscription.deleted, invoice.payment_failed)
 - Free plan auto-created on registration
 - Stripe raw body handling via `bodyParser: false` + custom verify in `main.ts`
@@ -184,6 +185,31 @@ npm run db:studio      # Open Prisma Studio
 - Protected by `AdminGuard` (requires `user.role === 'ADMIN'`)
 - `{PlanGuard}`: ADMIN role bypasses all plan restrictions
 - Accessible via `/dashboard/admin` (visible in top-nav only for ADMIN role)
+
+### Splits (Dividir Gastos)
+- Splitwise-style expense splitting feature
+- Independent of families (works with any registered user)
+- Requires `pro` plan (via `@Plan('pro')` decorator)
+- **Groups**: CRUD with invite by email (case-insensitive), members management
+- **Expenses**: Create shared expenses with 3 split types: EQUAL, PERCENTAGE, EXACT
+- **Balances**: Net balance calculation + simplified debt algorithm (minimizes transfers)
+- **Settlements**: Record payments, auto-create Transaction (EXPENSE for payer, INCOME for receiver)
+- **DebtSimplifierService**: Pure calculation service for net balances and debt simplification
+- Endpoints:
+  - `POST/GET /splits/groups` - Create/list groups
+  - `GET /splits/groups/:id` - Group detail with members, expenses, settlements
+  - `PATCH/DELETE /splits/groups/:id` - Update/delete group
+  - `POST /splits/groups/:id/invite` - Invite member by email
+  - `DELETE /splits/groups/:id/members/:userId` - Remove member
+  - `POST/GET /splits/expenses` - Create/list expenses (filtered by groupId)
+  - `GET/PATCH/DELETE /splits/expenses/:id` - Expense CRUD
+  - `GET /splits/balances?groupId=X` - Simplified debts for group
+  - `GET /splits/groups/balances/overall` - Overall balances across all groups
+  - `POST/GET /splits/settlements` - Create/list settlements
+  - `DELETE /splits/settlements/:id` - Delete settlement
+- Notifications: `SPLIT_INVITE`, `SPLIT_EXPENSE`, `SPLIT_SETTLEMENT`
+- Frontend: `/dashboard/splits` (groups list + balance summary), `/dashboard/splits/[groupId]` (tabs: expenses, balances, history, members)
+- Auto-creates "Pago de deuda" category for settlement transactions
 
 ### Email (Resend)
 - `EmailService` + `EmailModule` in `common/services/`
@@ -220,6 +246,8 @@ npm run db:studio      # Open Prisma Studio
 - `/dashboard/settings/billing` - Billing/subscription management (current plan, upgrade, cancel)
 - `/dashboard/onboarding` - First-use setup wizard (create account, first transaction)
 - `/dashboard/admin` - Admin panel (users, stats, plan changes) - ADMIN role only
+- `/dashboard/splits` - Split groups list with overall balance summary (Pro plan)
+- `/dashboard/splits/[groupId]` - Group detail with tabs: expenses, balances, history, members
 - `/pricing` - Pricing page (3 tiers: Gratis, Pro, Familia)
 
 ### Key Components
@@ -316,6 +344,7 @@ npm run db:studio      # Open Prisma Studio
 - **Production deployment** - Vercel (frontend), Render (backend), Neon (PostgreSQL)
 - **Mobile responsive fixes** - overflow prevention, flex-wrap, responsive text sizing, truncated titles across all dashboard pages
 - **Case-insensitive email** - login, register, forgot-password, family invite all use `mode: 'insensitive'`
+- **Group expense splitting (Splitwise-style)** - Splitwise-style expense splitting with groups, shared expenses, debt simplification algorithm, settlements with auto-transaction creation, Pro plan required
 
 ### Fixed Bugs
 - **FamilyId separation**: create methods no longer auto-assign user's familyId; personal transactions stay personal
@@ -330,6 +359,5 @@ npm run db:studio      # Open Prisma Studio
 - **Notification bell**: FamilySwitcher always visible (shows "Mi cuenta" when no families or 403)
 
 ### Next
-- Group expense splitting (Splitwise-style)
 - Export to PDF
 - Stripe live mode activation (create products, prices, webhook in Stripe dashboard)

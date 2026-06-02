@@ -20,6 +20,7 @@ import {
   X,
   PartyPopper,
   Shield,
+  Users,
 } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { FamilySwitcher } from "./family-switcher"
@@ -33,6 +34,7 @@ const navItems = [
   { href: "/dashboard/budgets", label: "Presupuestos", icon: PiggyBank },
   { href: "/dashboard/goals", label: "Metas", icon: Target },
   { href: "/dashboard/events", label: "Eventos", icon: PartyPopper },
+  { href: "/dashboard/splits", label: "Dividir", icon: Users },
 ]
 
 export function TopNav() {

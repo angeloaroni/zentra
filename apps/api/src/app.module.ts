@@ -14,6 +14,7 @@ import { TagsModule } from './modules/tags/tags.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { SplitsModule } from './modules/splits/splits.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     SubscriptionsModule,
     AdminModule,
     NotificationsModule,
+    SplitsModule,
   ],
 })
 export class AppModule {}
