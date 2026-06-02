@@ -20,6 +20,8 @@ import {
   Shield,
   Globe,
   Zap,
+  Receipt,
+  Coins,
 } from "lucide-react"
 
 function FadeIn({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -113,7 +115,7 @@ function HeroSection() {
         >
           <span className="inline-flex items-center gap-2 text-sm text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5">
             <Zap size={14} />
-            Gestiona tu dinero de forma inteligente
+            Gestiona tu dinero y divide gastos con amigos
           </span>
         </motion.div>
         <motion.h1
@@ -133,8 +135,8 @@ function HeroSection() {
           transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.4, 0.3, 1] }}
           className="mt-6 text-lg text-gray-400 max-w-2xl leading-relaxed"
         >
-          Deja de perseguir numeros. Zentra te muestra donde esta tu dinero,
-          cuanto puedes gastar, y hacia donde vas.
+          Gestiona tu dinero y divide gastos con amigos. Todo en un solo lugar,
+          sin hojas de calculo ni apps separadas.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -242,8 +244,8 @@ function ProblemsSection() {
     },
     {
       icon: <Users size={28} />,
-      title: "Compartir gastos es un caos",
-      text: "Gastos compartidos, presupuestos familiares, metas juntos. Todo en un solo lugar, con vistas personales y familiares separadas.",
+      title: "Dividir gastos no tiene por que ser complicado",
+      text: "Apps separadas, chats perdidos, calculadoras mentales. Zentra integra la division de gastos con tu vida financiera.",
       accent: "from-purple-500/10 to-pink-500/10",
       iconBg: "bg-purple-500/10 text-purple-400 border-purple-500/20",
     },
@@ -379,6 +381,53 @@ function FeaturesSection() {
       ),
       dark: true,
     },
+    {
+      icon: <Users size={24} />,
+      badge: "Dividir gastos",
+      title: "Split gastos con amigos, como Splitwise",
+      text: "Crea grupos, divide gastos igual o por porcentaje, simplifica deudas automaticamente. Todo integrado con tus finanzas personales.",
+      mockup: (
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-bold text-gray-900 text-sm">Viaje a Europa</h4>
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">3 miembros</span>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">J</div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Cena</p>
+                  <p className="text-xs text-gray-500">Juan pago</p>
+                </div>
+              </div>
+              <span className="font-bold text-gray-900">$120</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold">M</div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Taxi</p>
+                  <p className="text-xs text-gray-500">Maria pago</p>
+                </div>
+              </div>
+              <span className="font-bold text-gray-900">$45</span>
+            </div>
+          </div>
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <p className="text-xs font-medium text-blue-800 mb-2">Balances simplificados</p>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-red-600 font-medium">Maria</span>
+              <span className="text-gray-400">le debe</span>
+              <span className="text-emerald-600 font-medium">$27.50</span>
+              <span className="text-gray-400">a</span>
+              <span className="text-blue-600 font-medium">Juan</span>
+            </div>
+          </div>
+        </div>
+      ),
+      dark: false,
+    },
   ]
 
   return (
@@ -413,6 +462,7 @@ function FeaturesSection() {
                     {i === 0 && <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">Probar gratis <ArrowRight size={14} /></Link>}
                     {i === 1 && <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">Crear presupuesto <ArrowRight size={14} /></Link>}
                     {i === 2 && <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">Definir meta <ArrowRight size={14} /></Link>}
+                    {i === 3 && <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">Dividir gastos <ArrowRight size={14} /></Link>}
                   </div>
                 </div>
                 <div className="flex-1 w-full max-w-md">
@@ -427,11 +477,144 @@ function FeaturesSection() {
   )
 }
 
+function SplitsSection() {
+  return (
+    <section className="py-24 bg-[#F8FAFC]" id="splits">
+      <div className="max-w-6xl mx-auto px-6">
+        <FadeIn>
+          <div className="text-center mb-16">
+            <span className="text-sm font-medium text-blue-600 bg-blue-50 rounded-full px-4 py-1.5">
+              Dividir gastos
+            </span>
+            <h2 className="mt-4 text-3xl sm:text-4xl font-semibold text-gray-900 tracking-tight">
+              Comparte gastos sin complicaciones
+            </h2>
+            <p className="mt-4 text-gray-500 text-lg max-w-2xl mx-auto">
+              Como Splitwise, pero integrado con tus finanzas personales. Crea grupos, divide gastos, y simplifica deudas en un solo lugar.
+            </p>
+          </div>
+        </FadeIn>
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <FadeIn delay={0.1}>
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                  <Users size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Crea grupos con amigos</h3>
+                  <p className="text-gray-500 text-sm">Invita por email, crea grupos para viajes, cenas, o gastos compartidos.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+                  <Receipt size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Divide en partes iguales o por porcentaje</h3>
+                  <p className="text-gray-500 text-sm">Igual para todos, porcentaje, o monto exacto. Tu decides como dividir.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
+                  <Coins size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Simplifica deudas automaticamente</h3>
+                  <p className="text-gray-500 text-sm">El algoritmo minimiza transfers. Si A le debe a B y B a C, simplifica a un solo pago.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
+                  <Wallet size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Registra pagos y salda deudas</h3>
+                  <p className="text-gray-500 text-sm">Registra cuando alguien paga. Se crea automaticamente en tu registro de transacciones.</p>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+          <FadeIn delay={0.2}>
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
+                  V
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Viaje a Europa</p>
+                  <p className="text-xs text-gray-500">3 miembros</p>
+                </div>
+              </div>
+              <div className="space-y-3 mb-5">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-bold">J</div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Cena en Roma</p>
+                      <p className="text-xs text-gray-500">Juan pago</p>
+                    </div>
+                  </div>
+                  <span className="font-bold text-gray-900">$120</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-sm font-bold">M</div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Taxi al aeropuerto</p>
+                      <p className="text-xs text-gray-500">Maria pago</p>
+                    </div>
+                  </div>
+                  <span className="font-bold text-gray-900">$45</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-sm font-bold">A</div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Hotel 2 noches</p>
+                      <p className="text-xs text-gray-500">Ana pago</p>
+                    </div>
+                  </div>
+                  <span className="font-bold text-gray-900">$280</span>
+                </div>
+              </div>
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <p className="text-xs font-semibold text-blue-800 mb-3 uppercase tracking-wide">Balances simplificados</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="h-6 w-6 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs font-bold">M</div>
+                    <span className="text-gray-600">Maria le debe</span>
+                    <span className="font-bold text-red-600">$27.50</span>
+                    <span className="text-gray-400">a</span>
+                    <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">J</div>
+                    <span className="text-gray-600">Juan</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-bold">A</div>
+                    <span className="text-gray-600">Ana le debe</span>
+                    <span className="font-bold text-red-600">$37.50</span>
+                    <span className="text-gray-400">a</span>
+                    <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">J</div>
+                    <span className="text-gray-600">Juan</span>
+                  </div>
+                </div>
+              </div>
+              <Link href="/login" className="mt-5 block text-center py-2.5 rounded-lg bg-gray-900 text-white font-semibold text-sm hover:bg-gray-800 transition-colors">
+                Probar gratis
+              </Link>
+            </div>
+          </FadeIn>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function ExtraFeaturesStrip() {
   const items = [
+    { icon: <Users size={20} />, title: "Dividir gastos", text: "Grupos, splits, simplificar deudas" },
     { icon: <Globe size={20} />, title: "10 monedas", text: "USD, EUR, MXN, y mas" },
     { icon: <Shield size={20} />, title: "Seguro", text: "Conexion encriptada" },
-    { icon: <Eye size={20} />, title: "Modo oscuro", text: "Cuida tu vista" },
     { icon: <Zap size={20} />, title: "Rapido", text: "Sin esperas" },
   ]
   return (
@@ -468,8 +651,9 @@ function PricingSection() {
         "2 cuentas",
         "3 presupuestos",
         "3 metas de ahorro",
-        "Categorias predeterminadas",
-        "Vista personal",
+        "1 grupo de division (3 personas)",
+        "10 gastos compartidos/mes",
+        "Division igual solamente",
       ],
       cta: "Empezar gratis",
       popular: false,
@@ -485,9 +669,13 @@ function PricingSection() {
         "Cuentas ilimitadas",
         "Presupuestos ilimitados",
         "Metas ilimitadas",
-        "Eventos con presupuesto",
+        "Grupos de division ilimitados",
+        "Division por % y monto exacto",
+        "Gastos recurrentes compartidos",
+        "Desglose de items por persona",
+        "Conversion de monedas",
+        "Guardar divisiones por defecto",
         "Exportar a CSV",
-        "View personal avanzada",
         "Alertas de presupuesto",
       ],
       cta: "Comenzar prueba gratis",
@@ -506,8 +694,6 @@ function PricingSection() {
         "Roles (Admin / Miembro)",
         "Invitar por email",
         "Vista personal y familiar",
-        "Presupuestos familiares",
-        "Metas familiares",
       ],
       cta: "Comenzar prueba gratis",
       popular: false,
@@ -602,6 +788,18 @@ function FAQSection() {
     {
       q: "Puedo exportar mis datos?",
       a: "Si. Exporta tus transacciones a CSV desde la seccion de registros. En el plan Pro y Familia la exportacion es ilimitada.",
+    },
+    {
+      q: "Puedo dividir gastos con amigos sin ser familia?",
+      a: "Si. La funcion de dividir gastos es independiente de la familiar. Crea un grupo, invita amigos por email, y empieza a dividir. Gratis con 1 grupo de hasta 3 personas.",
+    },
+    {
+      q: "Que tipos de division hay?",
+      a: "Hay tres tipos: igual para todos (gratis), por porcentaje, y por monto exacto. Tambien puedes simplificar deudas automaticamente para minimizar los pagos.",
+    },
+    {
+      q: "Puedo gastos recurrentes como el alquiler?",
+      a: "Si. En el plan Pro puedes crear gastos compartidos recurrentes (mensual, semanal, etc.) que se registran automaticamente.",
     },
   ]
 
@@ -727,6 +925,7 @@ export default function LandingPage() {
       <HeroSection />
       <ProblemsSection />
       <FeaturesSection />
+      <SplitsSection />
       <ExtraFeaturesStrip />
       <PricingSection />
       <FAQSection />

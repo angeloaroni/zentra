@@ -36,8 +36,10 @@ model User {
   createdSplitGroups SplitGroup[]
   paidExpenses      SharedExpense[]    @relation("PaidBy")
   expenseSplits     ExpenseSplit[]
+  recurringSplitExpenses RecurringSplitExpense[]
   settlementsFrom   Settlement[]       @relation("SettlementFrom")
   settlementsTo     Settlement[]       @relation("SettlementTo")
+  splitTemplates    SplitTemplate[]
 }
 
 model Account {
@@ -234,6 +236,7 @@ model SplitGroup {
   members     SplitGroupMember[]
   expenses    SharedExpense[]
   settlements Settlement[]
+  recurringExpenses RecurringSplitExpense[]
 
   @@index([createdById])
 }
@@ -267,6 +270,7 @@ model SharedExpense {
   group  SplitGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   paidBy User          @relation("PaidBy", fields: [paidById], references: [id])
   splits ExpenseSplit[]
+  items  ExpenseItem[]
 
   @@index([groupId, date])
 }
@@ -303,4 +307,50 @@ model Settlement {
   transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
 
   @@index([groupId, date])
+}
+
+model RecurringSplitExpense {
+  id          String   @id @default(cuid())
+  groupId     String
+  paidById    String
+  title       String
+  amount      Float
+  currency    String   @default("USD")
+  frequency   String   @default("MONTHLY")
+  splitType   String   @default("EQUAL")
+  nextDueDate DateTime
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  group  SplitGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  paidBy User       @relation(fields: [paidById], references: [id])
+
+  @@index([groupId, nextDueDate])
+}
+
+model SplitTemplate {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  splitType String   @default("EQUAL")
+  memberIds String[]
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+model ExpenseItem {
+  id         String   @id @default(cuid())
+  expenseId  String
+  name       String
+  amount     Float
+  quantity   Int      @default(1)
+  assignedTo String[]
+
+  expense SharedExpense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@index([expenseId])
 }

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { DebtSimplifierService, DebtTransfer } from './debt-simplifier.service'
+import { PlanLimitsService } from '../subscriptions/plan-limits.service'
 import {
   CreateGroupDto,
   UpdateGroupDto,
@@ -14,9 +15,12 @@ export class SplitsService {
   constructor(
     private prisma: PrismaService,
     private debtSimplifier: DebtSimplifierService,
+    private planLimits: PlanLimitsService,
   ) {}
 
   async createGroup(userId: string, dto: CreateGroupDto) {
+    await this.planLimits.checkSplitGroupLimit(userId)
+
     const group = await this.prisma.splitGroup.create({
       data: {
         name: dto.name,
@@ -170,6 +174,8 @@ export class SplitsService {
   }
 
   async inviteMember(groupId: string, userId: string, email: string) {
+    await this.planLimits.checkSplitMemberLimit(groupId)
+
     const group = await this.prisma.splitGroup.findUnique({ where: { id: groupId } })
 
     if (!group) {
@@ -261,6 +267,8 @@ export class SplitsService {
   }
 
   async createExpense(userId: string, dto: CreateExpenseDto) {
+    await this.planLimits.checkSplitExpenseLimit(userId)
+
     const group = await this.prisma.splitGroup.findUnique({
       where: { id: dto.groupId },
       include: { members: true },

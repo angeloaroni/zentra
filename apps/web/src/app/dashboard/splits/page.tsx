@@ -106,9 +106,9 @@ export default function SplitsPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <Lock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="font-semibold">Plan Pro requerido</p>
+            <p className="font-semibold">Error al cargar grupos</p>
             <p className="text-sm text-muted-foreground mt-1">
-              La division de gastos esta disponible en el plan Pro y superior.
+              Ha ocurrido un error. Intenta de nuevo mas tarde.
             </p>
             <Link href="/dashboard/settings/billing">
               <Button className="mt-4">Ver planes</Button>
