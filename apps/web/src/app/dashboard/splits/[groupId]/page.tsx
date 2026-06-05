@@ -174,7 +174,7 @@ export default function GroupDetailPage() {
     mutationFn: (data: any) => api("/splits/expenses", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: async (result: any) => {
       if (receiptFile && result?.id) {
-        try { await uploadFile(`/splits/expenses/${result.id}/receipt`, receiptFile) } catch {}
+        try { await uploadReceiptBase64(result.id, receiptFile) } catch {}
       }
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
       queryClient.invalidateQueries({ queryKey: ["split-balances", groupId] })
@@ -189,7 +189,7 @@ export default function GroupDetailPage() {
     onSuccess: async (result: any) => {
       const expenseId = editingExpense?.id
       if (receiptFile && expenseId) {
-        try { await uploadFile(`/splits/expenses/${expenseId}/receipt`, receiptFile) } catch {}
+        try { await uploadReceiptBase64(expenseId, receiptFile) } catch {}
       }
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
       queryClient.invalidateQueries({ queryKey: ["split-balances", groupId] })
@@ -310,6 +310,21 @@ export default function GroupDetailPage() {
     setReceiptFile(null)
     setReceiptPreview(null)
     setExpenseForm({ title: "", description: "", amount: "", date: new Date().toISOString().split("T")[0], splitType: "EQUAL", selectedMembers: [], percentages: {}, exactAmounts: {} })
+  }
+
+  async function uploadReceiptBase64(expenseId: string, file: File) {
+    const base64 = await new Promise<string>((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result as string
+        resolve(result.split(",")[1])
+      }
+      reader.readAsDataURL(file)
+    })
+    await api(`/splits/expenses/${expenseId}/receipt`, {
+      method: "POST",
+      body: JSON.stringify({ receiptData: base64, receiptMime: file.type }),
+    })
   }
 
   function startEditExpense(expense: SharedExpense) {

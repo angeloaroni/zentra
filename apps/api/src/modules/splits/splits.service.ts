@@ -823,17 +823,16 @@ export class SplitsService {
     return this.prisma.settlement.delete({ where: { id } })
   }
 
-  async uploadReceipt(expenseId: string, userId: string, file: Express.Multer.File) {
+  async uploadReceipt(expenseId: string, userId: string, dto: { receiptData: string; receiptMime: string }) {
     const expense = await this.prisma.sharedExpense.findUnique({ where: { id: expenseId } })
     if (!expense) throw new NotFoundException('Expense not found')
     if (expense.paidById !== userId) throw new ForbiddenException('Only the payer can upload receipts')
 
-    const base64Data = file.buffer.toString('base64')
     return this.prisma.sharedExpense.update({
       where: { id: expenseId },
       data: {
-        receiptData: base64Data,
-        receiptMime: file.mimetype,
+        receiptData: dto.receiptData,
+        receiptMime: dto.receiptMime,
         receiptUrl: null,
       },
     })

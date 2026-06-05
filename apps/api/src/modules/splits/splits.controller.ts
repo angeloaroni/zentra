@@ -9,11 +9,7 @@ import {
   Query,
   UseGuards,
   Req,
-  UseInterceptors,
-  UploadedFile,
 } from '@nestjs/common'
-import { FileInterceptor } from '@nestjs/platform-express'
-import { memoryStorage } from 'multer'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { PlanGuard } from '../subscriptions/plan.guard'
 import { Plan } from '../subscriptions/plan.decorator'
@@ -27,6 +23,7 @@ import {
   CreateSettlementDto,
   CreateRecurringSplitExpenseDto,
   CreateSplitTemplateDto,
+  UploadReceiptDto,
 } from './dto'
 
 @Controller('splits')
@@ -133,19 +130,8 @@ export class SplitsController {
   }
 
   @Post('expenses/:id/receipt')
-  @UseInterceptors(FileInterceptor('receipt', {
-    storage: memoryStorage(),
-    fileFilter: (req, file, cb) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|pdf)$/)) {
-        cb(new Error('Only images and PDFs are allowed'), false)
-      } else {
-        cb(null, true)
-      }
-    },
-    limits: { fileSize: 5 * 1024 * 1024 },
-  }))
-  uploadReceipt(@Param('id') id: string, @UploadedFile() file: Express.Multer.File, @Req() req: any) {
-    return this.splitsService.uploadReceipt(id, req.user.id, file)
+  uploadReceipt(@Param('id') id: string, @Body() dto: UploadReceiptDto, @Req() req: any) {
+    return this.splitsService.uploadReceipt(id, req.user.id, dto)
   }
 
   @Delete('expenses/:id/receipt')
