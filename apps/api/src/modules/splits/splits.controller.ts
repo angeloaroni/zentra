@@ -11,8 +11,6 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
@@ -137,7 +135,6 @@ export class SplitsController {
   }
 
   @Post('expenses/:id/receipt')
-  @UsePipes(new ValidationPipe({ skipMissingProperties: true, forbidNonWhitelisted: false }))
   @UseInterceptors(FileInterceptor('receipt', {
     storage: diskStorage({
       destination: (req, file, cb) => {
