@@ -16,70 +16,54 @@ npm run db:studio      # Open Prisma Studio
 - **Monorepo**: TurboRepo with npm workspaces
 - **apps/api**: NestJS backend, global prefix `/api`
 - **apps/web**: Next.js 14 frontend
-- **Database**: **PostgreSQL** via Prisma ORM (Neon)
+- **Database**: PostgreSQL via Prisma ORM (Neon)
 - **Email**: Resend API for transactional emails
 - **Auth**: JWT-based (`@nestjs/jwt`, `bcrypt`)
-- Swagger docs: `http://localhost:3001/api/docs`
 
 ## Production Deployment
 
 | Service | Provider | URL |
 |---------|----------|-----|
-| Frontend | Vercel (free) | `https://zentra-web-one.vercel.app` |
-| Backend | Render (free) | `https://zentra-api-c20o.onrender.com/api` |
-| Database | Neon (free, 3GB) | PostgreSQL via `DATABASE_URL` |
-| Email | Resend (free tier) | `onboarding@resend.dev` |
+| Frontend | Vercel | `https://zentra-web-one.vercel.app` |
+| Backend | Render | `https://zentra-api-c20o.onrender.com/api` |
+| Database | Neon | PostgreSQL via `DATABASE_URL` |
 
 ### Deploy Process
 1. Push to GitHub → Vercel & Render auto-deploy
-2. Render uses Dockerfile at repo root for monorepo build
-3. Vercel serves `apps/web` with `NEXT_PUBLIC_API_URL` pointing to Render
-4. Neon DB migrations: `npx prisma db push --skip-generate` runs on Render startup
+2. Render uses Dockerfile at repo root
+3. Neon DB migrations: `npx prisma db push --skip-generate` on Render startup
 
 ### Environment Variables
 
-**Backend (Render)**:
-- `DATABASE_URL` - Neon PostgreSQL connection string
-- `JWT_SECRET` - JWT signing key
-- `JWT_EXPIRES_IN` - Token expiry (default: `7d`)
-- `RESEND_API_KEY` - Resend API key for emails
-- `SMTP_FROM` - Sender email (e.g., `Zentra <onboarding@resend.dev>`)
-- `NEXT_PUBLIC_APP_URL` - Frontend URL for email links (`https://zentra-web-one.vercel.app`)
-- `NODE_ENV` - `production`
-- `PORT` - `3001`
+**Backend (Render)**: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `RESEND_API_KEY`, `SMTP_FROM`, `NEXT_PUBLIC_APP_URL`, `NODE_ENV`, `PORT`
 
-**Frontend (Vercel)**:
-- `NEXT_PUBLIC_API_URL` - Backend URL (`https://zentra-api-c20o.onrender.com/api`)
-- `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` - Stripe price ID for Pro plan
-- `NEXT_PUBLIC_STRIPE_FAMILY_PRICE_ID` - Stripe price ID for Family plan
+**Frontend (Vercel)**: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`, `NEXT_PUBLIC_STRIPE_FAMILY_PRICE_ID`
 
 ## Key Gotchas
 
-- **PostgreSQL, not SQLite** - schema uses `provider = "postgresql"` (migrated from SQLite for production)
-- `PlanLimitsService` in `subscriptions/plan-limits.service.ts` - enforces free tier limits
-- `@Plan()` decorator in `subscriptions/plan.decorator.ts` - shorthand for `@SetMetadata(PLAN_KEY, [...])`
-- `CheckoutSessionDto` accepts real Stripe price IDs (not just 'pro'/'family')
-- After schema changes: run `npm run db:generate` then `npm run db:push`
+- **PostgreSQL, not SQLite** - `provider = "postgresql"` in schema
+- After schema changes: `npm run db:generate` then `npm run db:push`
 - API `.env` is at `apps/api/.env` (not root)
-- API uses `class-validator` with `whitelist: true` and `forbidNonWhitelisted: true` - unknown fields are rejected
-- CORS is `origin: true` (all origins, JWT auth handles security)
+- API uses `class-validator` with `whitelist: true`, `forbidNonWhitelisted: false`
+- CORS whitelists specific origins (Vercel + localhost), not `origin: true`
 - API listens on `0.0.0.0` (required for Docker/Render)
-- Route ordering critical: `@Get('summary')` and `@Get('by-category')` MUST come before `@Get(':id')` in controllers
-- PrismaService doesn't auto-connect on init (lazy connection)
-- Keep-alive ping at `/api/health` every 13 min prevents Render free tier from sleeping
-- **Email lookups are case-insensitive** - login, register, forgot-password, and invite all use `mode: 'insensitive'`
-- **Register normalizes email to lowercase** before saving
-- **NestJS exceptions only** - never use `throw new Error()` in services, always use `NotFoundException`, `BadRequestException`, `ForbiddenException` etc.
+- Route ordering critical: `@Get('summary')` MUST come before `@Get(':id')`
+- **Email lookups are case-insensitive** (`mode: 'insensitive'`)
+- **NestJS exceptions only** - never `throw new Error()`, always `NotFoundException` etc.
 - `npm run dev` from root can have Next.js workspaces error (non-blocking, use separate terminals)
+- `bodyParser: false` in main.ts is needed for Stripe webhooks
+- Rate limiting: 100 req/min global, 3-5 req/min on auth endpoints (throttler)
+- Helmet security headers enabled, `contentSecurityPolicy: false` for compatibility
+- Swagger hidden in production (`NODE_ENV !== 'production'` only)
+- Env vars validated at startup with Joi schema (fails fast if missing `JWT_SECRET` or `DATABASE_URL`)
 
 ## App Structure
 
 - Backend entry: `apps/api/src/main.ts`
-- Backend modules: `apps/api/src/modules/{auth,users,families,transactions,categories,budgets,goals,accounts,recurring,tags,subscriptions,admin}/`
-- Frontend entry: `apps/web/src/app/page.tsx` (landing page, redirects to `/login` for auth)
+- Backend modules: `apps/api/src/modules/{auth,users,families,transactions,categories,budgets,goals,accounts,recurring,tags,subscriptions,admin,notifications,splits,net-worth,insights,health,reports,achievements}/`
+- Frontend entry: `apps/web/src/app/page.tsx` (landing page)
 - Prisma schema: `apps/api/prisma/schema.prisma`
 - Dockerfile: root-level `Dockerfile` for Render deployment
-- Render config: `render.yaml` at repo root
 
 ## Backend Modules
 
@@ -87,277 +71,158 @@ npm run db:studio      # Open Prisma Studio
 - JWT login/register with bcrypt
 - Default categories seeded on registration
 - Auto-create `Subscription` record on registration (plan: free)
-- Forgot password + reset password endpoints with email via Resend
-- Email lookups are case-insensitive
-- Guards: JwtAuthGuard, RolesGuard
+- Forgot password + reset password with email via Resend
+- Rate limited: 3 req/min register, 5 req/min login, 3 req/min forgot-password
 
 ### Transactions
-- CRUD with search, date range, recurring filter, tag filtering
-- CSV export via `/transactions/export`
-- `GET /transactions/summary` - total income, expense, balance
-- `GET /transactions/by-category` - expense by category (pie chart data)
-- `GET /transactions/cashflow` - income vs expenses over 6 months (line chart)
-- `GET /transactions/comparison` - month vs previous month with % change arrows
-- `GET /transactions/by-tag/:tagId` - transactions by tag for current month
-- Recurring transactions auto-generated via setInterval (hourly check)
+- CRUD with search, date range, recurring filter, tag filtering, **account filtering**
+- `accountId` field links transaction to account → **auto-updates account balance**
+- Balance logic: INCOME → `+amount`, EXPENSE → `-amount` on create/update/delete
+- CSV export, recurring auto-generation, family-aware scoping
+- Endpoints: summary, by-category, cashflow (pro), comparison (pro), by-tag (pro)
 
-### Tags (Eventos)
-- CRUD for tagging transactions (e.g., "Cumpleanos de Sofia")
-- Family-aware: personal (`familyId: null`) or family (`familyId: set`)
-- Budget tracking per tag (monthly)
-- Budget alerts at 80% and 100%
-- Notifications created automatically when tag budget exceeded
-- Endpoints: POST/GET/PATCH/DELETE `/tags`
-- `GET /tags/:id/details` - detailed tag with stats (MUST come before `GET /tags/:id`)
+### Accounts
+- CRUD with balance tracking, color, icon, type
+- **Balance auto-updated by transactions** (Phase 1)
+- `GET /accounts/total-balance` - sum of all accounts
+- Types: checking, savings, credit, cash, investment
 
 ### Categories
-- CRUD with color and icon fields
-- `GET /categories/default` - returns default categories (MUST come before `GET /categories/:id`)
-- `GET /categories/by-type` - filter by INCOME/EXPENSE/BOTH
+- CRUD with color, icon, type (INCOME/EXPENSE/BOTH)
+- `GET /categories/default` - default categories (MUST come before `GET /categories/:id`)
 
 ### Budgets
 - CRUD with progress tracking (spent vs amount)
 - Alerts for overspending (>80% or >100%)
-- Edit limited to amount field only (backend PATCH only supports amount)
+- Requires `pro` plan
 
 ### Goals (Metas)
 - CRUD with target amount and deadline
 - `POST /goals/:id/contribute` - add funds to goal
-- Progress calculated as percentage
+- Requires `pro` plan
 
-### Accounts (Carteras)
-- CRUD with balance tracking, color, icon, type
-- `GET /accounts/total-balance` - sum of all accounts
-- Edit functionality with pencil icon
-
-### Recurring
-- Auto-generates transactions based on frequency (daily/weekly/monthly/yearly)
-- Prevents duplicate creation
-- Uses native `setInterval` in `OnModuleInit`
+### Tags (Eventos)
+- CRUD for tagging transactions with budget tracking
+- Budget alerts at 80% and 100% → auto-create notifications
+- `GET /tags/:id/details` (MUST come before `GET /tags/:id`)
+- Requires `pro` plan
 
 ### Families
-- CRUD: create, update, list members
-- Invite by email (case-insensitive lookup, must be registered)
-- Remove members (cannot remove creator)
-- `POST /users/join-family` - join by family ID
-- `POST /users/leave-family` - leave current family
-- Roles: ADMIN (creator) and USER
-- All data services (transactions, categories, budgets, goals, accounts) are family-aware
+- CRUD with invite by email (case-insensitive), remove members
 - `family-access.helper.ts` - shared utility for resolving member IDs
-- **Fixed**: family creation sets `user.familyId` + creates `FamilyMember` with ADMIN role
-- **Fixed**: `inviteMember` sets `user.familyId` on the invited user
+- **Family data pattern**: personal = `familyId: null`, family = explicit `familyId`
+- Requires `family` plan
 
 ### Subscriptions
-- CRUD with Stripe integration (checkout, portal, cancel, plan change)
-- PlanGuard: `free=0 < pro=1 < family=2` hierarchy, applied via `@Plan()` decorator
-- `PlanGuard` registered in `SubscriptionsModule`, exported and imported by modules that need it
-- `PlanLimitsService` enforces free tier limits: 50 txns/mo, 2 accounts, 3 budgets, 3 goals
-- `GET /subscriptions/usage` - returns plan usage vs limits for current user
-- Plan-restricted endpoints:
-  - **Tags**: all endpoints require `pro` plan
-  - **Budgets**: all endpoints require `pro` plan
-  - **Goals**: all endpoints require `pro` plan
-  - **Families**: all endpoints require `family` plan
-  - **Transactions**: `cashflow`, `comparison`, `by-tag/:tagId` require `pro` plan
-  - **Users**: `join-family`, `leave-family` require `family` plan
-  - **Splits**: all endpoints require `pro` plan
-- Webhook handler for Stripe events (checkout.session.completed, subscription.updated, subscription.deleted, invoice.payment_failed)
-- Free plan auto-created on registration
-- Stripe raw body handling via `bodyParser: false` + custom verify in `main.ts`
-- CheckoutSessionDto accepts real Stripe price IDs (removed `@IsIn` validation)
+- Stripe checkout/portal/cancel/webhook
+- PlanGuard: `free=0 < pro=1 < family=2` hierarchy
+- `PlanLimitsService`: 50 txns/mo, 2 accounts, 3 budgets, 3 goals for free
+- Plan-restricted: tags, budgets, goals (pro), families (family), splits (pro)
 
 ### Notifications
-- `NotificationsModule` with controller, service
-- `GET /notifications` - list user notifications (with read/unread filter)
-- `GET /notifications/unread-count` - badge count for top-nav
-- `PATCH /notifications/mark-all-read` - mark all as read
-- `PATCH /notifications/:id/read` - mark single as read
-- `DELETE /notifications/:id` - delete single notification
-- `DELETE /notifications` - clear all notifications
-- Auto-created on tag budget alerts (80% and 100%)
-- Top-nav bell icon with unread badge count and dropdown
-
-### Admin
-- `GET /admin/stats` - total users, by plan, transactions, families, income/expense
-- `GET /admin/users` - list all users with search, includes plan, family, transaction count
-- `PATCH /admin/users/:id/plan` - change user plan (free/pro/family)
-- `DELETE /admin/users/:id` - delete user account (cascade)
-- Protected by `AdminGuard` (requires `user.role === 'ADMIN'`)
-- `{PlanGuard}`: ADMIN role bypasses all plan restrictions
-- Accessible via `/dashboard/admin` (visible in top-nav only for ADMIN role)
+- Auto-created on tag budget alerts, split invites/expenses/settlements
+- Bell icon with unread count, mark-read, clear-all
 
 ### Splits (Dividir Gastos)
-- Splitwise-style expense splitting feature
 - Independent of families (works with any registered user)
-- Requires `pro` plan (via `@Plan('pro')` decorator)
-- **Groups**: CRUD with invite by email (case-insensitive), members management
-- **Expenses**: Create shared expenses with 3 split types: EQUAL, PERCENTAGE, EXACT
-- **Balances**: Net balance calculation + simplified debt algorithm (minimizes transfers)
-- **Settlements**: Record payments, auto-create Transaction (EXPENSE for payer, INCOME for receiver)
-- **DebtSimplifierService**: Pure calculation service for net balances and debt simplification
-- Endpoints:
-  - `POST/GET /splits/groups` - Create/list groups
-  - `GET /splits/groups/:id` - Group detail with members, expenses, settlements
-  - `PATCH/DELETE /splits/groups/:id` - Update/delete group
-  - `POST /splits/groups/:id/invite` - Invite member by email
-  - `DELETE /splits/groups/:id/members/:userId` - Remove member
-  - `POST/GET /splits/expenses` - Create/list expenses (filtered by groupId)
-  - `GET/PATCH/DELETE /splits/expenses/:id` - Expense CRUD
-  - `GET /splits/balances?groupId=X` - Simplified debts for group
-  - `GET /splits/groups/balances/overall` - Overall balances across all groups
-  - `POST/GET /splits/settlements` - Create/list settlements
-  - `DELETE /splits/settlements/:id` - Delete settlement
+- Requires `pro` plan
+- **Groups**: CRUD with invite by email, members management
+- **Expenses**: 3 split types: EQUAL, PERCENTAGE, EXACT
+- **Receipts**: Base64 stored in DB (`receiptData`, `receiptMime` fields)
+- **Balances**: Debt simplification algorithm (minimizes transfers)
+- **Settlements**: Record payments → auto-create Transaction
+- **Recurring**: Auto-generate shared expenses on schedule
+- **Templates**: Save common split configurations
+- Toggle `isPaid` on expense splits (mark/unmark as paid)
 - Notifications: `SPLIT_INVITE`, `SPLIT_EXPENSE`, `SPLIT_SETTLEMENT`
-- Frontend: `/dashboard/splits` (groups list + balance summary), `/dashboard/splits/[groupId]` (tabs: expenses, balances, history, members)
-- Auto-creates "Pago de deuda" category for settlement transactions
+
+### Net Worth
+- `GET /net-worth?months=12` - historical balance snapshots
+- `GET /net-worth/current` - current total balance
+- `NetWorthSnapshot` model for tracking over time
+
+### Insights
+- `GET /insights` - spending anomalies, category increases, savings projection
+- Auto-detects unusual spending patterns (>30% category increase)
+
+### Health Score
+- `GET /health-score` - score 0-100 with breakdown
+- 4 components: savings rate, emergency fund, diversification, consistency
+- Labels: Excelente (80+), Bueno (60-79), Regular (40-59), Mejorable (<40)
+
+### Reports
+- `GET /reports/weekly-digest` - week-over-week comparison, top categories
+- `GET /reports/monthly?month=X&year=Y` - monthly summary with categories
+
+### Achievements
+- `GET /achievements` - unlocked + available + points
+- `POST /achievements/check` - auto-check and unlock new achievements
+- 10 achievements: FIRST_TRANSACTION, STREAK_7/30, SAVINGS_100/500, GOAL_50/100, FIRST_SPLIT, DIVERSIFIED, BUDGET_MASTER
 
 ### Email (Resend)
-- `EmailService` + `EmailModule` in `common/services/`
-- `sendPasswordResetEmail()` sends HTML email with reset link
-- Uses `NEXT_PUBLIC_APP_URL` for reset URL (production) or falls back to `localhost:3000`
+- `EmailService` in `common/services/`
+- `sendPasswordResetEmail()` with reset link
 - When `RESEND_API_KEY` not set, logs reset URL to console (dev mode)
-
-### Family Data Sharing Pattern
-- **CRITICAL RULE**: personal transactions = `familyId: null`; family transactions = explicit `familyId`
-- Personal view: queries filter by `familyId: null` (user's own only)
-- Family view: queries filter by `familyId = [familyId]` (all family members)
-- `getScopeUserIds(prisma, userId, familyId)` returns `[userId]` or all member IDs
-- Frontend passes `familyId: activeFamilyId ? activeFamilyId : null` on all create operations
-- Backend does NOT auto-assign familyId - only when explicitly passed from frontend
 
 ## Frontend Structure
 
 ### Pages
-- `/` - Landing page (marketing, Hero, Features, Pricing, FAQ)
+- `/` - Landing page (marketing with framer-motion animations)
 - `/login` - Login/Register
-- `/forgot-password` - Password reset request
-- `/reset-password` - Password reset form (token from email)
-- `/dashboard` - Main dashboard with balance card, comparison tags, cashflow line chart, top categories
+- `/forgot-password` / `/reset-password` - Password reset flow
+- `/dashboard` - Main dashboard: balance card, health score, insights, net worth chart, cashflow, categories, goals, recent transactions
 - `/dashboard/accounts` - Account management with colored cards
-- `/dashboard/transactions` - Transaction list with search, CSV export, recurring filter, advanced filters (min/max amount, category, payment method, tag)
+- `/dashboard/transactions` - Transaction list with search, CSV export, **account selector**, recurring filter, advanced filters
 - `/dashboard/categories` - Category CRUD with color picker
-- `/dashboard/budgets` - Budget with progress bars
-- `/dashboard/goals` - Goals with contributions
-- `/dashboard/events` - Events/tags list with progress bars and budget tracking
-- `/dashboard/events/[id]` - Event detail with transactions and stats
-- `/dashboard/settings` - Currency setting
-- `/dashboard/settings/profile` - Edit name, change password, delete account
-- `/dashboard/settings/family` - Family management (create, join, invite, leave)
-- `/dashboard/settings/billing` - Billing/subscription management (current plan, upgrade, cancel)
-- `/dashboard/onboarding` - First-use setup wizard (create account, first transaction)
-- `/dashboard/admin` - Admin panel (users, stats, plan changes) - ADMIN role only
-- `/dashboard/splits` - Split groups list with overall balance summary (Pro plan)
-- `/dashboard/splits/[groupId]` - Group detail with tabs: expenses, balances, history, members
-- `/pricing` - Pricing page (3 tiers: Gratis, Pro, Familia)
+- `/dashboard/budgets` - Budget with progress bars (Pro)
+- `/dashboard/goals` - Goals with contributions (Pro)
+- `/dashboard/events` - Events/tags list (Pro)
+- `/dashboard/splits` - Split groups list with balance summary (Pro)
+- `/dashboard/splits/[groupId]` - Group detail: expenses, balances, history, members, recurring
+- `/dashboard/settings/*` - Profile, family, billing
+- `/dashboard/admin` - Admin panel (ADMIN role only)
+- `/dashboard/onboarding` - 3-step setup wizard
 
 ### Key Components
-- `providers.tsx` - QueryClient + ThemeProvider (dark mode)
-- `top-nav.tsx` - Horizontal top nav with mobile hamburger menu, "Admin" link visible only for ADMIN role, notification bell
-- `theme-toggle.tsx` - Dark/light mode toggle button
-- `family-switcher.tsx` - Personal/family view toggle in top nav
-- `date-range-picker.tsx` - Preset date ranges (current month, last month, last 3/6 months, current year, all)
-- `tag-input.tsx` - Tag/event selector with autocomplete and inline creation
-- `error-boundary.tsx` - React error boundary with Spanish-language fallback
-- `toast.tsx` - Custom toast system with success/error/warning variants
+- `top-nav.tsx` - Horizontal nav with mobile hamburger, admin link, notification bell, "Dividir" nav item
+- `family-switcher.tsx` - Personal/family view toggle
+- `skeleton.tsx` - Loading skeleton components (Card, Transaction, Account, Category, Budget)
+- `confirm-dialog.tsx` - Reusable confirmation dialog (Radix Dialog)
+- `fade-in.tsx` - Scroll-triggered fade-in animation
+- `toast.tsx` - Toast notification system
+- `tag-input.tsx` - Tag/event selector with autocomplete
 
 ### Lib
-- `lib/api.ts` - API client with JWT auth, 401 redirect to `/login`, versioned localStorage keys (`zentra-token:v1`, `zentra-user:v1`)
-- `lib/settings.ts` - Zustand store for global currency, `formatMoney(n, currency)` with symbol at END
-- `lib/family.ts` - Zustand store for active family (persists to localStorage)
-- `lib/utils.ts` - `cn()` helper for className merging
+- `api.ts` - API client with JWT auth, `uploadFile()` for base64 uploads
+- `settings.ts` - Zustand store for global currency (EUR default), `formatMoney()`
+- `family.ts` - Zustand store for active family
 
 ## Design System
 
-- **Primary color**: Blue (`blue-600`) - modern, sober, elegant
-- **Landing page**: Alternating dark/light sections with framer-motion animations
-- **Cards**: `border-0 rounded-xl shadow-sm` (unified across all pages)
-- **Dark mode**: Next-themes with `class` strategy, toggle in top nav
-- **Currency**: Global setting in Zustand, symbol at END (e.g., `1,250.00 $`)
-- **Mobile**: Responsive with hamburger menu, cards stack vertically, flex-wrap for overflow prevention
-- **Mobile patterns**: `text-2xl sm:text-4xl` for large numbers, `min-w-0 truncate` for text in flex layouts, `shrink-0` for buttons, `flex-col sm:flex-row` for forms on mobile
+- **Primary color**: Blue (`blue-600`)
+- **Currency**: EUR (€) with symbol at END (e.g., `1,250.00 €`)
+- **Cards**: `border-0 rounded-xl shadow-sm`
+- **Dark mode**: Next-themes with `class` strategy
+- **Mobile**: Responsive with hamburger menu, `text-2xl sm:text-4xl` for large numbers, `min-w-0 truncate` for text
+- **Touch targets**: 44px minimum on all interactive buttons
+- **Loading states**: Skeleton components (never plain "Cargando..." text)
+- **Empty states**: Icon + descriptive text + CTA button
+- **Confirmations**: ConfirmAction dialog (never `window.confirm()`)
+- **Toast feedback**: All CRUD operations show success/error toasts
 
-## Design System - Events/Tags
+## Landing Page Sections
 
-- **Colors**: 12 preset colors matching the app palette
-- **Icons**: 20 Lucide-based icons (cake, gift, heart, plane, etc.)
-- **Budget**: Monthly per event, null = "Sin limite"
-- **Notifications**: Automatic at 80% and 100% of budget
-
-## Design System - Landing Page
-
-- **Hero** (dark `#0B1120`): "Tus finanzas, claras de una vez" + dashboard mockup
-- **Problemas** (light `#F8FAFC`): 3 pain points with icons
-- **Features** (dark): 3 visual blocks alternating text/screenshot
-- **Extra features strip** (light): currencies, security, dark mode, speed
-- **Precios** (dark): 3 tiers - Gratis/Pro/Familia with "Mas popular" badge
-- **FAQ** (light): Accordion with animated answers
-- **CTA** (dark): "Empieza a gestionar tu dinero en minutos"
-- **Footer** (dark): Links + "Built by Angelo" sutil
-- **Animations**: Framer Motion fade-in on scroll, accordion for FAQ
-- **Responsive**: Hamburger nav on mobile, stacked sections
+- **Hero** (dark): "Tus finanzas, claras de una vez" + dashboard mockup with EUR amounts
+- **Problemas** (light): 3 pain points including "Dividir gastos no tiene por que ser complicado"
+- **Features** (dark): 4 blocks: Panel, Presupuestos, Metas, Dividir gastos
+- **Splits section** (light): "Finanzas compartidas sin dramas" with mockup showing group/expenses/balances
+- **Precios** (dark): 3 tiers with EUR pricing (0€, 4,99€, 7,99€)
+- **FAQ** (light): Accordion including splits questions
+- No Splitwise references anywhere
 
 ## Tech Stack
 
-- Frontend: Next.js 14, TypeScript, TailwindCSS, Recharts, Zustand, React Query, Radix UI, Lucide icons, next-themes, framer-motion
-- Backend: NestJS, Prisma, class-validator, Swagger, Resend
-- DB: PostgreSQL (Neon) in production, SQLite compatible for dev
+- Frontend: Next.js 14, TypeScript, TailwindCSS, Recharts, Zustand, React Query, Radix UI, Lucide, next-themes, framer-motion
+- Backend: NestJS, Prisma, class-validator, Swagger, Resend, helmet, throttler, Joi (env validation)
+- DB: PostgreSQL (Neon)
 - Deploy: Vercel (frontend), Render (backend), Neon (database)
-
-## Current Status
-
-### Done
-- Full monorepo setup
-- Complete DB schema (User, Family, FamilyMember, Transaction, Category, Budget, Goal, Account, Tag, Notification, Subscription)
-- Auth (JWT + bcrypt + default categories seed)
-- All CRUD modules with search/filter
-- Dashboard with charts (pie, line, comparison tags) and summary
-- Horizontal top nav with mobile hamburger
-- Dark mode toggle (theme provider wired, toggle component added)
-- Currency as global setting
-- Route ordering fixes
-- CSV export
-- Recurring transaction auto-generation
-- **Family switcher** - shows "Mi cuenta" always + family list when available; gracefully handles 403 from PlanGuard
-- Family management UI (create, join, invite, leave) at `/dashboard/settings/family`
-- Family switcher in top nav (personal/family view toggle)
-- Profile settings (edit name, change password, delete account)
-- Comparison endpoint (month vs previous month with % change arrows)
-- Cashflow chart (income vs expenses line chart over 6 months)
-- Advanced transaction filters (min/max amount, category, payment method)
-- Family data separation: personal = `familyId: null`, family = explicit `familyId`
-- **Tags/Events system** - tag transactions with events, track budget per event, notifications at 80%/100%
-- **Email service** - Resend integration for password reset emails
-- **Forgot password + reset password** - full flow with email link
-- **Subscriptions module** - Stripe checkout/portal/cancel/webhook with PlanGuard
-- **Plan enforcement** - PlanGuard + @Plan() decorator on protected routes; PlanLimitsService for free-tier limits
-- **Billing page** - `/dashboard/settings/billing` with plan cards, usage, manage billing, cancel
-- **Notifications UI** - bell icon with unread badge, dropdown with mark-as-read, delete, clear all
-- **Onboarding flow** - `/dashboard/onboarding` 3-step wizard (welcome, create account, first transaction)
-- **Accessibility** - skip link, Escape key handlers on dropdowns, `aria-hidden` on backdrops, `prefers-reduced-motion` CSS + framer-motion, alt text on AvatarImage
-- **React quality** - functional setState (no stale closures), localStorage key versioning, escaped `new Date()` hydration mismatches, `<Link>` for internal nav
-- **SEO** - Open Graph meta, Twitter cards, sitemap.xml, robots.txt, metadataBase
-- **Stripe setup guide** - `STRIPE_SETUP.md` with product/price/webhook configuration steps
-- **Admin bypass** - ADMIN role bypasses PlanGuard and PlanLimitsService restrictions
-- **Landing page** - Hero, Problems, Features, Pricing, FAQ, CTA, Footer with framer-motion
-- **Admin panel** - `/dashboard/admin` with stats, user table, plan changes, delete user (ADMIN role only)
-- **Edit functionality** - transactions, accounts, budgets can be edited inline
-- **Production deployment** - Vercel (frontend), Render (backend), Neon (PostgreSQL)
-- **Mobile responsive fixes** - overflow prevention, flex-wrap, responsive text sizing, truncated titles across all dashboard pages
-- **Case-insensitive email** - login, register, forgot-password, family invite all use `mode: 'insensitive'`
-- **Group expense splitting (Splitwise-style)** - Splitwise-style expense splitting with groups, shared expenses, debt simplification algorithm, settlements with auto-transaction creation, Pro plan required
-
-### Fixed Bugs
-- **FamilyId separation**: create methods no longer auto-assign user's familyId; personal transactions stay personal
-- **removeChild error**: `setShowForm(false)` in `onSuccess` wrapped with `setTimeout` to avoid React state conflict
-- **NestJS exceptions**: replaced all `throw new Error()` with proper HTTP exceptions (NotFoundException, BadRequestException, ForbiddenException) in families service
-- **Case-insensitive emails**: all email lookups use `mode: 'insensitive'`, register normalizes to lowercase
-- **Admin dropdown overflow**: fixed z-index/scrollbar issue by using fixed positioning
-- **Mobile overflow**: dashboard balance card, transaction rows, action buttons, color pickers, contribute forms all properly responsified
-- **CheckoutSessionDto**: removed `@IsIn(['pro', 'family'])` validation - now accepts real Stripe price IDs
-- **PlanGuard activation**: registered in SubscriptionsModule, `@Plan()` decorator applied to tags, budgets, goals, families, transactions (cashflow/comparison/by-tag), users (join-family/leave-family)
-- **Admin PlanGuard bypass**: ADMIN role returns true immediately, skipping plan checks
-- **Notification bell**: FamilySwitcher always visible (shows "Mi cuenta" when no families or 403)
-
-### Next
-- Export to PDF
-- Stripe live mode activation (create products, prices, webhook in Stripe dashboard)
