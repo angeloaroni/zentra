@@ -1,228 +1,228 @@
-# Zentra - Personal Finance App
+# Zentra - App de Finanzas Personales
 
-## Quick Commands
+## Comandos Rapidos
 
 ```bash
-npm install            # Install all dependencies
-npm run dev            # Start both apps (turbo)
-npm run build          # Build all apps
-npm run db:generate    # Regenerate Prisma client
-npm run db:push        # Push schema changes to DB
-npm run db:studio      # Open Prisma Studio
+npm install            # Instalar dependencias
+npm run dev            # Iniciar ambas apps (turbo)
+npm run build          # Compilar todas las apps
+npm run db:generate    # Regenerar cliente Prisma
+npm run db:push        # Aplicar cambios de schema a la DB
+npm run db:studio      # Abrir Prisma Studio
 ```
 
-## Architecture
+## Arquitectura
 
-- **Monorepo**: TurboRepo with npm workspaces
-- **apps/api**: NestJS backend, global prefix `/api`
-- **apps/web**: Next.js 14 frontend
-- **Database**: PostgreSQL via Prisma ORM (Neon)
-- **Email**: Resend API for transactional emails
-- **Auth**: JWT-based (`@nestjs/jwt`, `bcrypt`)
+- **Monorepo**: TurboRepo con npm workspaces
+- **apps/api**: Backend NestJS, prefijo global `/api`
+- **apps/web**: Frontend Next.js 14
+- **Base de datos**: PostgreSQL via Prisma ORM (Neon)
+- **Email**: API Resend para emails transaccionales
+- **Auth**: JWT (`@nestjs/jwt`, `bcrypt`)
 
-## Production Deployment
+## Despliegue en Produccion
 
-| Service | Provider | URL |
-|---------|----------|-----|
+| Servicio | Proveedor | URL |
+|----------|-----------|-----|
 | Frontend | Vercel | `https://zentra-web-one.vercel.app` |
 | Backend | Render | `https://zentra-api-c20o.onrender.com/api` |
-| Database | Neon | PostgreSQL via `DATABASE_URL` |
+| Base de datos | Neon | PostgreSQL via `DATABASE_URL` |
 
-### Deploy Process
-1. Push to GitHub → Vercel & Render auto-deploy
-2. Render uses Dockerfile at repo root
-3. Neon DB migrations: `npx prisma db push --skip-generate` on Render startup
+### Proceso de Despliegue
+1. Push a GitHub → Vercel y Render despliegan automaticamente
+2. Render usa el Dockerfile en la raiz del repo
+3. Migraciones Neon: `npx prisma db push --skip-generate` al iniciar Render
 
-### Environment Variables
+### Variables de Entorno
 
 **Backend (Render)**: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `RESEND_API_KEY`, `SMTP_FROM`, `NEXT_PUBLIC_APP_URL`, `NODE_ENV`, `PORT`
 
 **Frontend (Vercel)**: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`, `NEXT_PUBLIC_STRIPE_FAMILY_PRICE_ID`
 
-## Key Gotchas
+## Puntos Clave
 
-- **PostgreSQL, not SQLite** - `provider = "postgresql"` in schema
-- After schema changes: `npm run db:generate` then `npm run db:push`
-- API `.env` is at `apps/api/.env` (not root)
-- API uses `class-validator` with `whitelist: true`, `forbidNonWhitelisted: false`
-- CORS whitelists specific origins (Vercel + localhost), not `origin: true`
-- API listens on `0.0.0.0` (required for Docker/Render)
-- Route ordering critical: `@Get('summary')` MUST come before `@Get(':id')`
-- **Email lookups are case-insensitive** (`mode: 'insensitive'`)
-- **NestJS exceptions only** - never `throw new Error()`, always `NotFoundException` etc.
-- `npm run dev` from root can have Next.js workspaces error (non-blocking, use separate terminals)
-- `bodyParser: false` in main.ts is needed for Stripe webhooks
-- Rate limiting: 100 req/min global, 3-5 req/min on auth endpoints (throttler)
-- Helmet security headers enabled, `contentSecurityPolicy: false` for compatibility
-- Swagger hidden in production (`NODE_ENV !== 'production'` only)
-- Env vars validated at startup with Joi schema (fails fast if missing `JWT_SECRET` or `DATABASE_URL`)
+- **PostgreSQL, no SQLite** - `provider = "postgresql"` en el schema
+- Despues de cambios al schema: `npm run db:generate` y luego `npm run db:push`
+- El `.env` de la API esta en `apps/api/.env` (no en la raiz)
+- La API usa `class-validator` con `whitelist: true`, `forbidNonWhitelisted: false`
+- CORS lista origenes especificos (Vercel + localhost), no `origin: true`
+- La API escucha en `0.0.0.0` (requerido para Docker/Render)
+- **Orden de rutas critico**: `@Get('summary')` DEBE ir antes de `@Get(':id')`
+- **Busquedas de email son case-insensitive** (`mode: 'insensitive'`)
+- **Solo excepciones NestJS** - nunca `throw new Error()`, usar siempre `NotFoundException` etc.
+- `npm run dev` desde la raiz puede dar error de workspaces (no bloquea, usar terminales separados)
+- `bodyParser: false` en main.ts es necesario para webhooks de Stripe
+- Rate limiting: 100 req/min global, 3-5 req/min en endpoints de auth (throttler)
+- Headers de seguridad Helmet habilitados, `contentSecurityPolicy: false` por compatibilidad
+- Swagger oculto en produccion (`NODE_ENV !== 'production'` solamente)
+- Variables de entorno validadas al inicio con schema Joi (falla rapido si falta `JWT_SECRET` o `DATABASE_URL`)
 
-## App Structure
+## Estructura de la App
 
-- Backend entry: `apps/api/src/main.ts`
-- Backend modules: `apps/api/src/modules/{auth,users,families,transactions,categories,budgets,goals,accounts,recurring,tags,subscriptions,admin,notifications,splits,net-worth,insights,health,reports,achievements}/`
-- Frontend entry: `apps/web/src/app/page.tsx` (landing page)
-- Prisma schema: `apps/api/prisma/schema.prisma`
-- Dockerfile: root-level `Dockerfile` for Render deployment
+- Entry del backend: `apps/api/src/main.ts`
+- Modulos del backend: `apps/api/src/modules/{auth,users,families,transactions,categories,budgets,goals,accounts,recurring,tags,subscriptions,admin,notifications,splits,net-worth,insights,health,reports,achievements}/`
+- Entry del frontend: `apps/web/src/app/page.tsx` (landing page)
+- Schema Prisma: `apps/api/prisma/schema.prisma`
+- Dockerfile: en la raiz para despliegue en Render
 
-## Backend Modules
+## Modulos del Backend
 
 ### Auth
-- JWT login/register with bcrypt
-- Default categories seeded on registration
-- Auto-create `Subscription` record on registration (plan: free)
-- Forgot password + reset password with email via Resend
+- Login/register con JWT + bcrypt
+- Categorias por defecto al registrarse
+- Auto-crear registro `Subscription` al registrar (plan: free)
+- Olvidar password + resetear password con email via Resend
 - Rate limited: 3 req/min register, 5 req/min login, 3 req/min forgot-password
 
-### Transactions
-- CRUD with search, date range, recurring filter, tag filtering, **account filtering**
-- `accountId` field links transaction to account → **auto-updates account balance**
-- Balance logic: INCOME → `+amount`, EXPENSE → `-amount` on create/update/delete
-- CSV export, recurring auto-generation, family-aware scoping
+### Transacciones
+- CRUD con busqueda, rango de fechas, filtro recurrente, filtro por tags, **filtro por cuenta**
+- Campo `accountId` vincula transaccion a cuenta → **auto-actualiza saldo de cuenta**
+- Logica de balance: INCOME → `+amount`, EXPENSE → `-amount` en crear/editar/eliminar
+- Export CSV, auto-generacion recurrente, scoping familiar
 - Endpoints: summary, by-category, cashflow (pro), comparison (pro), by-tag (pro)
 
-### Accounts
-- CRUD with balance tracking, color, icon, type
-- **Balance auto-updated by transactions** (Phase 1)
-- `GET /accounts/total-balance` - sum of all accounts
-- Types: checking, savings, credit, cash, investment
+### Cuentas
+- CRUD con seguimiento de balance, color, icono, tipo
+- **Balance auto-actualizado por transacciones**
+- `GET /accounts/total-balance` - suma de todas las cuentas
+- Tipos: checking, savings, credit, cash, investment
 
-### Categories
-- CRUD with color, icon, type (INCOME/EXPENSE/BOTH)
-- `GET /categories/default` - default categories (MUST come before `GET /categories/:id`)
+### Categorias
+- CRUD con color, icono, tipo (INCOME/EXPENSE/BOTH)
+- `GET /categories/default` - categorias por defecto (DEBE ir antes de `GET /categories/:id`)
 
-### Budgets
-- CRUD with progress tracking (spent vs amount)
-- Alerts for overspending (>80% or >100%)
-- Requires `pro` plan
+### Presupuestos
+- CRUD con seguimiento de progreso (gastado vs monto)
+- Alertas por exceso (>80% o >100%)
+- Requiere plan `pro`
 
-### Goals (Metas)
-- CRUD with target amount and deadline
-- `POST /goals/:id/contribute` - add funds to goal
-- Requires `pro` plan
+### Metas
+- CRUD con monto objetivo y fecha limite
+- `POST /goals/:id/contribute` - agregar fondos a la meta
+- Requiere plan `pro`
 
 ### Tags (Eventos)
-- CRUD for tagging transactions with budget tracking
-- Budget alerts at 80% and 100% → auto-create notifications
-- `GET /tags/:id/details` (MUST come before `GET /tags/:id`)
-- Requires `pro` plan
+- CRUD para etiquetar transacciones con seguimiento de presupuesto
+- Alertas de presupuesto al 80% y 100% → crear notificaciones automaticamente
+- `GET /tags/:id/details` (DEBE ir antes de `GET /tags/:id`)
+- Requiere plan `pro`
 
-### Families
-- CRUD with invite by email (case-insensitive), remove members
-- `family-access.helper.ts` - shared utility for resolving member IDs
-- **Family data pattern**: personal = `familyId: null`, family = explicit `familyId`
-- Requires `family` plan
+### Familias
+- CRUD con invitacion por email (case-insensitive), remover miembros
+- `family-access.helper.ts` - utilidad compartida para resolver IDs de miembros
+- **Patron de datos familiares**: personal = `familyId: null`, familiar = `familyId` explicito
+- Requiere plan `family`
 
-### Subscriptions
+### Subscripciones
 - Stripe checkout/portal/cancel/webhook
-- PlanGuard: `free=0 < pro=1 < family=2` hierarchy
-- `PlanLimitsService`: 50 txns/mo, 2 accounts, 3 budgets, 3 goals for free
-- Plan-restricted: tags, budgets, goals (pro), families (family), splits (pro)
+- PlanGuard: jerarquia `free=0 < pro=1 < family=2`
+- `PlanLimitsService`: 50 txns/mes, 2 cuentas, 3 presupuestos, 3 metas para gratis
+- Restricciones por plan: tags, presupuestos, metas (pro), familias (family), splits (pro)
 
-### Notifications
-- Auto-created on tag budget alerts, split invites/expenses/settlements
-- Bell icon with unread count, mark-read, clear-all
+### Notificaciones
+- Auto-creadas en alertas de presupuesto de tags, invitaciones/gastos/settlements de splits
+- Icono de campana con conteo no leidos, marcar-leido, limpiar-todo
 
-### Splits (Dividir Gastos)
-- Independent of families (works with any registered user)
-- Requires `pro` plan
-- **Groups**: CRUD with invite by email, members management
-- **Expenses**: 3 split types: EQUAL, PERCENTAGE, EXACT
-- **Receipts**: Base64 stored in DB (`receiptData`, `receiptMime` fields)
-- **Balances**: Debt simplification algorithm (minimizes transfers)
-- **Settlements**: Record payments → auto-create Transaction
-- **Recurring**: Auto-generate shared expenses on schedule
-- **Templates**: Save common split configurations
-- Toggle `isPaid` on expense splits (mark/unmark as paid)
-- Notifications: `SPLIT_INVITE`, `SPLIT_EXPENSE`, `SPLIT_SETTLEMENT`
+### Dividir Gastos (Splits)
+- Independiente de familias (funciona con cualquier usuario registrado)
+- Requiere plan `pro`
+- **Grupos**: CRUD con invitacion por email, gestion de miembros
+- **Gastos**: 3 tipos de division: EQUAL, PERCENTAGE, EXACT
+- **Tickets**: Base64 almacenado en DB (campos `receiptData`, `receiptMime`)
+- **Balances**: Algoritmo de simplificacion de deudas (minimiza transfers)
+- **Settlements**: Registrar pagos → auto-crear Transaction
+- **Recurrentes**: Auto-generar gastos compartidos en horario
+- **Plantillas**: Guardar configuraciones de division comunes
+- Toggle `isPaid` en splits de gastos (marcar/desmarcar como pagado)
+- Notificaciones: `SPLIT_INVITE`, `SPLIT_EXPENSE`, `SPLIT_SETTLEMENT`
 
-### Net Worth
-- `GET /net-worth?months=12` - historical balance snapshots
-- `GET /net-worth/current` - current total balance
-- `NetWorthSnapshot` model for tracking over time
+### Patrimonio Neto
+- `GET /net-worth?months=12` - snapshots historicos de balance
+- `GET /net-worth/current` - balance total actual
+- Modelo `NetWorthSnapshot` para seguimiento en el tiempo
 
 ### Insights
-- `GET /insights` - spending anomalies, category increases, savings projection
-- Auto-detects unusual spending patterns (>30% category increase)
+- `GET /insights` - anomalias de gasto, aumentos por categoria, proyeccion de ahorro
+- Auto-deteccion de patrones inusuales (>30% aumento en categoria)
 
-### Health Score
-- `GET /health-score` - score 0-100 with breakdown
-- 4 components: savings rate, emergency fund, diversification, consistency
-- Labels: Excelente (80+), Bueno (60-79), Regular (40-59), Mejorable (<40)
+### Score de Salud
+- `GET /health-score` - score 0-100 con desglose
+- 4 componentes: tasa de ahorro, fondo de emergencia, diversificacion, consistencia
+- Etiquetas: Excelente (80+), Bueno (60-79), Regular (40-59), Mejorable (<40)
 
-### Reports
-- `GET /reports/weekly-digest` - week-over-week comparison, top categories
-- `GET /reports/monthly?month=X&year=Y` - monthly summary with categories
+### Reportes
+- `GET /reports/weekly-digest` - comparacion semana a semana, top categorias
+- `GET /reports/monthly?month=X&year=Y` - resumen mensual con categorias
 
-### Achievements
-- `GET /achievements` - unlocked + available + points
-- `POST /achievements/check` - auto-check and unlock new achievements
-- 10 achievements: FIRST_TRANSACTION, STREAK_7/30, SAVINGS_100/500, GOAL_50/100, FIRST_SPLIT, DIVERSIFIED, BUDGET_MASTER
+### Logros
+- `GET /achievements` - desbloqueados + disponibles + puntos
+- `POST /achievements/check` - auto-verificar y desbloquear nuevos logros
+- 10 logros: FIRST_TRANSACTION, STREAK_7/30, SAVINGS_100/500, GOAL_50/100, FIRST_SPLIT, DIVERSIFIED, BUDGET_MASTER
 
 ### Email (Resend)
-- `EmailService` in `common/services/`
-- `sendPasswordResetEmail()` with reset link
-- When `RESEND_API_KEY` not set, logs reset URL to console (dev mode)
+- `EmailService` en `common/services/`
+- `sendPasswordResetEmail()` con link de reset
+- Cuando `RESEND_API_KEY` no esta configurado, loguea la URL de reset en consola (modo dev)
 
-## Frontend Structure
+## Estructura del Frontend
 
-### Pages
-- `/` - Landing page (marketing with framer-motion animations)
+### Paginas
+- `/` - Landing page (marketing con animaciones framer-motion)
 - `/login` - Login/Register
-- `/forgot-password` / `/reset-password` - Password reset flow
-- `/dashboard` - Main dashboard: balance card, health score, insights, net worth chart, cashflow, categories, goals, recent transactions
-- `/dashboard/accounts` - Account management with colored cards
-- `/dashboard/transactions` - Transaction list with search, CSV export, **account selector**, recurring filter, advanced filters
-- `/dashboard/categories` - Category CRUD with color picker
-- `/dashboard/budgets` - Budget with progress bars (Pro)
-- `/dashboard/goals` - Goals with contributions (Pro)
-- `/dashboard/events` - Events/tags list (Pro)
-- `/dashboard/splits` - Split groups list with balance summary (Pro)
-- `/dashboard/splits/[groupId]` - Group detail: expenses, balances, history, members, recurring
-- `/dashboard/settings/*` - Profile, family, billing
-- `/dashboard/admin` - Admin panel (ADMIN role only)
-- `/dashboard/onboarding` - 3-step setup wizard
+- `/forgot-password` / `/reset-password` - Flujo de reset de password
+- `/dashboard` - Panel principal: tarjeta de balance, score de salud, insights, grafico de patrimonio, cashflow, categorias, metas, transacciones recientes
+- `/dashboard/accounts` - Gestion de cuentas con tarjetas de color
+- `/dashboard/transactions` - Lista de transacciones con busqueda, export CSV, **selector de cuenta**, filtro recurrente, filtros avanzados
+- `/dashboard/categories` - CRUD de categorias con selector de color
+- `/dashboard/budgets` - Presupuestos con barras de progreso (Pro)
+- `/dashboard/goals` - Metas con contribuciones (Pro)
+- `/dashboard/events` - Lista de eventos/tags (Pro)
+- `/dashboard/splits` - Lista de grupos de division con resumen de balances (Pro)
+- `/dashboard/splits/[groupId]` - Detalle del grupo: gastos, balances, historial, miembros, recurrentes
+- `/dashboard/settings/*` - Perfil, familia, facturacion
+- `/dashboard/admin` - Panel de admin (solo rol ADMIN)
+- `/dashboard/onboarding` - Asistente de configuracion en 3 pasos
 
-### Key Components
-- `top-nav.tsx` - Horizontal nav with mobile hamburger, admin link, notification bell, "Dividir" nav item
-- `family-switcher.tsx` - Personal/family view toggle
-- `skeleton.tsx` - Loading skeleton components (Card, Transaction, Account, Category, Budget)
-- `confirm-dialog.tsx` - Reusable confirmation dialog (Radix Dialog)
-- `fade-in.tsx` - Scroll-triggered fade-in animation
-- `toast.tsx` - Toast notification system
-- `tag-input.tsx` - Tag/event selector with autocomplete
+### Componentes Clave
+- `top-nav.tsx` - Nav horizontal con hamburger movil, link admin, campana de notificaciones, item "Dividir"
+- `family-switcher.tsx` - Toggle vista personal/familiar
+- `skeleton.tsx` - Componentes de skeleton de carga (Card, Transaction, Account, Category, Budget)
+- `confirm-dialog.tsx` - Dialogo de confirmacion reutilizable (Radix Dialog)
+- `fade-in.tsx` - Animacion fade-in al hacer scroll
+- `toast.tsx` - Sistema de notificaciones toast
+- `tag-input.tsx` - Selector de tag/evento con autocompletado
 
 ### Lib
-- `api.ts` - API client with JWT auth, `uploadFile()` for base64 uploads
-- `settings.ts` - Zustand store for global currency (EUR default), `formatMoney()`
-- `family.ts` - Zustand store for active family
+- `api.ts` - Cliente API con auth JWT, `uploadFile()` para uploads en base64
+- `settings.ts` - Store Zustand para moneda global (EUR por defecto), `formatMoney()`
+- `family.ts` - Store Zustand para familia activa
 
-## Design System
+## Sistema de Diseno
 
-- **Primary color**: Blue (`blue-600`)
-- **Currency**: EUR (€) with symbol at END (e.g., `1,250.00 €`)
-- **Cards**: `border-0 rounded-xl shadow-sm`
-- **Dark mode**: Next-themes with `class` strategy
-- **Mobile**: Responsive with hamburger menu, `text-2xl sm:text-4xl` for large numbers, `min-w-0 truncate` for text
-- **Touch targets**: 44px minimum on all interactive buttons
-- **Loading states**: Skeleton components (never plain "Cargando..." text)
-- **Empty states**: Icon + descriptive text + CTA button
-- **Confirmations**: ConfirmAction dialog (never `window.confirm()`)
-- **Toast feedback**: All CRUD operations show success/error toasts
+- **Color primario**: Azul (`blue-600`)
+- **Moneda**: EUR (€) con simbolo al FINAL (ej: `1.250,00 €`)
+- **Tarjetas**: `border-0 rounded-xl shadow-sm`
+- **Modo oscuro**: Next-themes con estrategia `class`
+- **Movil**: Responsive con hamburger menu, `text-2xl sm:text-4xl` para numeros grandes, `min-w-0 truncate` para texto
+- **Targets de toque**: 44px minimo en todos los botones interactivos
+- **Estados de carga**: Componentes skeleton (nunca texto plano "Cargando...")
+- **Estados vacios**: Icono + texto descriptivo + boton CTA
+- **Confirmaciones**: Dialogo ConfirmAction (nunca `window.confirm()`)
+- **Feedback toast**: Todas las operaciones CRUD muestran toasts de exito/error
 
-## Landing Page Sections
+## Secciones de la Landing Page
 
-- **Hero** (dark): "Tus finanzas, claras de una vez" + dashboard mockup with EUR amounts
-- **Problemas** (light): 3 pain points including "Dividir gastos no tiene por que ser complicado"
-- **Features** (dark): 4 blocks: Panel, Presupuestos, Metas, Dividir gastos
-- **Splits section** (light): "Finanzas compartidas sin dramas" with mockup showing group/expenses/balances
-- **Precios** (dark): 3 tiers with EUR pricing (0€, 4,99€, 7,99€)
-- **FAQ** (light): Accordion including splits questions
-- No Splitwise references anywhere
+- **Hero** (oscuro): "Tus finanzas, claras de una vez" + mockup del dashboard con montos en EUR
+- **Problemas** (claro): 3 puntos de dolor incluyendo "Dividir gastos no tiene por que ser complicado"
+- **Features** (oscuro): 4 bloques: Panel, Presupuestos, Metas, Dividir gastos
+- **Seccion Splits** (claro): "Finanzas compartidas sin dramas" con mockup de grupo/gastos/balances
+- **Precios** (oscuro): 3 tiers con precios en EUR (0€, 4,99€, 7,99€)
+- **FAQ** (claro): Acordeon con preguntas sobre splits
+- Sin referencias a Splitwise en ningun lugar
 
-## Tech Stack
+## Stack Tecnico
 
 - Frontend: Next.js 14, TypeScript, TailwindCSS, Recharts, Zustand, React Query, Radix UI, Lucide, next-themes, framer-motion
-- Backend: NestJS, Prisma, class-validator, Swagger, Resend, helmet, throttler, Joi (env validation)
+- Backend: NestJS, Prisma, class-validator, Swagger, Resend, helmet, throttler, Joi (validacion de env)
 - DB: PostgreSQL (Neon)
 - Deploy: Vercel (frontend), Render (backend), Neon (database)
