@@ -1,16 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { useSettings, getCurrencySymbol, formatMoney, formatDateShort, useHasHydrated, useMounted } from "@/lib/settings"
 import { useFamilyStore } from "@/lib/family"
+import { useToast } from "@/components/ui/toast"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2, Repeat, Filter, X, Pencil } from "lucide-react"
+import { Skeleton, SkeletonTransactionRow } from "@/components/ui/skeleton"
+import { ConfirmAction } from "@/components/ui/confirm-dialog"
+import { Plus, Trash2, Repeat, Filter, X, Pencil, ArrowLeftRight, Search } from "lucide-react"
 import { TagInput } from "@/components/ui/tag-input"
 import Link from "next/link"
 
@@ -106,13 +109,21 @@ export default function TransactionsPage() {
   const hydrated = useHasHydrated()
   const mounted = useMounted()
   const { activeFamilyId } = useFamilyStore()
+  const { addToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>("all")
   const [viewMode, setViewMode] = useState<"all" | "recurring">("all")
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [showFilters, setShowFilters] = useState(false)
   const [formError, setFormError] = useState("")
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(timer)
+  }, [search])
 
   const [filters, setFilters] = useState({
     minAmount: "",
@@ -128,12 +139,12 @@ export default function TransactionsPage() {
     transactions: Transaction[]
     total: number
   }>({
-    queryKey: ["transactions", filterType, viewMode, search, filters, activeFamilyId],
+    queryKey: ["transactions", filterType, viewMode, debouncedSearch, filters, activeFamilyId],
     queryFn: () => {
       const params = new URLSearchParams({ take: "200" })
       if (filterType !== "all") params.set("type", filterType)
       if (viewMode === "recurring") params.set("recurring", "true")
-      if (search.trim()) params.set("search", search.trim())
+      if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim())
       if (filters.minAmount) params.set("minAmount", filters.minAmount)
       if (filters.maxAmount) params.set("maxAmount", filters.maxAmount)
       if (filters.categoryId) params.set("categoryId", filters.categoryId)
@@ -173,9 +184,11 @@ export default function TransactionsPage() {
       setShowForm(false)
       setFormError("")
       setForm(defaultForm())
+      addToast({ title: "Transaccion creada", variant: "success" })
     },
     onError: (err: Error) => {
       setFormError(err.message || "Error al guardar")
+      addToast({ title: "Error", description: err.message, variant: "error" })
     },
   })
 
@@ -191,9 +204,11 @@ export default function TransactionsPage() {
       setEditingId(null)
       setFormError("")
       setForm(defaultForm())
+      addToast({ title: "Transaccion actualizada", variant: "success" })
     },
     onError: (err: Error) => {
       setFormError(err.message || "Error al actualizar")
+      addToast({ title: "Error", description: err.message, variant: "error" })
     },
   })
 
@@ -205,6 +220,11 @@ export default function TransactionsPage() {
       queryClient.invalidateQueries({ queryKey: ["by-category"] })
       queryClient.invalidateQueries({ queryKey: ["budgets-summary"] })
       queryClient.invalidateQueries({ queryKey: ["tags"] })
+      setDeleteId(null)
+      addToast({ title: "Transaccion eliminada", variant: "success" })
+    },
+    onError: (err: Error) => {
+      addToast({ title: "Error", description: err.message, variant: "error" })
     },
   })
 
@@ -213,7 +233,20 @@ export default function TransactionsPage() {
   )
 
   if (!mounted || !hydrated) {
-    return <div className="space-y-6"><p className="text-center text-muted-foreground py-8">Cargando...</p></div>
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-7 w-7" />
+          <Skeleton className="h-8 w-48" />
+        </div>
+        <Skeleton className="h-10 w-full" />
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonTransactionRow key={i} />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   function startEdit(tx: Transaction) {
@@ -610,11 +643,21 @@ export default function TransactionsPage() {
       <Card>
         <CardContent className="p-0">
           {txLoading ? (
-            <p className="text-center text-muted-foreground py-8">Cargando...</p>
+            <div className="space-y-3 p-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonTransactionRow key={i} />
+              ))}
+            </div>
           ) : !txData?.transactions?.length ? (
-            <p className="text-center text-muted-foreground py-8">
-              {viewMode === "recurring" ? "Sin transacciones recurrentes" : "Sin transacciones"}
-            </p>
+            <div className="py-12 text-center">
+              <ArrowLeftRight className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">
+                {viewMode === "recurring" ? "Sin transacciones recurrentes" : "Sin transacciones"}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Crea tu primera transaccion para empezar a rastrear tus gastos
+              </p>
+            </div>
           ) : (
             <div className="divide-y">
               {txData.transactions.map((tx) => (
@@ -658,32 +701,42 @@ export default function TransactionsPage() {
                        </p>
                      </div>
                    </div>
-                   <div className="flex items-center gap-2 shrink-0">
-                     <span className={`text-sm font-semibold whitespace-nowrap ${tx.type === "INCOME" ? "text-emerald-600" : "text-red-600"}`}>
-                       {tx.type === "INCOME" ? "+" : "-"}
-                       {formatMoney(tx.amount, tx.currency || currency)}
-                     </span>
-                     <button
-                       onClick={() => startEdit(tx)}
-                       className="text-muted-foreground hover:text-blue-500 transition-colors shrink-0"
-                       title="Editar"
-                     >
-                       <Pencil className="h-4 w-4" />
-                     </button>
-                     <button
-                       onClick={() => deleteMutation.mutate(tx.id)}
-                       className="text-muted-foreground hover:text-red-500 transition-colors shrink-0"
-                       title="Eliminar"
-                     >
-                       <Trash2 className="h-4 w-4" />
-                     </button>
-                   </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className={`text-sm font-semibold whitespace-nowrap ${tx.type === "INCOME" ? "text-emerald-600" : "text-red-600"}`}>
+                        {tx.type === "INCOME" ? "+" : "-"}
+                        {formatMoney(tx.amount, tx.currency || currency)}
+                      </span>
+                      <button
+                        onClick={() => startEdit(tx)}
+                        className="text-muted-foreground hover:text-blue-500 transition-colors shrink-0 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteId(tx.id)}
+                        className="text-muted-foreground hover:text-red-500 transition-colors shrink-0 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                  </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <ConfirmAction
+        open={deleteId !== null}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Eliminar transaccion"
+        description="Esta accion no se puede deshacer. Se eliminara la transaccion permanentemente."
+        confirmLabel="Eliminar"
+        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
+        loading={deleteMutation.isPending}
+      />
     </div>
   )
 }

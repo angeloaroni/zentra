@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/components/ui/toast"
+import { SkeletonBudgetRow } from "@/components/ui/skeleton"
+import { ConfirmAction } from "@/components/ui/confirm-dialog"
 import {
   Select,
   SelectContent,
@@ -17,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Trash2, AlertTriangle, Pencil } from "lucide-react"
+import { Plus, Trash2, AlertTriangle, Pencil, PiggyBank } from "lucide-react"
 
 interface Budget {
   id: string
@@ -43,9 +46,11 @@ export default function BudgetsPage() {
   const { currency } = useSettings()
   const hydrated = useHasHydrated()
   const mounted = useMounted()
+  const { addToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formError, setFormError] = useState("")
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     amount: "",
@@ -91,9 +96,11 @@ export default function BudgetsPage() {
       setShowForm(false)
       setFormError("")
       setForm(prev => ({ ...prev, amount: "", categoryId: "" }))
+      addToast({ title: "Presupuesto creado", variant: "success" })
     },
     onError: (err: Error) => {
       setFormError(err.message || "Error al guardar")
+      addToast({ title: err.message || "Error al guardar", variant: "error" })
     },
   })
 
@@ -101,6 +108,11 @@ export default function BudgetsPage() {
     mutationFn: (id: string) => api(`/budgets/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["budgets-summary"] })
+      setDeleteId(null)
+      addToast({ title: "Presupuesto eliminado", variant: "success" })
+    },
+    onError: (err: Error) => {
+      addToast({ title: err.message || "Error al eliminar", variant: "error" })
     },
   })
 
@@ -111,9 +123,11 @@ export default function BudgetsPage() {
       queryClient.invalidateQueries({ queryKey: ["budgets-summary"] })
       setEditingId(null)
       setFormError("")
+      addToast({ title: "Presupuesto actualizado", variant: "success" })
     },
     onError: (err: Error) => {
       setFormError(err.message || "Error al actualizar")
+      addToast({ title: err.message || "Error al actualizar", variant: "error" })
     },
   })
 
@@ -162,7 +176,21 @@ export default function BudgetsPage() {
   const totalSpent = (budgets || []).reduce((s, b) => s + b.spent, 0)
 
   if (!mounted || !hydrated) {
-    return <div className="space-y-6"><p className="text-center text-muted-foreground py-8">Cargando...</p></div>
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-48"><SkeletonBudgetRow /></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <SkeletonBudgetRow />
+          <SkeletonBudgetRow />
+          <SkeletonBudgetRow />
+        </div>
+        <SkeletonBudgetRow />
+        <SkeletonBudgetRow />
+        <SkeletonBudgetRow />
+      </div>
+    )
   }
 
   return (
@@ -289,11 +317,17 @@ export default function BudgetsPage() {
       )}
 
       {isLoading ? (
-        <p className="text-center text-muted-foreground py-8">Cargando...</p>
+        <div className="space-y-4">
+          <SkeletonBudgetRow />
+          <SkeletonBudgetRow />
+          <SkeletonBudgetRow />
+        </div>
       ) : !budgets?.length ? (
         <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            Sin presupuestos para este mes
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <PiggyBank className="h-12 w-12 mx-auto mb-3 opacity-40" />
+            <p className="font-medium">Sin presupuestos</p>
+            <p className="text-sm mt-1">Crea tu primer presupuesto para controlar tus gastos</p>
           </CardContent>
         </Card>
       ) : (
@@ -352,22 +386,22 @@ export default function BudgetsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         {b.overBudget && (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-xs mr-1">
                             <AlertTriangle className="h-3 w-3 mr-1" />
                             Excedido
                           </Badge>
                         )}
                         <button
                           onClick={() => startEdit(b)}
-                          className="text-muted-foreground hover:text-blue-500 transition-colors"
+                          className="p-2 text-muted-foreground hover:text-blue-500 transition-colors rounded-lg"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => deleteMutation.mutate(b.id)}
-                          className="text-muted-foreground hover:text-red-500 transition-colors"
+                          onClick={() => setDeleteId(b.id)}
+                          className="p-2 text-muted-foreground hover:text-red-500 transition-colors rounded-lg"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -391,6 +425,19 @@ export default function BudgetsPage() {
           ))}
         </div>
       )}
+
+      <ConfirmAction
+        open={!!deleteId}
+        onOpenChange={(open) => { if (!open) setDeleteId(null) }}
+        title="Eliminar presupuesto"
+        description="Esta accion no se puede deshacer. Se eliminara el presupuesto permanentemente."
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleteMutation.isPending}
+        onConfirm={() => {
+          if (deleteId) deleteMutation.mutate(deleteId)
+        }}
+      />
     </div>
   )
 }

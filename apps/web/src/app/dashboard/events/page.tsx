@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { SkeletonCard } from "@/components/ui/skeleton"
+import { useToast } from "@/components/ui/toast"
 import { Plus, PartyPopper } from "lucide-react"
 import Link from "next/link"
 
@@ -72,6 +74,7 @@ export default function EventsPage() {
   const hydrated = useHasHydrated()
   const mounted = useMounted()
   const { activeFamilyId } = useFamilyStore()
+  const { addToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [formError, setFormError] = useState("")
   const [form, setForm] = useState({
@@ -96,8 +99,12 @@ export default function EventsPage() {
       setShowForm(false)
       setFormError("")
       setForm({ name: "", color: TAG_COLORS[0], icon: TAG_ICONS[0], budget: "" })
+      addToast({ title: "Evento creado", description: "Tu evento se ha creado correctamente.", variant: "success" })
     },
-    onError: (err: Error) => setFormError(err.message),
+    onError: (err: Error) => {
+      setFormError(err.message)
+      addToast({ title: "Error", description: err.message || "Error al crear el evento", variant: "error" })
+    },
   })
 
   function handleCreate(e: React.FormEvent) {
@@ -119,7 +126,19 @@ export default function EventsPage() {
   const monthName = formatMonthYear(new Date())
 
   if (!mounted || !hydrated) {
-    return <div className="space-y-6"><p className="text-center text-muted-foreground py-8">Cargando...</p></div>
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-40 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" />
+          <div className="h-10 w-36 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -158,7 +177,7 @@ export default function EventsPage() {
                     <button
                       key={c}
                       type="button"
-                      className={`h-8 w-8 rounded-full border-2 transition-all ${
+                      className={`h-9 w-9 rounded-full border-2 transition-all ${
                         form.color === c ? "border-foreground scale-110" : "border-transparent"
                       }`}
                       style={{ backgroundColor: c }}
@@ -175,7 +194,7 @@ export default function EventsPage() {
                     <button
                       key={iconName}
                       type="button"
-                      className={`h-10 w-10 rounded-lg border-2 flex items-center justify-center text-xl transition-all ${
+                      className={`min-h-[44px] min-w-[44px] rounded-lg border-2 flex items-center justify-center text-xl transition-all ${
                         form.icon === iconName
                           ? "border-primary bg-primary/10"
                           : "border-transparent bg-secondary"
@@ -221,7 +240,11 @@ export default function EventsPage() {
       )}
 
       {isLoading ? (
-        <p className="text-center text-muted-foreground py-8">Cargando...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       ) : !tags?.length ? (
         <Card>
           <CardContent className="py-12 text-center">

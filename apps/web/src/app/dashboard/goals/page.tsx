@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { SkeletonCard } from "@/components/ui/skeleton"
+import { useToast } from "@/components/ui/toast"
+import { ConfirmAction } from "@/components/ui/confirm-dialog"
 import { Plus, Trash2, Target, Lock } from "lucide-react"
 import Link from "next/link"
 
@@ -34,10 +37,12 @@ export default function GoalsPage() {
   const { currency } = useSettings()
   const hydrated = useHasHydrated()
   const mounted = useMounted()
+  const { addToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [contributeId, setContributeId] = useState<string | null>(null)
   const [contributeAmount, setContributeAmount] = useState("")
   const [formError, setFormError] = useState("")
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     name: "",
@@ -64,9 +69,11 @@ export default function GoalsPage() {
       setShowForm(false)
       setFormError("")
       setForm({ name: "", description: "", targetAmount: "", deadline: "", color: PRESET_COLORS[0] })
+      addToast({ title: "Meta creada", description: "Tu meta se ha creado correctamente.", variant: "success" })
     },
     onError: (err: Error) => {
       setFormError(err.message || "Error al crear la meta")
+      addToast({ title: "Error", description: err.message || "Error al crear la meta", variant: "error" })
     },
   })
 
@@ -74,9 +81,12 @@ export default function GoalsPage() {
     mutationFn: (id: string) => api(`/goals/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals"] })
+      setDeleteId(null)
+      addToast({ title: "Meta eliminada", description: "La meta se ha eliminado correctamente.", variant: "success" })
     },
     onError: (err: Error) => {
-      alert(err.message || "Error al eliminar la meta")
+      setDeleteId(null)
+      addToast({ title: "Error", description: err.message || "Error al eliminar la meta", variant: "error" })
     },
   })
 
@@ -90,14 +100,27 @@ export default function GoalsPage() {
       queryClient.invalidateQueries({ queryKey: ["goals"] })
       setContributeId(null)
       setContributeAmount("")
+      addToast({ title: "Aporte registrado", description: "Tu aporte se ha registrado correctamente.", variant: "success" })
     },
     onError: (err: Error) => {
-      alert(err.message || "Error al aportar")
+      addToast({ title: "Error", description: err.message || "Error al aportar", variant: "error" })
     },
   })
 
   if (!mounted || !hydrated) {
-    return <div className="space-y-6"><p className="text-center text-muted-foreground py-8">Cargando...</p></div>
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" />
+          <div className="h-10 w-28 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   function handleCreate(e: React.FormEvent) {
@@ -204,7 +227,7 @@ export default function GoalsPage() {
                     <button
                       key={c}
                       type="button"
-                      className={`h-8 w-8 rounded-full border-2 transition-all ${
+                      className={`h-9 w-9 rounded-full border-2 transition-all ${
                         form.color === c
                           ? "border-foreground scale-110"
                           : "border-transparent"
@@ -242,7 +265,11 @@ export default function GoalsPage() {
       )}
 
       {isLoading ? (
-        <p className="text-center text-muted-foreground py-8">Cargando...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       ) : !goals?.length ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -287,8 +314,8 @@ export default function GoalsPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => deleteMutation.mutate(goal.id)}
-                      className="text-muted-foreground hover:text-red-500 transition-colors"
+                      onClick={() => setDeleteId(goal.id)}
+                      className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -356,7 +383,7 @@ export default function GoalsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="mt-3 w-full"
+                      className="mt-3 w-full min-h-[44px]"
                       onClick={() => setContributeId(goal.id)}
                       disabled={isComplete}
                     >
@@ -369,6 +396,17 @@ export default function GoalsPage() {
           })}
         </div>
       )}
+
+      <ConfirmAction
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null) }}
+        title="Eliminar meta"
+        description="Esta accion no se puede deshacer. Se eliminara la meta y todo su historial."
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleteMutation.isPending}
+        onConfirm={() => { if (deleteId) deleteMutation.mutate(deleteId) }}
+      />
     </div>
   )
 }

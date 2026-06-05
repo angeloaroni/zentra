@@ -10,8 +10,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2, Pencil } from "lucide-react"
+import { Plus, Trash2, Pencil, Tag } from "lucide-react"
 import { useMounted } from "@/lib/settings"
+import { useToast } from "@/components/ui/toast"
+import { SkeletonCategoryCard } from "@/components/ui/skeleton"
+import { ConfirmAction } from "@/components/ui/confirm-dialog"
 
 const PRESET_COLORS = [
   "#10B981", "#3B82F6", "#8B5CF6", "#EF4444",
@@ -34,6 +37,8 @@ export default function CategoriesPage() {
   const mounted = useMounted()
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const { addToast } = useToast()
+  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [filterType, setFilterType] = useState("all")
   const [formError, setFormError] = useState("")
 
@@ -59,9 +64,11 @@ export default function CategoriesPage() {
       setShowForm(false)
       setFormError("")
       setForm(defaultForm)
+      addToast({ title: "Categoria creada", variant: "success" })
     },
     onError: (err: Error) => {
       setFormError(err.message || "Error al crear la categoria")
+      addToast({ title: "Error", description: err.message, variant: "error" })
     },
   })
 
@@ -74,9 +81,11 @@ export default function CategoriesPage() {
       setShowForm(false)
       setFormError("")
       setForm(defaultForm)
+      addToast({ title: "Categoria actualizada", variant: "success" })
     },
     onError: (err: Error) => {
       setFormError(err.message || "Error al actualizar la categoria")
+      addToast({ title: "Error", description: err.message, variant: "error" })
     },
   })
 
@@ -85,9 +94,12 @@ export default function CategoriesPage() {
       api(`/categories/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] })
+      setDeleteId(null)
+      addToast({ title: "Categoria eliminada", variant: "success" })
     },
     onError: (err: Error) => {
-      alert(err.message || "No se pudo eliminar la categoria")
+      setDeleteId(null)
+      addToast({ title: "Error", description: err.message, variant: "error" })
     },
   })
 
@@ -134,7 +146,7 @@ export default function CategoriesPage() {
   }
 
   if (!mounted || !familyHydrated) {
-    return <div className="space-y-6"><p className="text-center text-muted-foreground py-8">Cargando...</p></div>
+    return <div className="space-y-6"><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{Array.from({ length: 6 }).map((_, i) => <SkeletonCategoryCard key={i} />)}</div></div>
   }
 
   return (
@@ -266,7 +278,9 @@ export default function CategoriesPage() {
       )}
 
       {isLoading ? (
-        <p className="text-center text-muted-foreground py-8">Cargando...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonCategoryCard key={i} />)}
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {(categories || []).map((cat: Category) => (
@@ -297,17 +311,13 @@ export default function CategoriesPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => startEdit(cat)}
-                      className="text-muted-foreground hover:text-blue-500 transition-colors"
+                      className="text-muted-foreground hover:text-blue-500 transition-colors p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm("Eliminar esta categoria?")) {
-                          deleteMutation.mutate(cat.id)
-                        }
-                      }}
-                      className="text-muted-foreground hover:text-red-500 transition-colors"
+                      onClick={() => setDeleteId(cat.id)}
+                      className="text-muted-foreground hover:text-red-500 transition-colors p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -317,12 +327,23 @@ export default function CategoriesPage() {
             </Card>
           ))}
           {(!categories || categories.length === 0) && !isLoading && (
-            <div className="col-span-full text-center py-8 text-muted-foreground">
-              Sin categorias
+            <div className="col-span-full text-center py-8 text-muted-foreground flex flex-col items-center gap-2">
+              <Tag className="h-8 w-8" />
+              <p>Sin categorias</p>
             </div>
           )}
         </div>
       )}
+
+      <ConfirmAction
+        open={!!deleteId}
+        onOpenChange={(open) => { if (!open) setDeleteId(null) }}
+        title="Eliminar categoria"
+        description="¿Estás seguro de que quieres eliminar esta categoria? Esta acción no se puede deshacer."
+        onConfirm={() => { if (deleteId) deleteMutation.mutate(deleteId) }}
+        confirmLabel="Eliminar"
+        variant="danger"
+      />
     </div>
   )
 }

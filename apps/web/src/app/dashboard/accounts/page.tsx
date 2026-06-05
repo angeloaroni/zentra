@@ -9,6 +9,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useToast } from "@/components/ui/toast"
+import { Skeleton, SkeletonAccountCard } from "@/components/ui/skeleton"
+import { ConfirmAction } from "@/components/ui/confirm-dialog"
 import {
   Select,
   SelectContent,
@@ -16,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Trash2, Wallet, CreditCard, Landmark, Banknote, Pencil } from "lucide-react"
+import { Plus, Trash2, CreditCard, Landmark, Banknote, Pencil, Wallet } from "lucide-react"
 
 interface Account {
   id: string
@@ -53,8 +56,10 @@ export default function AccountsPage() {
   const hydrated = useHasHydrated()
   const mounted = useMounted()
   const { activeFamilyId } = useFamilyStore()
+  const { addToast } = useToast()
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [formError, setFormError] = useState("")
 
   const defaultForm = { name: "", type: "checking", balance: "", color: PRESET_COLORS[0] }
@@ -76,13 +81,23 @@ export default function AccountsPage() {
       setShowForm(false)
       setFormError("")
       setForm(defaultForm)
+      addToast({ title: "Cuenta creada", variant: "success" })
     },
-    onError: (err: Error) => setFormError(err.message),
+    onError: (err: Error) => {
+      addToast({ title: "Error", description: err.message, variant: "error" })
+    },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api(`/accounts/${id}`, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["accounts"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      setDeleteId(null)
+      addToast({ title: "Cuenta eliminada", variant: "success" })
+    },
+    onError: (err: Error) => {
+      addToast({ title: "Error", description: err.message, variant: "error" })
+    },
   })
 
   const updateMutation = useMutation({
@@ -94,8 +109,11 @@ export default function AccountsPage() {
       setShowForm(false)
       setFormError("")
       setForm(defaultForm)
+      addToast({ title: "Cuenta actualizada", variant: "success" })
     },
-    onError: (err: Error) => setFormError(err.message || "Error al actualizar"),
+    onError: (err: Error) => {
+      addToast({ title: "Error", description: err.message || "Error al actualizar", variant: "error" })
+    },
   })
 
   function startEdit(acc: Account) {
@@ -144,7 +162,19 @@ export default function AccountsPage() {
   const totalBalance = (accounts || []).reduce((s, a) => s + a.balance, 0)
 
   if (!mounted || !hydrated) {
-    return <div className="space-y-6"><p className="text-center text-muted-foreground py-8">Cargando...</p></div>
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonAccountCard key={i} />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -251,9 +281,7 @@ export default function AccountsPage() {
           <CardContent className="py-12 text-center">
             <Wallet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">Sin cuentas</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Crea una cuenta para empezar a trackear tu dinero
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">Crea tu primera cuenta para empezar</p>
           </CardContent>
         </Card>
       ) : (
@@ -285,12 +313,8 @@ export default function AccountsPage() {
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm("Eliminar esta cuenta?")) {
-                          deleteMutation.mutate(acc.id)
-                        }
-                      }}
-                      className="text-muted-foreground hover:text-red-500 transition-colors"
+                      onClick={() => setDeleteId(acc.id)}
+                      className="text-muted-foreground hover:text-red-500 transition-colors p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -304,6 +328,16 @@ export default function AccountsPage() {
           ))}
         </div>
       )}
+
+      <ConfirmAction
+        open={deleteId !== null}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Eliminar cuenta"
+        description="Esta accion no se puede deshacer."
+        confirmLabel="Eliminar"
+        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
+        loading={deleteMutation.isPending}
+      />
     </div>
   )
 }
