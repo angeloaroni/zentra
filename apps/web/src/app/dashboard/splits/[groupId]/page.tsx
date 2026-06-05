@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api, getUser, uploadFile } from "@/lib/api"
 import { useSettings, formatMoney, formatDateShort, useHasHydrated, useMounted } from "@/lib/settings"
 import { useToast } from "@/components/ui/toast"
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api").replace("/api", "")
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -168,14 +170,12 @@ export default function GroupDetailPage() {
 
   const createExpenseMutation = useMutation({
     mutationFn: (data: any) => api("/splits/expenses", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: async () => {
-      if (receiptFile) {
-        try {
-          const expensesData = await api<{ transactions: SharedExpense[] }>(`/splits/expenses?groupId=${groupId}`)
-          const latest = expensesData.transactions?.[0]
-          if (latest) await uploadFile(`/splits/expenses/${latest.id}/receipt`, receiptFile)
-        } catch {}
-      }
+    onSuccess: async (result: any) => {
+      try {
+        if (receiptFile && result?.id) {
+          await uploadFile(`/splits/expenses/${result.id}/receipt`, receiptFile)
+        }
+      } catch {}
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
       queryClient.invalidateQueries({ queryKey: ["split-balances", groupId] })
       resetExpenseForm()
@@ -186,13 +186,17 @@ export default function GroupDetailPage() {
 
   const updateExpenseMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => api(`/splits/expenses/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
-    onSuccess: async (_, variables) => {
-      if (receiptFile && editingExpense) {
-        try { await uploadFile(`/splits/expenses/${editingExpense.id}/receipt`, receiptFile) } catch {}
-      }
+    onSuccess: async () => {
+      const expenseId = editingExpense?.id
+      resetExpenseForm()
+      try {
+        if (receiptFile && expenseId) {
+          await uploadFile(`/splits/expenses/${expenseId}/receipt`, receiptFile)
+        }
+      } catch {}
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
       queryClient.invalidateQueries({ queryKey: ["split-balances", groupId] })
-      resetExpenseForm()
+      setDetailExpense(null)
       addToast({ title: "Gasto actualizado", variant: "success" })
     },
     onError: (err: Error) => { setFormError(err.message); addToast({ title: "Error", description: err.message, variant: "error" }) },
@@ -313,7 +317,7 @@ export default function GroupDetailPage() {
       percentages: Object.fromEntries(expense.splits.filter((s) => s.percentage).map((s) => [s.userId, String(s.percentage)])),
       exactAmounts: Object.fromEntries(expense.splits.map((s) => [s.userId, String(s.amount)])),
     })
-    if (expense.receiptUrl) setReceiptPreview(expense.receiptUrl)
+    if (expense.receiptUrl) setReceiptPreview(`${API_BASE}${expense.receiptUrl}`)
   }
 
   function handleExpenseSubmit(e: React.FormEvent) {
@@ -755,9 +759,9 @@ export default function GroupDetailPage() {
               {detailExpense.receiptUrl && (
                 <div><p className="text-sm text-muted-foreground mb-2">Ticket/factura</p>
                   {detailExpense.receiptUrl.endsWith(".pdf") ? (
-                    <a href={detailExpense.receiptUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline"><FileText className="h-5 w-5" />Ver PDF</a>
+                    <a href={`${API_BASE}${detailExpense.receiptUrl}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline"><FileText className="h-5 w-5" />Ver PDF</a>
                   ) : (
-                    <img src={detailExpense.receiptUrl} alt="Ticket" className="max-h-48 rounded-lg border" />
+                    <img src={`${API_BASE}${detailExpense.receiptUrl}`} alt="Ticket" className="max-h-48 rounded-lg border" />
                   )}
                 </div>
               )}
