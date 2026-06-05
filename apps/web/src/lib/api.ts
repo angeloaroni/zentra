@@ -55,3 +55,38 @@ export async function api<T>(
 
   return data as T
 }
+
+export async function uploadFile<T>(
+  path: string,
+  file: File,
+  fieldName: string = 'receipt',
+): Promise<T> {
+  const token = getToken()
+  const formData = new FormData()
+  formData.append(fieldName, file)
+
+  const headers: Record<string, string> = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  })
+
+  if (res.status === 401) {
+    clearToken()
+    window.location.href = '/login'
+    throw new Error('Unauthorized')
+  }
+
+  const data = await res.json()
+
+  if (!res.ok) {
+    throw new Error(data.message || 'Upload error')
+  }
+
+  return data as T
+}

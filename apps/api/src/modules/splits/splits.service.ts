@@ -8,6 +8,8 @@ import {
   CreateExpenseDto,
   UpdateExpenseDto,
   CreateSettlementDto,
+  CreateRecurringSplitExpenseDto,
+  CreateSplitTemplateDto,
 } from './dto'
 
 @Injectable()
@@ -795,5 +797,129 @@ export class SplitsService {
     }
 
     return this.prisma.settlement.delete({ where: { id } })
+  }
+
+  async uploadReceipt(expenseId: string, userId: string, file: Express.Multer.File) {
+    const expense = await this.prisma.sharedExpense.findUnique({ where: { id: expenseId } })
+    if (!expense) throw new NotFoundException('Expense not found')
+    if (expense.paidById !== userId) throw new ForbiddenException('Only the payer can upload receipts')
+
+    const receiptUrl = `/uploads/receipts/${file.filename}`
+    return this.prisma.sharedExpense.update({
+      where: { id: expenseId },
+      data: { receiptUrl },
+    })
+  }
+
+  async deleteReceipt(expenseId: string, userId: string) {
+    const expense = await this.prisma.sharedExpense.findUnique({ where: { id: expenseId } })
+    if (!expense) throw new NotFoundException('Expense not found')
+    if (expense.paidById !== userId) throw new ForbiddenException('Only the payer can delete receipts')
+
+    return this.prisma.sharedExpense.update({
+      where: { id: expenseId },
+      data: { receiptUrl: null },
+    })
+  }
+
+  async markSplitPaid(expenseId: string, splitId: string, userId: string) {
+    const expense = await this.prisma.sharedExpense.findUnique({ where: { id: expenseId } })
+    if (!expense) throw new NotFoundException('Expense not found')
+
+    const split = await this.prisma.expenseSplit.findUnique({ where: { id: splitId } })
+    if (!split || split.expenseId !== expenseId) throw new NotFoundException('Split not found')
+
+    const isMember = await this.prisma.splitGroupMember.findFirst({
+      where: { groupId: expense.groupId, userId },
+    })
+    if (!isMember && expense.paidById !== userId) throw new ForbiddenException('Not authorized')
+
+    return this.prisma.expenseSplit.update({
+      where: { id: splitId },
+      data: { isPaid: true, paidAt: new Date() },
+    })
+  }
+
+  async createRecurringExpense(userId: string, dto: CreateRecurringSplitExpenseDto) {
+    const group = await this.prisma.splitGroup.findUnique({
+      where: { id: dto.groupId },
+      include: { members: true },
+    })
+    if (!group) throw new NotFoundException('Group not found')
+
+    const isMember = group.members.some((m) => m.userId === userId)
+    if (!isMember) throw new ForbiddenException('Not a member')
+
+    return this.prisma.recurringSplitExpense.create({
+      data: {
+        groupId: dto.groupId,
+        paidById: userId,
+        title: dto.title,
+        amount: dto.amount,
+        currency: dto.currency || group.currency,
+        frequency: dto.frequency,
+        splitType: dto.splitType,
+        nextDueDate: new Date(dto.nextDueDate),
+      },
+    })
+  }
+
+  async findRecurringExpenses(groupId: string, userId: string) {
+    const isMember = await this.prisma.splitGroupMember.findFirst({ where: { groupId, userId } })
+    if (!isMember) {
+      const group = await this.prisma.splitGroup.findUnique({ where: { id: groupId } })
+      if (!group || group.createdById !== userId) throw new ForbiddenException('Not a member')
+    }
+
+    return this.prisma.recurringSplitExpense.findMany({
+      where: { groupId },
+      include: {
+        paidBy: { select: { id: true, name: true, avatar: true } },
+      },
+      orderBy: { nextDueDate: 'asc' },
+    })
+  }
+
+  async deleteRecurringExpense(id: string, userId: string) {
+    const recurring = await this.prisma.recurringSplitExpense.findUnique({ where: { id } })
+    if (!recurring) throw new NotFoundException('Recurring expense not found')
+    if (recurring.paidById !== userId) throw new ForbiddenException('Not authorized')
+    return this.prisma.recurringSplitExpense.delete({ where: { id } })
+  }
+
+  async toggleRecurringExpense(id: string, userId: string) {
+    const recurring = await this.prisma.recurringSplitExpense.findUnique({ where: { id } })
+    if (!recurring) throw new NotFoundException('Recurring expense not found')
+    if (recurring.paidById !== userId) throw new ForbiddenException('Not authorized')
+
+    return this.prisma.recurringSplitExpense.update({
+      where: { id },
+      data: { active: !recurring.active },
+    })
+  }
+
+  async createTemplate(userId: string, dto: CreateSplitTemplateDto) {
+    return this.prisma.splitTemplate.create({
+      data: {
+        userId,
+        name: dto.name,
+        splitType: dto.splitType,
+        memberIds: dto.memberIds,
+      },
+    })
+  }
+
+  async findTemplates(userId: string) {
+    return this.prisma.splitTemplate.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
+  async deleteTemplate(id: string, userId: string) {
+    const template = await this.prisma.splitTemplate.findUnique({ where: { id } })
+    if (!template) throw new NotFoundException('Template not found')
+    if (template.userId !== userId) throw new ForbiddenException('Not authorized')
+    return this.prisma.splitTemplate.delete({ where: { id } })
   }
 }
