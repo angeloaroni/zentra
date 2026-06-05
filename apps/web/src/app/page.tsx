@@ -22,6 +22,8 @@ import {
   Zap,
   Receipt,
   Coins,
+  ImageIcon,
+  RefreshCw,
 } from "lucide-react"
 
 function FadeIn({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -291,7 +293,7 @@ function FeaturesSection() {
       icon: <PieChart size={24} />,
       badge: "Panel principal",
       title: "Todo lo que necesitas, en un vistazo",
-      text: "Ingresos, gastos, balance, ahorro. Sin navegar entre pantallas. Tu resumen financiero siempre visible, siempre actualizado.",
+      text: "Ingresos, gastos, balance, ahorro, score de salud financiera, y insights inteligentes. Todo visible en un solo panel.",
       mockup: (
         <div className="bg-[#111827] rounded-xl p-5 border border-white/10">
           <div className="flex items-center justify-between mb-4">
@@ -304,8 +306,8 @@ function FeaturesSection() {
               <p className="text-white text-lg font-bold">8.450 €</p>
             </div>
             <div className="bg-gray-800 rounded-lg p-4">
-              <p className="text-gray-400 text-xs">Ahorro</p>
-              <p className="text-emerald-400 text-lg font-bold">38%</p>
+              <p className="text-gray-400 text-xs">Salud</p>
+              <p className="text-emerald-400 text-lg font-bold">82/100</p>
             </div>
             <div className="bg-gray-800 rounded-lg p-4">
               <p className="text-gray-400 text-xs">Ingresos</p>
@@ -490,7 +492,7 @@ function SplitsSection() {
               Finanzas compartidas sin dramas
             </h2>
             <p className="mt-4 text-gray-500 text-lg max-w-2xl mx-auto">
-              Crea grupos con amigos, divide gastos de forma flexible, y simplifica deudas automaticamente. Todo integrado con tus finanzas.
+              Crea grupos con amigos, divide gastos de forma flexible, sube fotos de tickets, y simplifica deudas automaticamente.
             </p>
           </div>
         </FadeIn>
@@ -516,6 +518,15 @@ function SplitsSection() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
+                  <ImageIcon size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Sube fotos de tickets y facturas</h3>
+                  <p className="text-gray-500 text-sm">Adjunta imagenes o PDFs como constancia. Todos los miembros del grupo pueden verlas.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
                   <Coins size={24} />
                 </div>
@@ -525,12 +536,12 @@ function SplitsSection() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
-                  <Wallet size={24} />
+                <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
+                  <RefreshCw size={24} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Registra pagos y salda deudas</h3>
-                  <p className="text-gray-500 text-sm">Registra cuando alguien paga. Se crea automaticamente en tu registro de transacciones.</p>
+                  <h3 className="font-semibold text-gray-900 mb-1">Gastos recurrentes</h3>
+                  <p className="text-gray-500 text-sm">Configura gastos que se repitan automaticamente: alquiler, internet, suscripciones compartidas.</p>
                 </div>
               </div>
             </div>
@@ -555,7 +566,10 @@ function SplitsSection() {
                       <p className="text-xs text-gray-500">Juan pago</p>
                     </div>
                   </div>
-                  <span className="font-bold text-gray-900">120 €</span>
+                  <div className="flex items-center gap-2">
+                    <Receipt className="h-3 w-3 text-blue-500" />
+                    <span className="font-bold text-gray-900">120 €</span>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
@@ -575,7 +589,10 @@ function SplitsSection() {
                       <p className="text-xs text-gray-500">Ana pago</p>
                     </div>
                   </div>
-                  <span className="font-bold text-gray-900">280 €</span>
+                  <div className="flex items-center gap-2">
+                    <Receipt className="h-3 w-3 text-blue-500" />
+                    <span className="font-bold text-gray-900">280 €</span>
+                  </div>
                 </div>
               </div>
               <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
@@ -672,9 +689,11 @@ function PricingSection() {
         "Grupos de division ilimitados",
         "Division por % y monto exacto",
         "Gastos recurrentes compartidos",
-        "Desglose de items por persona",
-        "Conversion de monedas",
-        "Guardar divisiones por defecto",
+        "Subir fotos de tickets",
+        "Score de salud financiera",
+        "Insights inteligentes de gasto",
+        "Grafico de patrimonio neto",
+        "Logros y gamificacion",
         "Exportar a CSV",
         "Alertas de presupuesto",
       ],
