@@ -143,7 +143,8 @@ export class SplitsController {
         cb(null, dir)
       },
       filename: (req, file, cb) => {
-        const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${join(file.originalname)}`
+        const ext = file.originalname.split('.').pop()
+        const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}.${ext}`
         cb(null, uniqueName)
       },
     }),
