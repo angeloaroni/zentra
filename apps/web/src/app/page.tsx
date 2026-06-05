@@ -176,7 +176,7 @@ function HeroSection() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-5">
                     <p className="text-blue-200 text-xs font-medium">Balance total</p>
-                    <p className="text-white text-2xl font-bold mt-1">$12,450.00</p>
+                    <p className="text-white text-2xl font-bold mt-1">12.450,00 €</p>
                     <div className="flex items-center gap-1 mt-2">
                       <TrendingUp size={14} className="text-emerald-400" />
                       <span className="text-emerald-400 text-xs font-medium">+12.5% vs mes anterior</span>
@@ -184,14 +184,14 @@ function HeroSection() {
                   </div>
                   <div className="bg-gray-800/50 rounded-xl p-5 border border-white/5">
                     <p className="text-gray-400 text-xs font-medium">Ingresos</p>
-                    <p className="text-emerald-400 text-2xl font-bold mt-1">$5,200.00</p>
+                    <p className="text-emerald-400 text-2xl font-bold mt-1">5.200,00 €</p>
                     <div className="mt-3 h-2 bg-gray-700 rounded-full overflow-hidden">
                       <div className="h-full bg-emerald-500 rounded-full" style={{ width: "65%" }} />
                     </div>
                   </div>
                   <div className="bg-gray-800/50 rounded-xl p-5 border border-white/5">
                     <p className="text-gray-400 text-xs font-medium">Gastos</p>
-                    <p className="text-rose-400 text-2xl font-bold mt-1">$3,150.00</p>
+                    <p className="text-rose-400 text-2xl font-bold mt-1">3.150,00 €</p>
                     <div className="mt-3 h-2 bg-gray-700 rounded-full overflow-hidden">
                       <div className="h-full bg-rose-500 rounded-full" style={{ width: "42%" }} />
                     </div>
@@ -301,7 +301,7 @@ function FeaturesSection() {
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg p-4">
               <p className="text-blue-200 text-xs">Balance</p>
-              <p className="text-white text-lg font-bold">$8,450</p>
+              <p className="text-white text-lg font-bold">8.450 €</p>
             </div>
             <div className="bg-gray-800 rounded-lg p-4">
               <p className="text-gray-400 text-xs">Ahorro</p>
@@ -309,11 +309,11 @@ function FeaturesSection() {
             </div>
             <div className="bg-gray-800 rounded-lg p-4">
               <p className="text-gray-400 text-xs">Ingresos</p>
-              <p className="text-emerald-400 text-lg font-bold">$5,200</p>
+              <p className="text-emerald-400 text-lg font-bold">5.200 €</p>
             </div>
             <div className="bg-gray-800 rounded-lg p-4">
               <p className="text-gray-400 text-xs">Gastos</p>
-              <p className="text-rose-400 text-lg font-bold">$3,150</p>
+              <p className="text-rose-400 text-lg font-bold">3.150 €</p>
             </div>
           </div>
         </div>
@@ -336,7 +336,7 @@ function FeaturesSection() {
             <div key={b.name} className="mb-3">
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-gray-700 font-medium">{b.name}</span>
-                <span className="text-gray-400">${b.spent}/${b.total}</span>
+                <span className="text-gray-400">{b.spent}€/{b.total}€</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div className={`h-full ${b.color} rounded-full transition-all`} style={{ width: `${(b.spent / b.total) * 100}%` }} />
@@ -364,7 +364,7 @@ function FeaturesSection() {
               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style={{ width: "75%" }} />
               </div>
-              <p className="text-gray-500 text-xs mt-1">$3,750 de $5,000</p>
+              <p className="text-gray-500 text-xs mt-1">3.750 € de 5.000 €</p>
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
@@ -374,7 +374,7 @@ function FeaturesSection() {
               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" style={{ width: "42%" }} />
               </div>
-              <p className="text-gray-500 text-xs mt-1">$4,200 de $10,000</p>
+              <p className="text-gray-500 text-xs mt-1">4.200 € de 10.000 €</p>
             </div>
           </div>
         </div>
@@ -384,7 +384,7 @@ function FeaturesSection() {
     {
       icon: <Users size={24} />,
       badge: "Dividir gastos",
-      title: "Split gastos con amigos, como Splitwise",
+      title: "Divide gastos con amigos sin complicaciones",
       text: "Crea grupos, divide gastos igual o por porcentaje, simplifica deudas automaticamente. Todo integrado con tus finanzas personales.",
       mockup: (
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
@@ -401,7 +401,7 @@ function FeaturesSection() {
                   <p className="text-xs text-gray-500">Juan pago</p>
                 </div>
               </div>
-              <span className="font-bold text-gray-900">$120</span>
+              <span className="font-bold text-gray-900">120 €</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2">
@@ -411,7 +411,7 @@ function FeaturesSection() {
                   <p className="text-xs text-gray-500">Maria pago</p>
                 </div>
               </div>
-              <span className="font-bold text-gray-900">$45</span>
+              <span className="font-bold text-gray-900">45 €</span>
             </div>
           </div>
           <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
@@ -419,7 +419,7 @@ function FeaturesSection() {
             <div className="flex items-center gap-2 text-sm">
               <span className="text-red-600 font-medium">Maria</span>
               <span className="text-gray-400">le debe</span>
-              <span className="text-emerald-600 font-medium">$27.50</span>
+              <span className="text-emerald-600 font-medium">27,50 €</span>
               <span className="text-gray-400">a</span>
               <span className="text-blue-600 font-medium">Juan</span>
             </div>
@@ -487,10 +487,10 @@ function SplitsSection() {
               Dividir gastos
             </span>
             <h2 className="mt-4 text-3xl sm:text-4xl font-semibold text-gray-900 tracking-tight">
-              Comparte gastos sin complicaciones
+              Finanzas compartidas sin dramas
             </h2>
             <p className="mt-4 text-gray-500 text-lg max-w-2xl mx-auto">
-              Como Splitwise, pero integrado con tus finanzas personales. Crea grupos, divide gastos, y simplifica deudas en un solo lugar.
+              Crea grupos con amigos, divide gastos de forma flexible, y simplifica deudas automaticamente. Todo integrado con tus finanzas.
             </p>
           </div>
         </FadeIn>
@@ -555,7 +555,7 @@ function SplitsSection() {
                       <p className="text-xs text-gray-500">Juan pago</p>
                     </div>
                   </div>
-                  <span className="font-bold text-gray-900">$120</span>
+                  <span className="font-bold text-gray-900">120 €</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
@@ -565,7 +565,7 @@ function SplitsSection() {
                       <p className="text-xs text-gray-500">Maria pago</p>
                     </div>
                   </div>
-                  <span className="font-bold text-gray-900">$45</span>
+                  <span className="font-bold text-gray-900">45 €</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
@@ -575,7 +575,7 @@ function SplitsSection() {
                       <p className="text-xs text-gray-500">Ana pago</p>
                     </div>
                   </div>
-                  <span className="font-bold text-gray-900">$280</span>
+                  <span className="font-bold text-gray-900">280 €</span>
                 </div>
               </div>
               <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
@@ -584,7 +584,7 @@ function SplitsSection() {
                   <div className="flex items-center gap-2 text-sm">
                     <div className="h-6 w-6 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs font-bold">M</div>
                     <span className="text-gray-600">Maria le debe</span>
-                    <span className="font-bold text-red-600">$27.50</span>
+                    <span className="font-bold text-red-600">27,50 €</span>
                     <span className="text-gray-400">a</span>
                     <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">J</div>
                     <span className="text-gray-600">Juan</span>
@@ -592,7 +592,7 @@ function SplitsSection() {
                   <div className="flex items-center gap-2 text-sm">
                     <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-bold">A</div>
                     <span className="text-gray-600">Ana le debe</span>
-                    <span className="font-bold text-red-600">$37.50</span>
+                    <span className="font-bold text-red-600">37,50 €</span>
                     <span className="text-gray-400">a</span>
                     <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">J</div>
                     <span className="text-gray-600">Juan</span>
@@ -642,7 +642,7 @@ function PricingSection() {
   const plans = [
     {
       name: "Gratis",
-      price: "$0",
+      price: "0 €",
       period: "por siempre",
       icon: <Zap size={20} />,
       gradient: "from-gray-600 to-gray-700",
@@ -660,7 +660,7 @@ function PricingSection() {
     },
     {
       name: "Pro",
-      price: "$4.99",
+      price: "4,99 €",
       period: "/mes",
       icon: <TrendingUp size={20} />,
       gradient: "from-blue-500 to-indigo-600",
@@ -683,7 +683,7 @@ function PricingSection() {
     },
     {
       name: "Familia",
-      price: "$7.99",
+      price: "7,99 €",
       period: "/mes",
       icon: <Users size={20} />,
       gradient: "from-purple-500 to-pink-600",
