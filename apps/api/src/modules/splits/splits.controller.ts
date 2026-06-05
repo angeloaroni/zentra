@@ -11,6 +11,8 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
@@ -135,6 +137,7 @@ export class SplitsController {
   }
 
   @Post('expenses/:id/receipt')
+  @UsePipes(new ValidationPipe({ skipMissingProperties: true, forbidNonWhitelisted: false }))
   @UseInterceptors(FileInterceptor('receipt', {
     storage: diskStorage({
       destination: (req, file, cb) => {
@@ -156,7 +159,7 @@ export class SplitsController {
     },
     limits: { fileSize: 5 * 1024 * 1024 },
   }))
-  uploadReceipt(@Param('id') id: string, @Req() req: any, @UploadedFile() file: Express.Multer.File) {
+  uploadReceipt(@Param('id') id: string, @UploadedFile() file: Express.Multer.File, @Req() req: any) {
     return this.splitsService.uploadReceipt(id, req.user.id, file)
   }
 
