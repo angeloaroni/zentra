@@ -782,12 +782,15 @@ export default function GroupDetailPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{formatMoney(split.amount, detailExpense.currency)}</span>
-                        {!split.isPaid && (user?.id === detailExpense.paidBy.id || user?.id === split.userId) && (
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => markSplitPaidMutation.mutate({ expenseId: detailExpense.id, splitId: split.id })} disabled={markSplitPaidMutation.isPending}>
-                            Marcar pagado
+                        {(user?.id === detailExpense.paidBy.id || user?.id === split.userId) && (
+                          <Button size="sm" variant={split.isPaid ? "ghost" : "outline"} className={`h-7 text-xs ${split.isPaid ? "text-emerald-600 hover:text-red-500" : ""}`}
+                            onClick={() => markSplitPaidMutation.mutate({ expenseId: detailExpense.id, splitId: split.id })} disabled={markSplitPaidMutation.isPending}>
+                            {split.isPaid ? "Pagado ✓" : "Marcar pagado"}
                           </Button>
                         )}
-                        {split.isPaid && <span className="text-xs text-emerald-600">Pagado ✓</span>}
+                        {!split.isPaid && (user?.id !== detailExpense.paidBy.id && user?.id !== split.userId) && (
+                          <span className="text-xs text-amber-600">Pendiente</span>
+                        )}
                       </div>
                     </div>
                   ))}

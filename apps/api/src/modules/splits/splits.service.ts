@@ -393,7 +393,19 @@ export class SplitsService {
   async findExpenseById(id: string, userId: string) {
     const expense = await this.prisma.sharedExpense.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        groupId: true,
+        paidById: true,
+        title: true,
+        description: true,
+        amount: true,
+        currency: true,
+        date: true,
+        splitType: true,
+        receiptUrl: true,
+        createdAt: true,
+        updatedAt: true,
         group: { include: { members: true } },
         paidBy: { select: { id: true, name: true, avatar: true } },
         splits: {
@@ -846,7 +858,10 @@ export class SplitsService {
 
     return this.prisma.expenseSplit.update({
       where: { id: splitId },
-      data: { isPaid: true, paidAt: new Date() },
+      data: {
+        isPaid: !split.isPaid,
+        paidAt: !split.isPaid ? new Date() : null,
+      },
     })
   }
 
