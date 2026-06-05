@@ -131,6 +131,7 @@ export default function GroupDetailPage() {
   const [search, setSearch] = useState("")
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
+  const [zoomImage, setZoomImage] = useState<string | null>(null)
 
   const [expenseForm, setExpenseForm] = useState({
     title: "",
@@ -786,7 +787,9 @@ export default function GroupDetailPage() {
                   {detailExpense.receiptMime === "application/pdf" ? (
                     <a href={`data:application/pdf;base64,${detailExpense.receiptData}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline"><FileText className="h-5 w-5" />Ver PDF</a>
                   ) : (
-                    <img src={`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`} alt="Ticket" className="max-h-48 rounded-lg border" />
+                    <button onClick={() => setZoomImage(`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`)} className="block cursor-pointer hover:opacity-80 transition-opacity">
+                      <img src={`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`} alt="Ticket" className="max-h-48 rounded-lg border" />
+                    </button>
                   )}
                 </div>
               )}
@@ -828,6 +831,13 @@ export default function GroupDetailPage() {
       <ConfirmAction open={deleteExpenseId !== null} onOpenChange={(open) => !open && setDeleteExpenseId(null)} title="Eliminar gasto" description="Esta accion no se puede deshacer." confirmLabel="Eliminar" onConfirm={() => deleteExpenseId && deleteExpenseMutation.mutate(deleteExpenseId)} loading={deleteExpenseMutation.isPending} />
       <ConfirmAction open={deleteGroupId} onOpenChange={setDeleteGroupId} title="Eliminar grupo" description="Todos los gastos y balances se perderan permanentemente." confirmLabel="Eliminar grupo" onConfirm={() => deleteGroupMutation.mutate()} loading={deleteGroupMutation.isPending} />
       <ConfirmAction open={deleteMemberId !== null} onOpenChange={(open) => !open && setDeleteMemberId(null)} title="Remover miembro" description="El miembro sera removido del grupo." confirmLabel="Remover" onConfirm={() => deleteMemberId && removeMemberMutation.mutate(deleteMemberId)} loading={removeMemberMutation.isPending} />
+
+      {zoomImage && (
+        <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setZoomImage(null)}>
+          <button onClick={() => setZoomImage(null)} className="absolute top-4 right-4 text-white/80 hover:text-white z-10 p-2"><X className="h-8 w-8" /></button>
+          <img src={zoomImage} alt="Ticket ampliado" className="max-w-full max-h-full object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   )
 }
