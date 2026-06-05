@@ -40,22 +40,25 @@ model User {
   settlementsFrom   Settlement[]       @relation("SettlementFrom")
   settlementsTo     Settlement[]       @relation("SettlementTo")
   splitTemplates    SplitTemplate[]
+  netWorthSnapshots NetWorthSnapshot[]
+  achievements      UserAchievement[]
 }
 
 model Account {
-  id        String   @id @default(cuid())
-  name      String
-  type      String
-  icon      String   @default("wallet")
-  color     String   @default("#6366F1")
-  balance   Float    @default(0)
-  currency  String   @default("USD")
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  familyId  String?
-  family    Family?  @relation(fields: [familyId], references: [id], onDelete: SetNull)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String
+  type         String
+  icon         String   @default("wallet")
+  color        String   @default("#6366F1")
+  balance      Float    @default(0)
+  currency     String   @default("USD")
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId     String?
+  family       Family?  @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Family {
@@ -105,6 +108,8 @@ model Transaction {
   recurringFreq String?
   attachmentUrl String?
   notes         String?
+  accountId     String?
+  account       Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   familyId      String?
@@ -356,4 +361,42 @@ model ExpenseItem {
   expense SharedExpense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
 
   @@index([expenseId])
+}
+
+model NetWorthSnapshot {
+  id           String   @id @default(cuid())
+  userId       String
+  totalBalance Float
+  date         DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String
+  icon        String
+  category    String
+  points      Int      @default(10)
+  createdAt   DateTime @default(now())
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
 }

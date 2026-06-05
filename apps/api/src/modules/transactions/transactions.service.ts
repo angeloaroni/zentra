@@ -57,6 +57,7 @@ export class TransactionsService {
         attachmentUrl: dto.attachmentUrl,
         userId,
         familyId,
+        accountId: dto.accountId || null,
         ...tagsConnect,
       },
       include: {
@@ -68,6 +69,15 @@ export class TransactionsService {
         },
       },
     });
+
+    // Update account balance
+    if (dto.accountId) {
+      const balanceChange = dto.type === 'INCOME' ? dto.amount : -dto.amount;
+      await this.prisma.account.update({
+        where: { id: dto.accountId },
+        data: { balance: { increment: balanceChange } },
+      });
+    }
 
     // Check tag budgets for notifications
     if (dto.tagIds?.length && dto.type === 'EXPENSE') {
@@ -141,6 +151,7 @@ export class TransactionsService {
     maxAmount?: number;
     paymentMethod?: string;
     tagId?: string;
+    accountId?: string;
   } = {}) {
     const userIds = await getScopeUserIds(this.prisma, userId, options.familyId);
 
@@ -156,6 +167,7 @@ export class TransactionsService {
       ...(options.isRecurring !== undefined && { isRecurring: options.isRecurring }),
       ...(options.paymentMethod && { paymentMethod: options.paymentMethod }),
       ...(options.tagId && { tags: { some: { id: options.tagId } } }),
+      ...(options.accountId && { accountId: options.accountId }),
       ...(options.minAmount !== undefined && options.maxAmount !== undefined
         ? { amount: { gte: options.minAmount, lte: options.maxAmount } }
         : options.minAmount !== undefined
@@ -258,7 +270,16 @@ export class TransactionsService {
       }
     }
 
-    return this.prisma.transaction.update({
+    // Revert old account balance
+    if (transaction.accountId) {
+      const oldChange = transaction.type === 'INCOME' ? -transaction.amount : transaction.amount;
+      await this.prisma.account.update({
+        where: { id: transaction.accountId },
+        data: { balance: { increment: oldChange } },
+      });
+    }
+
+    const updated = await this.prisma.transaction.update({
       where: { id },
       data: {
         type: dto.type,
@@ -274,6 +295,7 @@ export class TransactionsService {
         recurringFreq: dto.recurringFreq,
         attachmentUrl: dto.attachmentUrl,
         familyId: dto.familyId,
+        accountId: dto.accountId,
       },
       include: {
         category: {
@@ -281,6 +303,20 @@ export class TransactionsService {
         },
       },
     });
+
+    // Apply new account balance
+    const newAccountId = dto.accountId || transaction.accountId;
+    if (newAccountId) {
+      const newType = dto.type || transaction.type;
+      const newAmount = dto.amount || transaction.amount;
+      const newChange = newType === 'INCOME' ? newAmount : -newAmount;
+      await this.prisma.account.update({
+        where: { id: newAccountId },
+        data: { balance: { increment: newChange } },
+      });
+    }
+
+    return updated;
   }
 
   async remove(id: string, userId: string) {
@@ -302,6 +338,15 @@ export class TransactionsService {
       }
     }
 
+    // Revert account balance
+    if (transaction.accountId) {
+      const revertChange = transaction.type === 'INCOME' ? -transaction.amount : transaction.amount;
+      await this.prisma.account.update({
+        where: { id: transaction.accountId },
+        data: { balance: { increment: revertChange } },
+      });
+    }
+
     return this.prisma.transaction.delete({ where: { id } });
   }
 
@@ -309,6 +354,7 @@ export class TransactionsService {
     startDate?: Date;
     endDate?: Date;
     familyId?: string;
+    accountId?: string;
   } = {}) {
     const userIds = await getScopeUserIds(this.prisma, userId, options.familyId);
 
@@ -317,6 +363,7 @@ export class TransactionsService {
       ...(options.familyId ? { familyId: options.familyId } : { familyId: null }),
       ...(options.startDate && { date: { gte: options.startDate } }),
       ...(options.endDate && { date: { lte: options.endDate } }),
+      ...(options.accountId && { accountId: options.accountId }),
     };
 
     const [income, expense] = await this.prisma.$transaction([

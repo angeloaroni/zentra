@@ -7,6 +7,7 @@ import { useSettings, formatMoney, formatDateShort, formatMonthYear, useHasHydra
 import { useFamilyStore } from "@/lib/family"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { Card, CardContent } from "@/components/ui/card"
+import { FadeIn } from "@/components/ui/fade-in"
 import {
   TrendingUp,
   TrendingDown,
@@ -155,6 +156,21 @@ export default function DashboardPage() {
   const { data: cashflow } = useQuery<CashflowItem[]>({
     queryKey: ["cashflow", activeFamilyId],
     queryFn: () => api(`/transactions/cashflow?months=6${familyParam}`),
+  })
+
+  const { data: netWorth } = useQuery<{ date: string; balance: number }[]>({
+    queryKey: ["net-worth"],
+    queryFn: () => api("/net-worth?months=12"),
+  })
+
+  const { data: insights } = useQuery<{ type: string; title: string; message: string; icon: string }[]>({
+    queryKey: ["insights"],
+    queryFn: () => api("/insights"),
+  })
+
+  const { data: healthScore } = useQuery<{ score: number; label: string; breakdown: Record<string, { score: number; max: number; description: string }> }>({
+    queryKey: ["health-score"],
+    queryFn: () => api("/health-score"),
   })
 
   const pieData = (byCategory || []).map((item, i) => ({
@@ -464,6 +480,82 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Health Score */}
+      {healthScore && (
+        <FadeIn>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Salud financiera</p>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className={`text-3xl font-bold ${
+                      healthScore.score >= 80 ? "text-emerald-600" :
+                      healthScore.score >= 60 ? "text-blue-600" :
+                      healthScore.score >= 40 ? "text-amber-600" : "text-red-600"
+                    }`}>{healthScore.score}</span>
+                    <span className="text-sm text-gray-400">/100</span>
+                    <span className={`text-sm font-medium ${
+                      healthScore.score >= 80 ? "text-emerald-600" :
+                      healthScore.score >= 60 ? "text-blue-600" :
+                      healthScore.score >= 40 ? "text-amber-600" : "text-red-600"
+                    }`}>{healthScore.label}</span>
+                  </div>
+                </div>
+                <div className="h-16 w-16 relative">
+                  <svg className="h-16 w-16 -rotate-90" viewBox="0 0 36 36">
+                    <path className="text-gray-200 dark:text-gray-700" stroke="currentColor" strokeWidth="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path className={
+                      healthScore.score >= 80 ? "text-emerald-500" :
+                      healthScore.score >= 60 ? "text-blue-500" :
+                      healthScore.score >= 40 ? "text-amber-500" : "text-red-500"
+                    } stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray={`${healthScore.score}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  </svg>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </FadeIn>
+      )}
+
+      {/* Insights */}
+      {insights && insights.length > 0 && (
+        <FadeIn>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 mb-3">Insights</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {insights.slice(0, 4).map((insight, i) => (
+                <Card key={i} className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <p className="font-medium text-sm">{insight.title}</p>
+                    <p className="text-xs text-gray-500 mt-1">{insight.message}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </FadeIn>
+      )}
+
+      {/* Net Worth Chart */}
+      {netWorth && netWorth.length > 1 && (
+        <FadeIn>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <h3 className="text-sm font-medium text-gray-500 mb-4">Patrimonio neto</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={netWorth}>
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="balance" stroke="#3B82F6" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </FadeIn>
+      )}
 
       {/* Recent Transactions */}
       <Card className="border-0 shadow-sm">

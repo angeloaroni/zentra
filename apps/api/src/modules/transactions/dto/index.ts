@@ -66,6 +66,11 @@ export class CreateTransactionDto {
   @IsOptional()
   familyId?: string;
 
+  @ApiProperty({ example: 'account-id-1' })
+  @IsString()
+  @IsOptional()
+  accountId?: string;
+
   @ApiProperty({ example: ['tag-id-1', 'tag-id-2'] })
   @IsString({ each: true })
   @IsOptional()

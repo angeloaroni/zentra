@@ -49,6 +49,14 @@ interface Tag {
   budget: number | null
 }
 
+interface Account {
+  id: string
+  name: string
+  type: string
+  balance: number
+  currency: string
+}
+
 const FREQUENCIES = [
   { value: "DAILY", label: "Diario" },
   { value: "WEEKLY", label: "Semanal" },
@@ -83,6 +91,7 @@ interface FormState {
   amount: string
   date: string
   categoryId: string
+  accountId: string
   description: string
   paymentMethod: string
   isRecurring: boolean
@@ -96,6 +105,7 @@ const defaultForm = (): FormState => ({
   amount: "",
   date: new Date().toISOString().split("T")[0],
   categoryId: "",
+  accountId: "",
   description: "",
   paymentMethod: "",
   isRecurring: false,
@@ -169,6 +179,14 @@ export default function TransactionsPage() {
       const params = new URLSearchParams({ includeDefault: "true" })
       if (activeFamilyId) params.set("familyId", activeFamilyId)
       return api(`/categories?${params}`)
+    },
+  })
+
+  const { data: accounts } = useQuery<Account[]>({
+    queryKey: ["accounts", activeFamilyId],
+    queryFn: () => {
+      const params = activeFamilyId ? `?familyId=${activeFamilyId}` : ""
+      return api(`/accounts${params}`)
     },
   })
 
@@ -259,6 +277,7 @@ export default function TransactionsPage() {
       amount: String(tx.amount),
       date: tx.date ? new Date(tx.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       categoryId: tx.categoryId,
+      accountId: (tx as any).accountId || "",
       description: tx.description || "",
       paymentMethod: tx.paymentMethod || "",
       isRecurring: tx.isRecurring,
@@ -305,6 +324,7 @@ export default function TransactionsPage() {
       currency,
       date: form.date,
       categoryId: form.categoryId,
+      ...(form.accountId && { accountId: form.accountId }),
       description: form.description || undefined,
       paymentMethod: form.paymentMethod || undefined,
       isRecurring: form.isRecurring,
@@ -397,6 +417,22 @@ export default function TransactionsPage() {
                   ))}
                 </select>
               </div>
+
+              {accounts && accounts.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Cuenta (opcional)</Label>
+                  <select
+                    className={selectClass}
+                    value={form.accountId}
+                    onChange={(e) => setForm(prev => ({ ...prev, accountId: e.target.value }))}
+                  >
+                    <option value="">Sin cuenta</option>
+                    {accounts.map((acc) => (
+                      <option key={acc.id} value={acc.id}>{acc.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Metodo de pago</Label>

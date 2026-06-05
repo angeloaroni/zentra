@@ -17,6 +17,11 @@ import { SubscriptionsModule } from './modules/subscriptions/subscriptions.modul
 import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SplitsModule } from './modules/splits/splits.module';
+import { NetWorthModule } from './modules/net-worth/net-worth.module';
+import { InsightsModule } from './modules/insights/insights.module';
+import { HealthScoreModule } from './modules/health/health-score.module';
+import { AchievementsModule } from './modules/achievements/achievements.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -43,6 +48,11 @@ import { SplitsModule } from './modules/splits/splits.module';
     AdminModule,
     NotificationsModule,
     SplitsModule,
+    NetWorthModule,
+    InsightsModule,
+    HealthScoreModule,
+    AchievementsModule,
+    ReportsModule,
   ],
   providers: [
     {
