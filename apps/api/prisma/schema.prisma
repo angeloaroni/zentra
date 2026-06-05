@@ -265,6 +265,8 @@ model SharedExpense {
   date        DateTime
   splitType   String   @default("EQUAL")
   receiptUrl  String?
+  receiptData String?
+  receiptMime String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

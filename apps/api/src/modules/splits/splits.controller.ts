@@ -13,9 +13,7 @@ import {
   UploadedFile,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { diskStorage } from 'multer'
-import { join } from 'path'
-import { existsSync, mkdirSync } from 'fs'
+import { memoryStorage } from 'multer'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { PlanGuard } from '../subscriptions/plan.guard'
 import { Plan } from '../subscriptions/plan.decorator'
@@ -136,18 +134,7 @@ export class SplitsController {
 
   @Post('expenses/:id/receipt')
   @UseInterceptors(FileInterceptor('receipt', {
-    storage: diskStorage({
-      destination: (req, file, cb) => {
-        const dir = join(process.cwd(), 'uploads', 'receipts')
-        if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-        cb(null, dir)
-      },
-      filename: (req, file, cb) => {
-        const ext = file.originalname.split('.').pop()
-        const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}.${ext}`
-        cb(null, uniqueName)
-      },
-    }),
+    storage: memoryStorage(),
     fileFilter: (req, file, cb) => {
       if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|pdf)$/)) {
         cb(new Error('Only images and PDFs are allowed'), false)

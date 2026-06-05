@@ -404,6 +404,8 @@ export class SplitsService {
         date: true,
         splitType: true,
         receiptUrl: true,
+        receiptData: true,
+        receiptMime: true,
         createdAt: true,
         updatedAt: true,
         group: { include: { members: true } },
@@ -826,10 +828,14 @@ export class SplitsService {
     if (!expense) throw new NotFoundException('Expense not found')
     if (expense.paidById !== userId) throw new ForbiddenException('Only the payer can upload receipts')
 
-    const receiptUrl = `/uploads/receipts/${file.filename}`
+    const base64Data = file.buffer.toString('base64')
     return this.prisma.sharedExpense.update({
       where: { id: expenseId },
-      data: { receiptUrl },
+      data: {
+        receiptData: base64Data,
+        receiptMime: file.mimetype,
+        receiptUrl: null,
+      },
     })
   }
 
@@ -840,7 +846,7 @@ export class SplitsService {
 
     return this.prisma.sharedExpense.update({
       where: { id: expenseId },
-      data: { receiptUrl: null },
+      data: { receiptUrl: null, receiptData: null, receiptMime: null },
     })
   }
 

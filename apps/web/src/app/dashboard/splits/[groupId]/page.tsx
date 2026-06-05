@@ -46,6 +46,8 @@ interface SharedExpense {
   date: string
   splitType: string
   receiptUrl?: string
+  receiptData?: string
+  receiptMime?: string
   paidBy: User
   splits: ExpenseSplit[]
 }
@@ -324,7 +326,8 @@ export default function GroupDetailPage() {
       percentages: Object.fromEntries(expense.splits.filter((s) => s.percentage).map((s) => [s.userId, String(s.percentage)])),
       exactAmounts: Object.fromEntries(expense.splits.map((s) => [s.userId, String(s.amount)])),
     })
-    if (expense.receiptUrl) setReceiptPreview(`${API_BASE}${expense.receiptUrl}`)
+    if (expense.receiptData && expense.receiptMime) setReceiptPreview(`data:${expense.receiptMime};base64,${expense.receiptData}`)
+    else if (expense.receiptUrl) setReceiptPreview(`${API_BASE}${expense.receiptUrl}`)
   }
 
   function handleExpenseSubmit(e: React.FormEvent) {
@@ -565,7 +568,7 @@ export default function GroupDetailPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <p className="font-semibold truncate">{expense.title}</p>
-                            {expense.receiptUrl && <Receipt className="h-3 w-3 text-blue-500 shrink-0" />}
+                            {expense.receiptData && <Receipt className="h-3 w-3 text-blue-500 shrink-0" />}
                           </div>
                           <p className="text-xs text-muted-foreground truncate">
                             {expense.paidBy.name} pago &middot; {formatDateShort(new Date(expense.date))}
@@ -763,12 +766,12 @@ export default function GroupDetailPage() {
               <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Pagado por</span><span className="font-medium">{detailExpense.paidBy.name}</span></div>
               <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Fecha</span><span className="font-medium">{formatDateShort(new Date(detailExpense.date))}</span></div>
               <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Tipo</span><span className="font-medium">{detailExpense.splitType === "EQUAL" ? "Igual para todos" : detailExpense.splitType === "PERCENTAGE" ? "Por porcentaje" : "Monto exacto"}</span></div>
-              {detailExpense.receiptUrl && (
+              {detailExpense.receiptData && detailExpense.receiptMime && (
                 <div><p className="text-sm text-muted-foreground mb-2">Ticket/factura</p>
-                  {detailExpense.receiptUrl.endsWith(".pdf") ? (
-                    <a href={`${API_BASE}${detailExpense.receiptUrl}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline"><FileText className="h-5 w-5" />Ver PDF</a>
+                  {detailExpense.receiptMime === "application/pdf" ? (
+                    <a href={`data:application/pdf;base64,${detailExpense.receiptData}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline"><FileText className="h-5 w-5" />Ver PDF</a>
                   ) : (
-                    <img src={`${API_BASE}${detailExpense.receiptUrl}`} alt="Ticket" className="max-h-48 rounded-lg border" />
+                    <img src={`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`} alt="Ticket" className="max-h-48 rounded-lg border" />
                   )}
                 </div>
               )}
