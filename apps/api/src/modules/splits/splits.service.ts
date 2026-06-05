@@ -467,14 +467,24 @@ export class SplitsService {
 
     return this.prisma.$transaction(async (tx) => {
       if (splitsData.length > 0) {
+        const existingSplits = await tx.expenseSplit.findMany({
+          where: { expenseId: id },
+        })
+        const existingPaidMap = new Map(existingSplits.map((s) => [s.userId, { isPaid: s.isPaid, paidAt: s.paidAt }]))
+
         await tx.expenseSplit.deleteMany({ where: { expenseId: id } })
         await tx.expenseSplit.createMany({
-          data: splitsData.map((s) => ({
-            expenseId: id,
-            userId: s.userId,
-            amount: s.amount,
-            percentage: s.percentage,
-          })),
+          data: splitsData.map((s) => {
+            const existing = existingPaidMap.get(s.userId)
+            return {
+              expenseId: id,
+              userId: s.userId,
+              amount: s.amount,
+              percentage: s.percentage,
+              isPaid: existing?.isPaid || false,
+              paidAt: existing?.paidAt || null,
+            }
+          }),
         })
       }
 

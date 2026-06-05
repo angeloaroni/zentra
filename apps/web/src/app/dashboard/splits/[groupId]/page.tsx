@@ -171,11 +171,9 @@ export default function GroupDetailPage() {
   const createExpenseMutation = useMutation({
     mutationFn: (data: any) => api("/splits/expenses", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: async (result: any) => {
-      try {
-        if (receiptFile && result?.id) {
-          await uploadFile(`/splits/expenses/${result.id}/receipt`, receiptFile)
-        }
-      } catch {}
+      if (receiptFile && result?.id) {
+        try { await uploadFile(`/splits/expenses/${result.id}/receipt`, receiptFile) } catch {}
+      }
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
       queryClient.invalidateQueries({ queryKey: ["split-balances", groupId] })
       resetExpenseForm()
@@ -186,17 +184,20 @@ export default function GroupDetailPage() {
 
   const updateExpenseMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => api(`/splits/expenses/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
-    onSuccess: async () => {
+    onSuccess: async (result: any) => {
       const expenseId = editingExpense?.id
-      resetExpenseForm()
-      try {
-        if (receiptFile && expenseId) {
-          await uploadFile(`/splits/expenses/${expenseId}/receipt`, receiptFile)
-        }
-      } catch {}
+      if (receiptFile && expenseId) {
+        try { await uploadFile(`/splits/expenses/${expenseId}/receipt`, receiptFile) } catch {}
+      }
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
       queryClient.invalidateQueries({ queryKey: ["split-balances", groupId] })
-      setDetailExpense(null)
+      if (expenseId) {
+        try {
+          const updated = await api<SharedExpense>(`/splits/expenses/${expenseId}`)
+          setDetailExpense(updated)
+        } catch {}
+      }
+      resetExpenseForm()
       addToast({ title: "Gasto actualizado", variant: "success" })
     },
     onError: (err: Error) => { setFormError(err.message); addToast({ title: "Error", description: err.message, variant: "error" }) },
@@ -215,9 +216,15 @@ export default function GroupDetailPage() {
   const markSplitPaidMutation = useMutation({
     mutationFn: ({ expenseId, splitId }: { expenseId: string; splitId: string }) =>
       api(`/splits/expenses/${expenseId}/splits/${splitId}/pay`, { method: "PATCH" }),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
       queryClient.invalidateQueries({ queryKey: ["split-balances", groupId] })
+      if (detailExpense) {
+        try {
+          const updated = await api<SharedExpense>(`/splits/expenses/${detailExpense.id}`)
+          setDetailExpense(updated)
+        } catch {}
+      }
       addToast({ title: "Marcado como pagado", variant: "success" })
     },
   })
