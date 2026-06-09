@@ -770,8 +770,8 @@ export default function GroupDetailPage() {
       )}
 
       {detailExpense && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetailExpense(null)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={() => setDetailExpense(null)}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-lg max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="font-semibold text-lg">{detailExpense.title}</h3>
               <button onClick={() => setDetailExpense(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
@@ -833,8 +833,8 @@ export default function GroupDetailPage() {
       <ConfirmAction open={deleteMemberId !== null} onOpenChange={(open) => !open && setDeleteMemberId(null)} title="Remover miembro" description="El miembro sera removido del grupo." confirmLabel="Remover" onConfirm={() => deleteMemberId && removeMemberMutation.mutate(deleteMemberId)} loading={removeMemberMutation.isPending} />
 
       {zoomImage && (
-        <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setZoomImage(null)}>
-          <button onClick={() => setZoomImage(null)} className="absolute top-4 right-4 text-white/80 hover:text-white z-10 p-2"><X className="h-8 w-8" /></button>
+        <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-2 sm:p-4 cursor-zoom-out" onClick={() => setZoomImage(null)}>
+          <button onClick={() => setZoomImage(null)} className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white/80 hover:text-white z-10 p-2"><X className="h-6 w-6 sm:h-8 sm:w-8" /></button>
           <img src={zoomImage} alt="Ticket ampliado" className="max-w-full max-h-full object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
         </div>
       )}

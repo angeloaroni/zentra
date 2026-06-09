@@ -568,7 +568,11 @@ export class SplitsService {
       }),
     ])
 
-    const netBalances = this.debtSimplifier.calculateNetBalances(expenses, settlements)
+    const mappedExpenses = expenses.map((e) => ({
+      paidById: e.paidById,
+      splits: e.splits,
+    }))
+    const netBalances = this.debtSimplifier.calculateNetBalances(mappedExpenses, settlements)
     const simplifiedDebts = this.debtSimplifier.simplifyDebts(netBalances)
 
     const enrichedDebts: (DebtTransfer & { fromName: string; toName: string })[] = []
@@ -635,7 +639,14 @@ export class SplitsService {
       }),
     )
 
-    const overall = this.debtSimplifier.getOverallBalances(groupData, userId)
+    const mappedGroupData = groupData.map((g) => ({
+      ...g,
+      expenses: g.expenses.map((e) => ({
+        paidById: e.paidById,
+        splits: e.splits,
+      })),
+    }))
+    const overall = this.debtSimplifier.getOverallBalances(mappedGroupData, userId)
 
     return overall
   }
