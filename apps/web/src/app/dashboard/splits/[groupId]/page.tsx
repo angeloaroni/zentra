@@ -615,57 +615,88 @@ export default function GroupDetailPage() {
 
       {activeTab === "balances" && (
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <Button onClick={() => { setShowSettlementForm(!showSettlementForm); setFormError(""); setSettlementForm({ toUserId: "", amount: "", notes: "" }) }}>
-              <Send className="h-4 w-4 mr-2" />Registrar pago
-            </Button>
-          </div>
-          {showSettlementForm && (
-            <Card>
-              <CardHeader><CardTitle className="text-sm">Registrar pago</CardTitle></CardHeader>
-              <CardContent>
-                <form onSubmit={(e) => { e.preventDefault(); setFormError(""); if (!settlementForm.toUserId || !settlementForm.amount) return; createSettlementMutation.mutate({ groupId, toUserId: settlementForm.toUserId, amount: parseFloat(settlementForm.amount), notes: settlementForm.notes || undefined }) }} className="space-y-4">
-                  <div className="space-y-2"><Label>Pagar a</Label>
-                    <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm" value={settlementForm.toUserId} onChange={(e) => setSettlementForm(prev => ({ ...prev, toUserId: e.target.value }))} required>
-                      <option value="">Seleccionar...</option>
-                      {group.members
-                        .filter((m) => {
-                          if (m.user.id === user?.id) return false
-                          const memberBalance = balances?.netBalances?.find((b) => b.userId === m.user.id)
-                          return memberBalance && memberBalance.amount > 0
-                        })
-                        .map((m) => (<option key={m.user.id} value={m.user.id}>{m.user.name}</option>))}
-                    </select>
+          {(() => {
+            const membersOwed = balances?.netBalances?.filter((b) => b.amount > 0.01) || []
+            const hasDebts = membersOwed.length > 0
+            return (
+              <>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => {
+                      if (!hasDebts) {
+                        addToast({ title: "Sin deudas pendientes", description: "Todos los miembros estan al dia. No hay nada que pagar.", variant: "warning" })
+                        return
+                      }
+                      setShowSettlementForm(!showSettlementForm)
+                      setFormError("")
+                      setSettlementForm({ toUserId: "", amount: "", notes: "" })
+                    }}
+                    disabled={!hasDebts}
+                    className={!hasDebts ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    <Send className="h-4 w-4 mr-2" />Registrar pago
+                  </Button>
+                </div>
+                {!hasDebts && (
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                      <Scale className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Todos estan al dia</p>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400">No hay deudas pendientes en este grupo</p>
+                    </div>
                   </div>
-                  <div className="space-y-2"><Label>Monto ({group.currency}) *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={settlementForm.amount} onChange={(e) => setSettlementForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
-                  <div className="space-y-2"><Label>Notas</Label><Input placeholder="Nota..." value={settlementForm.notes} onChange={(e) => setSettlementForm(prev => ({ ...prev, notes: e.target.value }))} /></div>
-                  {formError && <p className="text-sm text-red-500">{formError}</p>}
-                  <div className="flex gap-2">
-                    <Button type="submit" disabled={createSettlementMutation.isPending}>{createSettlementMutation.isPending ? "Registrando..." : "Registrar pago"}</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowSettlementForm(false)}>Cancelar</Button>
+                )}
+                {showSettlementForm && (
+                  <Card>
+                    <CardHeader><CardTitle className="text-sm">Registrar pago</CardTitle></CardHeader>
+                    <CardContent>
+                      <form onSubmit={(e) => { e.preventDefault(); setFormError(""); if (!settlementForm.toUserId || !settlementForm.amount) return; createSettlementMutation.mutate({ groupId, toUserId: settlementForm.toUserId, amount: parseFloat(settlementForm.amount), notes: settlementForm.notes || undefined }) }} className="space-y-4">
+                        <div className="space-y-2"><Label>Pagar a</Label>
+                          <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm" value={settlementForm.toUserId} onChange={(e) => setSettlementForm(prev => ({ ...prev, toUserId: e.target.value }))} required>
+                            <option value="">Seleccionar...</option>
+                            {group.members
+                              .filter((m) => {
+                                if (m.user.id === user?.id) return false
+                                const memberBalance = balances?.netBalances?.find((b) => b.userId === m.user.id)
+                                return memberBalance && memberBalance.amount > 0
+                              })
+                              .map((m) => (<option key={m.user.id} value={m.user.id}>{m.user.name}</option>))}
+                          </select>
+                        </div>
+                        <div className="space-y-2"><Label>Monto ({group.currency}) *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={settlementForm.amount} onChange={(e) => setSettlementForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
+                        <div className="space-y-2"><Label>Notas</Label><Input placeholder="Nota..." value={settlementForm.notes} onChange={(e) => setSettlementForm(prev => ({ ...prev, notes: e.target.value }))} /></div>
+                        {formError && <p className="text-sm text-red-500">{formError}</p>}
+                        <div className="flex gap-2">
+                          <Button type="submit" disabled={createSettlementMutation.isPending}>{createSettlementMutation.isPending ? "Registrando..." : "Registrar pago"}</Button>
+                          <Button type="button" variant="outline" onClick={() => setShowSettlementForm(false)}>Cancelar</Button>
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+                )}
+                {balances?.simplifiedDebts.length === 0 ? (
+                  <Card><CardContent className="py-12 text-center"><Scale className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">Todos estan al dia</p><p className="text-sm text-muted-foreground mt-1">No hay deudas pendientes</p></CardContent></Card>
+                ) : (
+                  <div className="space-y-3">
+                    {balances?.simplifiedDebts.map((debt, i) => (
+                      <Card key={i}><CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-sm">{debt.fromName?.charAt(0)?.toUpperCase()}</div>
+                          <div><p className="font-medium">{debt.fromName}</p><p className="text-xs text-muted-foreground">debe</p></div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl font-bold text-red-600">{formatMoney(debt.amount, group.currency)}</span>
+                          <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm">{debt.toName?.charAt(0)?.toUpperCase()}</div>
+                        </div>
+                      </CardContent></Card>
+                    ))}
                   </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-          {balances?.simplifiedDebts.length === 0 ? (
-            <Card><CardContent className="py-12 text-center"><Scale className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">Todos estan al dia</p><p className="text-sm text-muted-foreground mt-1">No hay deudas pendientes</p></CardContent></Card>
-          ) : (
-            <div className="space-y-3">
-              {balances?.simplifiedDebts.map((debt, i) => (
-                <Card key={i}><CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-sm">{debt.fromName?.charAt(0)?.toUpperCase()}</div>
-                    <div><p className="font-medium">{debt.fromName}</p><p className="text-xs text-muted-foreground">debe</p></div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl font-bold text-red-600">{formatMoney(debt.amount, group.currency)}</span>
-                    <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm">{debt.toName?.charAt(0)?.toUpperCase()}</div>
-                  </div>
-                </CardContent></Card>
-              ))}
-            </div>
-          )}
+                )}
+              </>
+            )
+          })()}
         </div>
       )}
 
