@@ -628,7 +628,13 @@ export default function GroupDetailPage() {
                   <div className="space-y-2"><Label>Pagar a</Label>
                     <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm" value={settlementForm.toUserId} onChange={(e) => setSettlementForm(prev => ({ ...prev, toUserId: e.target.value }))} required>
                       <option value="">Seleccionar...</option>
-                      {group.members.filter((m) => m.user.id !== user?.id).map((m) => (<option key={m.user.id} value={m.user.id}>{m.user.name}</option>))}
+                      {group.members
+                        .filter((m) => {
+                          if (m.user.id === user?.id) return false
+                          const memberBalance = balances?.netBalances?.find((b) => b.userId === m.user.id)
+                          return memberBalance && memberBalance.amount > 0
+                        })
+                        .map((m) => (<option key={m.user.id} value={m.user.id}>{m.user.name}</option>))}
                     </select>
                   </div>
                   <div className="space-y-2"><Label>Monto ({group.currency}) *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={settlementForm.amount} onChange={(e) => setSettlementForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
@@ -787,8 +793,8 @@ export default function GroupDetailPage() {
                   {detailExpense.receiptMime === "application/pdf" ? (
                     <a href={`data:application/pdf;base64,${detailExpense.receiptData}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline"><FileText className="h-5 w-5" />Ver PDF</a>
                   ) : (
-                    <button onClick={() => setZoomImage(`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`)} className="block cursor-pointer hover:opacity-80 transition-opacity">
-                      <img src={`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`} alt="Ticket" className="max-h-48 rounded-lg border" />
+                    <button onClick={() => setZoomImage(`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`)} className="block cursor-pointer hover:opacity-80 transition-opacity w-full">
+                      <img src={`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`} alt="Ticket" className="w-full max-h-64 object-contain rounded-lg border" />
                     </button>
                   )}
                 </div>
