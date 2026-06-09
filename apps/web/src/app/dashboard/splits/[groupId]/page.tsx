@@ -652,27 +652,42 @@ export default function GroupDetailPage() {
                   <Card>
                     <CardHeader><CardTitle className="text-sm">Registrar pago</CardTitle></CardHeader>
                     <CardContent>
-                      <form onSubmit={(e) => { e.preventDefault(); setFormError(""); if (!settlementForm.toUserId || !settlementForm.amount) return; createSettlementMutation.mutate({ groupId, toUserId: settlementForm.toUserId, amount: parseFloat(settlementForm.amount), notes: settlementForm.notes || undefined }) }} className="space-y-4">
-                        <div className="space-y-2"><Label>Pagar a</Label>
-                          <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm" value={settlementForm.toUserId} onChange={(e) => setSettlementForm(prev => ({ ...prev, toUserId: e.target.value }))} required>
-                            <option value="">Seleccionar...</option>
-                            {group.members
-                              .filter((m) => {
-                                if (m.user.id === user?.id) return false
-                                const memberBalance = balances?.netBalances?.find((b) => b.userId === m.user.id)
-                                return memberBalance && memberBalance.amount > 0
-                              })
-                              .map((m) => (<option key={m.user.id} value={m.user.id}>{m.user.name}</option>))}
-                          </select>
-                        </div>
-                        <div className="space-y-2"><Label>Monto ({group.currency}) *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={settlementForm.amount} onChange={(e) => setSettlementForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
-                        <div className="space-y-2"><Label>Notas</Label><Input placeholder="Nota..." value={settlementForm.notes} onChange={(e) => setSettlementForm(prev => ({ ...prev, notes: e.target.value }))} /></div>
-                        {formError && <p className="text-sm text-red-500">{formError}</p>}
-                        <div className="flex gap-2">
-                          <Button type="submit" disabled={createSettlementMutation.isPending}>{createSettlementMutation.isPending ? "Registrando..." : "Registrar pago"}</Button>
-                          <Button type="button" variant="outline" onClick={() => setShowSettlementForm(false)}>Cancelar</Button>
-                        </div>
-                      </form>
+                      {(() => {
+                        const availableMembers = group.members.filter((m) => {
+                          if (m.user.id === user?.id) return false
+                          const memberBalance = balances?.netBalances?.find((b) => b.userId === m.user.id)
+                          return memberBalance && memberBalance.amount > 0
+                        })
+                        if (availableMembers.length === 0) {
+                          return (
+                            <div className="text-center py-6">
+                              <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
+                                <Scale className="h-6 w-6 text-emerald-600" />
+                              </div>
+                              <p className="font-medium text-gray-900 dark:text-white">No hay nada que pagar</p>
+                              <p className="text-sm text-muted-foreground mt-1">Ningun miembro te debe dinero en este grupo</p>
+                              <Button variant="outline" size="sm" className="mt-4" onClick={() => setShowSettlementForm(false)}>Cerrar</Button>
+                            </div>
+                          )
+                        }
+                        return (
+                          <form onSubmit={(e) => { e.preventDefault(); setFormError(""); if (!settlementForm.toUserId || !settlementForm.amount) return; createSettlementMutation.mutate({ groupId, toUserId: settlementForm.toUserId, amount: parseFloat(settlementForm.amount), notes: settlementForm.notes || undefined }) }} className="space-y-4">
+                            <div className="space-y-2"><Label>Pagar a</Label>
+                              <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm" value={settlementForm.toUserId} onChange={(e) => setSettlementForm(prev => ({ ...prev, toUserId: e.target.value }))} required>
+                                <option value="">Seleccionar...</option>
+                                {availableMembers.map((m) => (<option key={m.user.id} value={m.user.id}>{m.user.name}</option>))}
+                              </select>
+                            </div>
+                            <div className="space-y-2"><Label>Monto ({group.currency}) *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={settlementForm.amount} onChange={(e) => setSettlementForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
+                            <div className="space-y-2"><Label>Notas</Label><Input placeholder="Nota..." value={settlementForm.notes} onChange={(e) => setSettlementForm(prev => ({ ...prev, notes: e.target.value }))} /></div>
+                            {formError && <p className="text-sm text-red-500">{formError}</p>}
+                            <div className="flex gap-2">
+                              <Button type="submit" disabled={createSettlementMutation.isPending}>{createSettlementMutation.isPending ? "Registrando..." : "Registrar pago"}</Button>
+                              <Button type="button" variant="outline" onClick={() => setShowSettlementForm(false)}>Cancelar</Button>
+                            </div>
+                          </form>
+                        )
+                      })()}
                     </CardContent>
                   </Card>
                 )}
