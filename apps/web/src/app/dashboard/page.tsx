@@ -50,10 +50,11 @@ interface Transaction {
 }
 
 interface CategoryBreakdown {
-  categoryId: string
-  _sum: { amount: number }
-  _count: number
-  category?: { name: string; color: string; icon: string }
+  name: string
+  color: string
+  icon: string
+  amount: number
+  count: number
 }
 
 interface Goal {
@@ -156,9 +157,9 @@ export default function DashboardPage() {
   })
 
   const pieData = (byCategory || []).map((item, i) => ({
-    name: item.category?.name || "Otro",
-    value: item._sum.amount,
-    color: item.category?.color || COLORS[i % COLORS.length],
+    name: item.name || "Otro",
+    value: item.amount,
+    color: item.color || COLORS[i % COLORS.length],
   }))
 
   const totalIncome = summary?.totalIncome || 0
