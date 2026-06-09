@@ -298,7 +298,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   {renderTagIcon(tag.icon)}
                 </div>
                 <div>
-                  <h1 className="text-2xl font-semibold">{tag.name}</h1>
+                  <h1 className="text-xl sm:text-2xl font-semibold">{tag.name}</h1>
                   <p className="text-muted-foreground capitalize">{monthName}</p>
                 </div>
               </div>

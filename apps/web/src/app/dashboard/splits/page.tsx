@@ -100,7 +100,7 @@ export default function SplitsPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Users className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-semibold">Dividir gastos</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold">Dividir gastos</h1>
           </div>
         </div>
         <Card>
@@ -124,7 +124,7 @@ export default function SplitsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Users className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl font-semibold">Dividir gastos</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold">Dividir gastos</h1>
         </div>
         <Button onClick={() => { setShowForm(!showForm); setFormError("") }}>
           <Plus className="h-4 w-4 mr-2" />

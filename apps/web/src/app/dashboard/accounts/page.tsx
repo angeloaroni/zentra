@@ -180,7 +180,7 @@ export default function AccountsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Cuentas</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold">Cuentas</h1>
         <Button onClick={() => { setShowForm(!showForm); setFormError(""); setEditingId(null); setForm(defaultForm) }}>
           <Plus className="h-4 w-4 mr-2" />
           Nueva
@@ -190,7 +190,7 @@ export default function AccountsPage() {
       <Card className="border-0 bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xl shadow-blue-500/20">
         <CardContent className="p-6">
           <p className="text-sm opacity-80">Balance total</p>
-          <p className="text-3xl font-bold">{formatMoney(totalBalance, currency)}</p>
+          <p className="text-2xl sm:text-3xl font-bold">{formatMoney(totalBalance, currency)}</p>
           <p className="text-sm opacity-60 mt-1">{accounts?.length || 0} cuenta(s)</p>
         </CardContent>
       </Card>

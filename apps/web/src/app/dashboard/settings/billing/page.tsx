@@ -209,7 +209,7 @@ function BillingContent() {
         <Link href="/dashboard/settings" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Plan y facturacion</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Plan y facturacion</h1>
       </div>
 
       {error && (

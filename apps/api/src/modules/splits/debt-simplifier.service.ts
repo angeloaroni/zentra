@@ -25,7 +25,10 @@ export class DebtSimplifierService {
     for (const expense of expenses) {
       const paidBy = expense.paidById
       const currentPaid = balanceMap.get(paidBy) || 0
-      balanceMap.set(paidBy, currentPaid + expense.splits.reduce((sum, s) => sum + s.amount, 0))
+      const othersOwe = expense.splits
+        .filter((s) => s.userId !== paidBy)
+        .reduce((sum, s) => sum + s.amount, 0)
+      balanceMap.set(paidBy, currentPaid + othersOwe)
 
       for (const split of expense.splits) {
         if (split.userId === paidBy) continue
