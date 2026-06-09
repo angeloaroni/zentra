@@ -664,8 +664,8 @@ export default function GroupDetailPage() {
                               <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
                                 <Scale className="h-6 w-6 text-emerald-600" />
                               </div>
-                              <p className="font-medium text-gray-900 dark:text-white">No hay nada que pagar</p>
-                              <p className="text-sm text-muted-foreground mt-1">Ningun miembro te debe dinero en este grupo</p>
+                              <p className="font-medium text-gray-900 dark:text-white">No puedes hacer pagos</p>
+                              <p className="text-sm text-muted-foreground mt-1">No debes dinero a ningun miembro del grupo</p>
                               <Button variant="outline" size="sm" className="mt-4" onClick={() => setShowSettlementForm(false)}>Cerrar</Button>
                             </div>
                           )
