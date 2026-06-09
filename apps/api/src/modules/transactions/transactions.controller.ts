@@ -102,6 +102,12 @@ export class TransactionsController {
     return this.transactionsService.findByTag(tagId, req.user.id, familyId);
   }
 
+  @Get('overview')
+  @UseGuards(JwtAuthGuard)
+  getOverview(@Req() req: any, @Query('familyId') familyId?: string) {
+    return this.transactionsService.getOverview(req.user.id, familyId);
+  }
+
   @Get(':id')
   findById(@Param('id') id: string, @Req() req: any) {
     return this.transactionsService.findById(id, req.user.id);

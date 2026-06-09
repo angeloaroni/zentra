@@ -539,4 +539,150 @@ export class TransactionsService {
       orderBy: { date: 'desc' },
     });
   }
+
+  async getOverview(userId: string, familyId?: string) {
+    const userIds = await getScopeUserIds(this.prisma, userId, familyId)
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
+
+    const baseWhere = {
+      userId: { in: userIds },
+      ...(familyId ? { familyId } : { familyId: null }),
+    }
+
+    const [
+      summary,
+      recentTransactions,
+      byCategory,
+      goals,
+      comparison,
+      cashflowIncome,
+      cashflowExpense,
+    ] = await Promise.all([
+      this.prisma.transaction.aggregate({
+        where: { ...baseWhere, date: { gte: startOfMonth } },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      this.prisma.transaction.findMany({
+        where: baseWhere,
+        include: {
+          category: { select: { id: true, name: true, icon: true, color: true } },
+          tags: { select: { id: true, name: true, color: true, icon: true } },
+        },
+        orderBy: { date: 'desc' },
+        take: 8,
+      }),
+      this.prisma.transaction.groupBy({
+        by: ['categoryId'],
+        where: { ...baseWhere, type: 'EXPENSE', date: { gte: startOfMonth } },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      this.prisma.goal.findMany({
+        where: { userId, familyId: familyId || null },
+        select: { id: true, name: true, targetAmount: true, currentAmount: true, deadline: true, icon: true, color: true },
+      }),
+      this.prisma.$transaction([
+        this.prisma.transaction.aggregate({
+          where: { ...baseWhere, type: 'INCOME', date: { gte: startOfMonth } },
+          _sum: { amount: true },
+        }),
+        this.prisma.transaction.aggregate({
+          where: { ...baseWhere, type: 'EXPENSE', date: { gte: startOfMonth } },
+          _sum: { amount: true },
+        }),
+        this.prisma.transaction.aggregate({
+          where: { ...baseWhere, type: 'INCOME', date: { gte: lastMonthStart, lte: lastMonthEnd } },
+          _sum: { amount: true },
+        }),
+        this.prisma.transaction.aggregate({
+          where: { ...baseWhere, type: 'EXPENSE', date: { gte: lastMonthStart, lte: lastMonthEnd } },
+          _sum: { amount: true },
+        }),
+      ]),
+      this.prisma.transaction.groupBy({
+        by: ['date'],
+        where: { ...baseWhere, type: 'INCOME', date: { gte: sixMonthsAgo } },
+        _sum: { amount: true },
+        orderBy: { date: 'asc' },
+      }),
+      this.prisma.transaction.groupBy({
+        by: ['date'],
+        where: { ...baseWhere, type: 'EXPENSE', date: { gte: sixMonthsAgo } },
+        _sum: { amount: true },
+        orderBy: { date: 'asc' },
+      }),
+    ])
+
+    const [curIncome, curExpense, prevIncome, prevExpense] = comparison
+    const currIncome = curIncome._sum.amount || 0
+    const currExpense = curExpense._sum.amount || 0
+    const pIncome = prevIncome._sum.amount || 0
+    const pExpense = prevExpense._sum.amount || 0
+
+    const pctChange = (current: number, previous: number) =>
+      previous > 0 ? ((current - previous) / previous) * 100 : current > 0 ? 100 : 0
+
+    const categoriesWithNames = await Promise.all(
+      byCategory.map(async (cat) => {
+        const category = await this.prisma.category.findUnique({
+          where: { id: cat.categoryId },
+          select: { name: true, icon: true, color: true },
+        })
+        return { ...category, amount: cat._sum.amount || 0, count: cat._count }
+      })
+    )
+
+    const monthlyMap: Record<string, { income: number; expense: number }> = {}
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      monthlyMap[key] = { income: 0, expense: 0 }
+    }
+
+    for (const item of cashflowIncome) {
+      const d = new Date(item.date)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      if (monthlyMap[key]) monthlyMap[key].income += item._sum?.amount || 0
+    }
+
+    for (const item of cashflowExpense) {
+      const d = new Date(item.date)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      if (monthlyMap[key]) monthlyMap[key].expense += item._sum?.amount || 0
+    }
+
+    const cashflow = Object.entries(monthlyMap).map(([key, data]) => ({
+      month: key,
+      income: data.income,
+      expense: data.expense,
+      balance: data.income - data.expense,
+    }))
+
+    return {
+      summary: {
+        totalIncome: currIncome,
+        totalExpense: currExpense,
+        balance: currIncome - currExpense,
+        savingsRate: currIncome > 0 ? ((currIncome - currExpense) / currIncome) * 100 : 0,
+      },
+      recentTransactions,
+      byCategory: categoriesWithNames.sort((a, b) => b.amount - a.amount),
+      goals,
+      comparison: {
+        current: { income: currIncome, expense: currExpense, balance: currIncome - currExpense },
+        previous: { income: pIncome, expense: pExpense, balance: pIncome - pExpense },
+        changes: {
+          income: pctChange(currIncome, pIncome),
+          expense: pctChange(currExpense, pExpense),
+          balance: pctChange(currIncome - currExpense, pIncome - pExpense),
+        },
+      },
+      cashflow,
+    }
+  }
 }

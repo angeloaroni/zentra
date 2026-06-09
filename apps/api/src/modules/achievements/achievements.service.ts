@@ -40,12 +40,23 @@ export class AchievementsService {
   async checkAndUnlock(userId: string) {
     const newAchievements: any[] = []
 
-    const existing = await this.prisma.userAchievement.findMany({
-      where: { userId },
-      select: { achievementId: true },
-    })
-    const unlockedCodes = new Set<string>()
-    for (const e of existing) {
+    const [existingAchievements, transactionCount, monthlySavings, goals, splitCount, categoryCount] = await Promise.all([
+      this.prisma.userAchievement.findMany({
+        where: { userId },
+        select: { achievementId: true },
+      }),
+      this.prisma.transaction.count({ where: { userId } }),
+      this.getMonthlySavings(userId),
+      this.prisma.goal.findMany({ where: { userId }, select: { targetAmount: true, currentAmount: true } }),
+      this.prisma.sharedExpense.count({ where: { paidById: userId } }),
+      this.prisma.transaction.groupBy({
+        by: ['categoryId'],
+        where: { userId, type: 'EXPENSE' },
+      }),
+    ])
+
+    const unlockedCodes = new Set()
+    for (const e of existingAchievements) {
       const ach = this.ACHIEVEMENTS.find(a => a.code === e.achievementId)
       if (ach) unlockedCodes.add(ach.code)
     }
@@ -56,67 +67,22 @@ export class AchievementsService {
       let shouldUnlock = false
 
       switch (achievement.code) {
-        case 'FIRST_TRANSACTION': {
-          const count = await this.prisma.transaction.count({ where: { userId } })
-          shouldUnlock = count >= 1
-          break
-        }
-        case 'STREAK_7': {
-          const streak = await this.calculateStreak(userId)
-          shouldUnlock = streak >= 7
-          break
-        }
-        case 'STREAK_30': {
-          const streak = await this.calculateStreak(userId)
-          shouldUnlock = streak >= 30
-          break
-        }
-        case 'SAVINGS_100': {
-          const savings = await this.getMonthlySavings(userId)
-          shouldUnlock = savings >= 100
-          break
-        }
-        case 'SAVINGS_500': {
-          const savings = await this.getMonthlySavings(userId)
-          shouldUnlock = savings >= 500
-          break
-        }
-        case 'GOAL_50': {
-          const goals = await this.prisma.goal.findMany({ where: { userId } })
-          shouldUnlock = goals.some(g => g.targetAmount > 0 && (g.currentAmount / g.targetAmount) >= 0.5)
-          break
-        }
-        case 'GOAL_100': {
-          const goals = await this.prisma.goal.findMany({ where: { userId } })
-          shouldUnlock = goals.some(g => g.currentAmount >= g.targetAmount && g.targetAmount > 0)
-          break
-        }
-        case 'FIRST_SPLIT': {
-          const count = await this.prisma.sharedExpense.count({
-            where: { paidById: userId },
-          })
-          shouldUnlock = count >= 1
-          break
-        }
-        case 'DIVERSIFIED': {
-          const cats = await this.prisma.transaction.groupBy({
-            by: ['categoryId'],
-            where: { userId, type: 'EXPENSE' },
-          })
-          shouldUnlock = cats.length >= 5
-          break
-        }
+        case 'FIRST_TRANSACTION': shouldUnlock = transactionCount >= 1; break
+        case 'STREAK_7': { const streak = await this.calculateStreak(userId); shouldUnlock = streak >= 7; break }
+        case 'STREAK_30': { const streak = await this.calculateStreak(userId); shouldUnlock = streak >= 30; break }
+        case 'SAVINGS_100': shouldUnlock = monthlySavings >= 100; break
+        case 'SAVINGS_500': shouldUnlock = monthlySavings >= 500; break
+        case 'GOAL_50': shouldUnlock = goals.some(g => g.targetAmount > 0 && (g.currentAmount / g.targetAmount) >= 0.5); break
+        case 'GOAL_100': shouldUnlock = goals.some(g => g.currentAmount >= g.targetAmount && g.targetAmount > 0); break
+        case 'FIRST_SPLIT': shouldUnlock = splitCount >= 1; break
+        case 'DIVERSIFIED': shouldUnlock = categoryCount.length >= 5; break
       }
 
       if (shouldUnlock) {
-        const achRecord = await this.prisma.achievement.findUnique({
-          where: { code: achievement.code },
-        })
+        const achRecord = await this.prisma.achievement.findUnique({ where: { code: achievement.code } })
         if (achRecord) {
           try {
-            await this.prisma.userAchievement.create({
-              data: { userId, achievementId: achRecord.id },
-            })
+            await this.prisma.userAchievement.create({ data: { userId, achievementId: achRecord.id } })
             newAchievements.push(achievement)
           } catch {}
         }
@@ -127,20 +93,31 @@ export class AchievementsService {
   }
 
   private async calculateStreak(userId: string): Promise<number> {
+    const now = new Date()
+    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+
+    const transactions = await this.prisma.transaction.findMany({
+      where: { userId, date: { gte: oneYearAgo } },
+      select: { date: true },
+      orderBy: { date: 'desc' },
+    })
+
+    if (transactions.length === 0) return 0
+
+    const uniqueDays = new Set<string>()
+    for (const tx of transactions) {
+      const day = new Date(tx.date)
+      day.setHours(0, 0, 0, 0)
+      uniqueDays.add(day.toISOString().split('T')[0])
+    }
+
     let streak = 0
-    const currentDate = new Date()
+    let currentDate = new Date(now)
+    currentDate.setHours(0, 0, 0, 0)
 
     for (let i = 0; i < 365; i++) {
-      const dayStart = new Date(currentDate)
-      dayStart.setHours(0, 0, 0, 0)
-      const dayEnd = new Date(currentDate)
-      dayEnd.setHours(23, 59, 59, 999)
-
-      const count = await this.prisma.transaction.count({
-        where: { userId, date: { gte: dayStart, lte: dayEnd } },
-      })
-
-      if (count > 0) {
+      const dayStr = currentDate.toISOString().split('T')[0]
+      if (uniqueDays.has(dayStr)) {
         streak++
         currentDate.setDate(currentDate.getDate() - 1)
       } else {

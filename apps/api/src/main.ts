@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { json, urlencoded, Request, Response, NextFunction } from 'express';
 import * as helmet from 'helmet';
+import * as compression from 'compression';
 import * as express from 'express';
 import { join } from 'path';
 import * as Joi from 'joi';
@@ -46,6 +47,8 @@ async function bootstrap() {
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   }));
+
+  app.use(compression());
 
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 

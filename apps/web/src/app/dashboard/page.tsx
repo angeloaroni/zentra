@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { api, getUser } from "@/lib/api"
@@ -18,20 +19,18 @@ import {
   ArrowDownRight,
 } from "lucide-react"
 import Link from "next/link"
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-} from "recharts"
+const CashflowChart = dynamic(() => import("./components/CashflowChart"), {
+  ssr: false,
+  loading: () => <div className="h-[220px] bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />,
+})
+const CategoryChart = dynamic(() => import("./components/CategoryChart"), {
+  ssr: false,
+  loading: () => <div className="h-[300px] bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />,
+})
+const NetWorthChart = dynamic(() => import("./components/NetWorthChart"), {
+  ssr: false,
+  loading: () => <div className="h-[200px] bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />,
+})
 
 interface Summary {
   totalIncome: number
@@ -120,43 +119,26 @@ export default function DashboardPage() {
     })
   }, [])
 
-  const familyParam = activeFamilyId ? `&familyId=${activeFamilyId}` : ""
+  const familyParam = activeFamilyId ? `?familyId=${activeFamilyId}` : ""
 
-  const { data: summary } = useQuery<Summary>({
-    queryKey: ["summary", dateRange.startDate, dateRange.endDate, activeFamilyId],
-    queryFn: () =>
-      api(`/transactions/summary?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}${familyParam}`),
-    enabled: !!dateRange.startDate,
+  const { data: overview, isLoading: overviewLoading } = useQuery<{
+    summary: { totalIncome: number; totalExpense: number; balance: number; savingsRate: number }
+    recentTransactions: Transaction[]
+    byCategory: CategoryBreakdown[]
+    goals: Goal[]
+    comparison: Comparison
+    cashflow: CashflowItem[]
+  }>({
+    queryKey: ["dashboard-overview", activeFamilyId],
+    queryFn: () => api(`/transactions/overview${familyParam}`),
   })
 
-  const { data: txData } = useQuery<{ transactions: Transaction[] }>({
-    queryKey: ["transactions-recent", dateRange.startDate, dateRange.endDate, activeFamilyId],
-    queryFn: () =>
-      api(`/transactions?take=8&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}${familyParam}`),
-    enabled: !!dateRange.startDate,
-  })
-
-  const { data: byCategory } = useQuery<CategoryBreakdown[]>({
-    queryKey: ["by-category", dateRange.startDate, dateRange.endDate, activeFamilyId],
-    queryFn: () =>
-      api(`/transactions/by-category?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}${familyParam}`),
-    enabled: !!dateRange.startDate,
-  })
-
-  const { data: goals } = useQuery<Goal[]>({
-    queryKey: ["goals", activeFamilyId],
-    queryFn: () => api(`/goals${activeFamilyId ? `?familyId=${activeFamilyId}` : ""}`),
-  })
-
-  const { data: comparison } = useQuery<Comparison>({
-    queryKey: ["comparison", activeFamilyId],
-    queryFn: () => api(`/transactions/comparison${familyParam}`),
-  })
-
-  const { data: cashflow } = useQuery<CashflowItem[]>({
-    queryKey: ["cashflow", activeFamilyId],
-    queryFn: () => api(`/transactions/cashflow?months=6${familyParam}`),
-  })
+  const summary = overview?.summary
+  const txData = overview?.recentTransactions ? { transactions: overview.recentTransactions } : undefined
+  const byCategory = overview?.byCategory
+  const goals = overview?.goals
+  const comparison = overview?.comparison
+  const cashflow = overview?.cashflow
 
   const { data: netWorth } = useQuery<{ date: string; balance: number }[]>({
     queryKey: ["net-worth"],
@@ -307,45 +289,7 @@ export default function DashboardPage() {
           {!cashflow?.length ? (
             <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-8">Sin datos</p>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={cashflow}>
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 11, fill: "#9CA3AF" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: "#9CA3AF" }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v) => formatMoney(v, currency).replace(/\.00$/, "")}
-                />
-                <Tooltip
-                  formatter={(value: number, name: string) => [
-                    formatMoney(value, currency),
-                    name === "income" ? "Ingresos" : "Gastos",
-                  ]}
-                />
-                <Legend
-                  formatter={(value) => (value === "income" ? "Ingresos" : "Gastos")}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="income"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  dot={{ fill: "#10B981", r: 3 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="expense"
-                  stroke="#EF4444"
-                  strokeWidth={2}
-                  dot={{ fill: "#EF4444", r: 3 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <CashflowChart data={cashflow} formatMoney={formatMoney} currency={currency} />
           )}
         </CardContent>
       </Card>
@@ -356,39 +300,7 @@ export default function DashboardPage() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Gastos por categoria</h3>
-            {pieData.length === 0 ? (
-              <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-8">Sin datos</p>
-            ) : (
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                <ResponsiveContainer width={140} height={140}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={35}
-                      outerRadius={65}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {pieData.map((entry) => (
-                        <Cell key={entry.name} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(v: number) => formatMoney(v, currency)} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="flex-1 space-y-2.5">
-                  {pieData.slice(0, 5).map((item) => (
-                    <div key={item.name} className="flex items-center gap-2 text-sm">
-                      <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="flex-1 text-gray-600 dark:text-gray-400 truncate">{item.name}</span>
-                      <span className="font-medium text-gray-900 dark:text-white min-w-0 truncate">{formatMoney(item.value, currency)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <CategoryChart data={pieData} formatMoney={formatMoney} currency={currency} />
           </CardContent>
         </Card>
 
@@ -544,14 +456,7 @@ export default function DashboardPage() {
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
               <h3 className="text-sm font-medium text-gray-500 mb-4">Patrimonio neto</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={netWorth}>
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="balance" stroke="#3B82F6" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+              <NetWorthChart data={netWorth} formatMoney={formatMoney} currency={currency} />
             </CardContent>
           </Card>
         </FadeIn>

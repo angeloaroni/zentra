@@ -59,6 +59,8 @@ model Account {
   transactions Transaction[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Family {
@@ -122,6 +124,8 @@ model Transaction {
 
   @@index([userId, date])
   @@index([familyId, date])
+  @@index([userId, type, date])
+  @@index([categoryId])
 }
 
 model Category {
@@ -143,6 +147,8 @@ model Category {
 
   transactions Transaction[]
   budgets      Budget[]
+
+  @@index([userId])
 }
 
 model Budget {
@@ -161,6 +167,7 @@ model Budget {
   updatedAt  DateTime @updatedAt
 
   @@unique([categoryId, month, year, userId])
+  @@index([userId])
 }
 
 model Goal {
@@ -178,6 +185,8 @@ model Goal {
   family        Family?   @relation(fields: [familyId], references: [id], onDelete: SetNull)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
 }
 
 model Tag {
@@ -194,6 +203,7 @@ model Tag {
   createdAt    DateTime      @default(now())
 
   @@unique([name, userId])
+  @@index([userId])
 }
 
 model Notification {
@@ -257,6 +267,7 @@ model SplitGroupMember {
   user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, userId])
+  @@index([userId])
 }
 
 model SharedExpense {
@@ -296,6 +307,7 @@ model ExpenseSplit {
   user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([expenseId, userId])
+  @@index([userId])
 }
 
 model Settlement {
@@ -399,4 +411,5 @@ model UserAchievement {
   achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
 
   @@unique([userId, achievementId])
+  @@index([userId])
 }
