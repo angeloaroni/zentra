@@ -17,13 +17,6 @@ import { Plus, Trash2, Repeat, Filter, X, Pencil, ArrowLeftRight, Search } from 
 import { Modal } from "@/components/ui/modal"
 import { TagInput } from "@/components/ui/tag-input"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import Link from "next/link"
 
 interface Transaction {
@@ -562,17 +555,15 @@ export default function TransactionsPage() {
             {accounts && accounts.length > 0 && (
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground invisible">Cuenta</Label>
-                <Select value={accountFilter || "all"} onValueChange={(v) => setAccountFilter(v === "all" ? "" : v)}>
-                  <SelectTrigger className="h-10 w-[180px]">
-                    <SelectValue placeholder="Todas las cuentas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las cuentas</SelectItem>
-                    {accounts.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select
+                  className="h-10 min-w-[180px] rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-ring appearance-none cursor-pointer"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}
+                  value={accountFilter}
+                  onChange={(e) => setAccountFilter(e.target.value)}
+                >
+                  <option value="">Todas las cuentas</option>
+                  {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
               </div>
             )}
           </div>
