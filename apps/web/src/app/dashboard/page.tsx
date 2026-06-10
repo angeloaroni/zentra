@@ -220,7 +220,7 @@ export default function DashboardPage() {
             }
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <Button variant="outline" size="sm" onClick={() => {
             if (!overview) return
             const rows = [
@@ -241,7 +241,7 @@ export default function DashboardPage() {
             a.download = `zentra-resumen-${new Date().toISOString().split("T")[0]}.csv`
             a.click()
             URL.revokeObjectURL(url)
-          }} className="hidden sm:flex">
+          }} className="hidden sm:flex h-9">
             <Download className="h-4 w-4 mr-1" />Exportar
           </Button>
           <DateRangePicker value={dateRange} onChange={setDateRange} />

@@ -362,8 +362,8 @@ export default function TransactionsPage() {
 
       {isFormVisible && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={cancelForm}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
               <h2 className="text-lg font-semibold">
                 {editingId ? "Editar transaccion" : "Nueva transaccion"}
               </h2>
@@ -371,104 +371,127 @@ export default function TransactionsPage() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <select
-                  value={form.type}
-                  onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value, categoryId: "" }))}
-                  className={selectClass}
-                >
-                  <option value="EXPENSE">Gasto</option>
-                  <option value="INCOME">Ingreso</option>
-                </select>
+            <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Tipo</Label>
+                  <select
+                    value={form.type}
+                    onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value, categoryId: "" }))}
+                    className={selectClass}
+                  >
+                    <option value="EXPENSE">Gasto</option>
+                    <option value="INCOME">Ingreso</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Fecha</Label>
+                  <Input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
+                    className="h-9"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Titulo</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Titulo</Label>
                 <Input
                   placeholder="Ej: Supermercado"
                   value={form.title}
                   onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                  className="h-9"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Monto ({getCurrencySymbol(currency)})</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={form.amount}
-                  onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
-                />
-              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Monto ({getCurrencySymbol(currency)})</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={form.amount}
+                    onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
+                    className="h-9"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label>Fecha</Label>
-                <Input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Categoria</Label>
-                <select
-                  value={form.categoryId}
-                  onChange={(e) => setForm(prev => ({ ...prev, categoryId: e.target.value }))}
-                  className={selectClass}
-                >
-                  <option value="">{catLoading ? "Cargando..." : "Seleccionar..."}</option>
-                  {filteredCategories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {accounts && accounts.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Cuenta (opcional)</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Categoria</Label>
                   <select
+                    value={form.categoryId}
+                    onChange={(e) => setForm(prev => ({ ...prev, categoryId: e.target.value }))}
                     className={selectClass}
-                    value={form.accountId}
-                    onChange={(e) => setForm(prev => ({ ...prev, accountId: e.target.value }))}
                   >
-                    <option value="">Sin cuenta</option>
-                    {accounts.map((acc) => (
-                      <option key={acc.id} value={acc.id}>{acc.name}</option>
+                    <option value="">{catLoading ? "Cargando..." : "Seleccionar..."}</option>
+                    {filteredCategories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {accounts && accounts.length > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Cuenta</Label>
+                    <select
+                      className={selectClass}
+                      value={form.accountId}
+                      onChange={(e) => setForm(prev => ({ ...prev, accountId: e.target.value }))}
+                    >
+                      <option value="">Sin cuenta</option>
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Metodo de pago</Label>
+                    <Input
+                      placeholder="Ej: Tarjeta"
+                      value={form.paymentMethod}
+                      onChange={(e) => setForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
               )}
 
-              <div className="space-y-2">
-                <Label>Metodo de pago</Label>
-                <Input
-                  placeholder="Ej: Tarjeta de credito"
-                  value={form.paymentMethod}
-                  onChange={(e) => setForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                />
-              </div>
+              {!(accounts && accounts.length > 0) && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Metodo de pago</Label>
+                  <Input
+                    placeholder="Ej: Tarjeta de credito"
+                    value={form.paymentMethod}
+                    onChange={(e) => setForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                    className="h-9"
+                  />
+                </div>
+              )}
 
-              <div className="space-y-2">
-                <Label>Descripcion (opcional)</Label>
-                <Input
-                  placeholder="Descripcion..."
-                  value={form.description}
-                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                />
-              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Descripcion</Label>
+                  <Input
+                    placeholder="Opcional"
+                    value={form.description}
+                    onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                    className="h-9"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label>Recurrente</Label>
-                <div className="flex items-center gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Recurrente</Label>
                   <button
                     type="button"
                     onClick={() => setForm(prev => ({ ...prev, isRecurring: !prev.isRecurring }))}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors w-full h-9 ${
                       form.isRecurring
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-background border-input hover:bg-accent"
@@ -481,8 +504,8 @@ export default function TransactionsPage() {
               </div>
 
               {form.isRecurring && (
-                <div className="space-y-2">
-                  <Label>Frecuencia</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Frecuencia</Label>
                   <select
                     value={form.recurringFreq}
                     onChange={(e) => setForm(prev => ({ ...prev, recurringFreq: e.target.value }))}
@@ -495,20 +518,18 @@ export default function TransactionsPage() {
                 </div>
               )}
 
-              <div className="md:col-span-2">
-                <TagInput
-                  selectedTagIds={form.tagIds}
-                  onTagsChange={(tagIds) => setForm(prev => ({ ...prev, tagIds }))}
-                  allTags={allTags || []}
-                />
-              </div>
+              <TagInput
+                selectedTagIds={form.tagIds}
+                onTagsChange={(tagIds) => setForm(prev => ({ ...prev, tagIds }))}
+                allTags={allTags || []}
+              />
 
               {formError && (
                 <p className="text-sm text-red-500">{formError}</p>
               )}
 
-              <div className="flex gap-2 pt-2">
-                <Button type="submit" disabled={isPending}>
+              <div className="flex gap-2 pt-1 sticky bottom-0 bg-white dark:bg-gray-900 pb-4">
+                <Button type="submit" disabled={isPending} className="flex-1">
                   {isPending ? "Guardando..." : editingId ? "Actualizar" : "Guardar"}
                 </Button>
                 <Button type="button" variant="outline" onClick={cancelForm}>
