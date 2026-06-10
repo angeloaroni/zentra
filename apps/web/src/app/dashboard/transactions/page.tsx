@@ -17,6 +17,13 @@ import { Plus, Trash2, Repeat, Filter, X, Pencil, ArrowLeftRight, Search } from 
 import { Modal } from "@/components/ui/modal"
 import { TagInput } from "@/components/ui/tag-input"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import Link from "next/link"
 
 interface Transaction {
@@ -555,14 +562,17 @@ export default function TransactionsPage() {
             {accounts && accounts.length > 0 && (
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground invisible">Cuenta</Label>
-                <select
-                  className="h-10 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-ring"
-                  value={accountFilter}
-                  onChange={(e) => setAccountFilter(e.target.value)}
-                >
-                  <option value="">Todas las cuentas</option>
-                  {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
+                <Select value={accountFilter} onValueChange={setAccountFilter}>
+                  <SelectTrigger className="h-10 w-[180px]">
+                    <SelectValue placeholder="Todas las cuentas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todas las cuentas</SelectItem>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>
