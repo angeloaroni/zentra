@@ -24,6 +24,7 @@ import {
   Coins,
   ImageIcon,
   RefreshCw,
+  ListOrdered,
 } from "lucide-react"
 
 function FadeIn({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -430,6 +431,47 @@ function FeaturesSection() {
       ),
       dark: false,
     },
+    {
+      icon: <RefreshCw size={24} />,
+      badge: "Gastos recurrentes",
+      title: "Gastos que se repiten solos",
+      text: "Configura gastos recurrentes y plantillas de division. La app los crea automaticamente cuando toca. Olvidate de registrar lo mismo cada mes.",
+      mockup: (
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-bold text-gray-900 text-sm">Gastos recurrentes</h4>
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Activo</span>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-sm font-bold">R</div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Alquiler</p>
+                  <p className="text-xs text-gray-500">Mensual - Proximo: 01 jul</p>
+                </div>
+              </div>
+              <span className="font-bold text-gray-900">650 €</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-bold">I</div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Internet</p>
+                  <p className="text-xs text-gray-500">Mensual - Proximo: 15 jul</p>
+                </div>
+              </div>
+              <span className="font-bold text-gray-900">35 €</span>
+            </div>
+          </div>
+          <div className="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+            <p className="text-xs font-medium text-emerald-800">Auto-generado cada hora</p>
+            <p className="text-xs text-emerald-600 mt-1">La app crea los gastos cuando toca</p>
+          </div>
+        </div>
+      ),
+      dark: false,
+    },
   ]
 
   return (
@@ -465,6 +507,7 @@ function FeaturesSection() {
                     {i === 1 && <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">Crear presupuesto <ArrowRight size={14} /></Link>}
                     {i === 2 && <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">Definir meta <ArrowRight size={14} /></Link>}
                     {i === 3 && <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">Dividir gastos <ArrowRight size={14} /></Link>}
+                    {i === 4 && <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">Configurar recurrentes <ArrowRight size={14} /></Link>}
                   </div>
                 </div>
                 <div className="flex-1 w-full max-w-md">
@@ -536,12 +579,21 @@ function SplitsSection() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
+                <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
                   <RefreshCw size={24} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Gastos recurrentes</h3>
-                  <p className="text-gray-500 text-sm">Configura gastos que se repitan automaticamente: alquiler, internet, suscripciones compartidas.</p>
+                  <h3 className="font-semibold text-gray-900 mb-1">Gastos recurrentes y plantillas</h3>
+                  <p className="text-gray-500 text-sm">Configura gastos recurrentes y plantillas de division. La app los crea automaticamente cuando toca.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
+                  <ListOrdered size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Desglose de items por persona</h3>
+                  <p className="text-gray-500 text-sm">En una cena, desglosa por items: pasta, vino, postre. Cada item se asigna a quien lo pidio.</p>
                 </div>
               </div>
             </div>
@@ -690,6 +742,9 @@ function PricingSection() {
         "Division por % y monto exacto",
         "Gastos recurrentes compartidos",
         "Subir fotos de tickets",
+        "Desglose de items por persona",
+        "Conversion de monedas",
+        "Plantillas de division",
         "Score de salud financiera",
         "Insights inteligentes de gasto",
         "Grafico de patrimonio neto",
@@ -817,8 +872,16 @@ function FAQSection() {
       a: "Hay tres tipos: igual para todos (gratis), por porcentaje, y por monto exacto. Tambien puedes simplificar deudas automaticamente para minimizar los pagos.",
     },
     {
-      q: "Puedo gastos recurrentes como el alquiler?",
+      q: "Puedo crear gastos recurrentes como el alquiler?",
       a: "Si. En el plan Pro puedes crear gastos compartidos recurrentes (mensual, semanal, etc.) que se registran automaticamente.",
+    },
+    {
+      q: "Puedo subir fotos de mis tickets?",
+      a: "Si. Al crear o editar un gasto compartido, puedes subir una foto del ticket o factura como constancia. Todos los miembros del grupo pueden verla.",
+    },
+    {
+      q: "Que es el desglose de items?",
+      a: "En un gasto como una cena, puedes desglosar por items: 35€ pasta, 25€ vino, 15€ postre. Cada item se asigna a quien lo pidio para un dividido mas preciso.",
     },
   ]
 

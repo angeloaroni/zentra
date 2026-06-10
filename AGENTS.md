@@ -128,13 +128,23 @@ npm run db:studio      # Abrir Prisma Studio
 - Requiere plan `pro`
 - **Grupos**: CRUD con invitacion por email, gestion de miembros
 - **Gastos**: 3 tipos de division: EQUAL, PERCENTAGE, EXACT
+- **Items**: Itemizar gastos individuales (POST/DELETE `/splits/expenses/:id/items`)
 - **Tickets**: Base64 almacenado en DB (campos `receiptData`, `receiptMime`)
 - **Balances**: Algoritmo de simplificacion de deudas (minimiza transfers)
-- **Settlements**: Registrar pagos → auto-crear Transaction
-- **Recurrentes**: Auto-generar gastos compartidos en horario
-- **Plantillas**: Guardar configuraciones de division comunes
+- **Settlements**: Registrar pagos → auto-crear Transaction con NOMBRE del pagador (no ID)
+- **Recurrentes**: Auto-generar gastos compartidos cada hora via `OnModuleInit`
+- **Plantillas**: Guardar configuraciones de division comunes (`POST/GET/DELETE /splits/templates`)
+- **Monedas**: Conversion de divisas (`/splits/currencies/rates`, `/splits/currencies/convert`)
 - Toggle `isPaid` en splits de gastos (marcar/desmarcar como pagado)
 - Notificaciones: `SPLIT_INVITE`, `SPLIT_EXPENSE`, `SPLIT_SETTLEMENT`
+
+### Conversion de Divisas (Splits)
+- `GET /splits/currencies/rates` - retorna tasas de cambio
+- `GET /splits/currencies/convert?amount=X&from=EUR&to=USD` - convertir monto
+
+### Items de Gasto (Splits)
+- `POST /splits/expenses/:id/items` - agregar item a un gasto
+- `DELETE /splits/expenses/items/:itemId` - eliminar item de un gasto
 
 ### Patrimonio Neto
 - `GET /net-worth?months=12` - snapshots historicos de balance
@@ -159,6 +169,13 @@ npm run db:studio      # Abrir Prisma Studio
 - `POST /achievements/check` - auto-verificar y desbloquear nuevos logros
 - 10 logros: FIRST_TRANSACTION, STREAK_7/30, SAVINGS_100/500, GOAL_50/100, FIRST_SPLIT, DIVERSIFIED, BUDGET_MASTER
 
+### Rendimiento
+- **Compresion**: gzip habilitada en NestJS (`compression` middleware)
+- **Indexes de DB**: Account, Category, Goal, Tag, Budget, Transaction (composite + categoryId), SplitGroupMember, ExpenseSplit, UserAchievement, accountId
+- **Dashboard overview**: `GET /transactions/overview` - endpoint optimizado para carga inicial
+- **Dynamic imports**: Recharts cargado dinamicamente (reduce bundle inicial)
+- **staleTime**: React Query con `staleTime` para reducir requests redundantes
+
 ### Email (Resend)
 - `EmailService` en `common/services/`
 - `sendPasswordResetEmail()` con link de reset
@@ -179,6 +196,7 @@ npm run db:studio      # Abrir Prisma Studio
 - `/dashboard/events` - Lista de eventos/tags (Pro)
 - `/dashboard/splits` - Lista de grupos de division con resumen de balances (Pro)
 - `/dashboard/splits/[groupId]` - Detalle del grupo: gastos, balances, historial, miembros, recurrentes
+- `/dashboard/splits/[groupId]/groups/*` - Gestion de grupos (crear, editar, miembros)
 - `/dashboard/settings/*` - Perfil, familia, facturacion
 - `/dashboard/admin` - Panel de admin (solo rol ADMIN)
 - `/dashboard/onboarding` - Asistente de configuracion en 3 pasos
@@ -191,6 +209,7 @@ npm run db:studio      # Abrir Prisma Studio
 - `fade-in.tsx` - Animacion fade-in al hacer scroll
 - `toast.tsx` - Sistema de notificaciones toast
 - `tag-input.tsx` - Selector de tag/evento con autocompletado
+- `modal.tsx` - Componente Modal compartido usado en todas las paginas
 
 ### Lib
 - `api.ts` - Cliente API con auth JWT, `uploadFile()` para uploads en base64
@@ -208,6 +227,7 @@ npm run db:studio      # Abrir Prisma Studio
 - **Estados de carga**: Componentes skeleton (nunca texto plano "Cargando...")
 - **Estados vacios**: Icono + texto descriptivo + boton CTA
 - **Confirmaciones**: Dialogo ConfirmAction (nunca `window.confirm()`)
+- **Modales**: Componente Modal compartido (consistencia visual en todas las paginas)
 - **Feedback toast**: Todas las operaciones CRUD muestran toasts de exito/error
 
 ## Secciones de la Landing Page
@@ -222,7 +242,18 @@ npm run db:studio      # Abrir Prisma Studio
 
 ## Stack Tecnico
 
-- Frontend: Next.js 14, TypeScript, TailwindCSS, Recharts, Zustand, React Query, Radix UI, Lucide, next-themes, framer-motion
-- Backend: NestJS, Prisma, class-validator, Swagger, Resend, helmet, throttler, Joi (validacion de env)
-- DB: PostgreSQL (Neon)
+- Frontend: Next.js 14, TypeScript, TailwindCSS, Recharts (dynamic import), Zustand, React Query (staleTime), Radix UI, Lucide, next-themes, framer-motion
+- Backend: NestJS, Prisma, class-validator, Swagger, Resend, helmet, throttler, Joi (validacion de env), compression (gzip)
+- DB: PostgreSQL (Neon) + indexes optimizados
 - Deploy: Vercel (frontend), Render (backend), Neon (database)
+
+## Hecho (Features Completadas)
+
+- [x] CRUD completo: Auth, Users, Families, Transactions, Categories, Budgets, Goals, Accounts, Recurring, Tags, Subscriptions, Notifications, Achievements
+- [x] Dividir Gastos: Grupos, Gastos (EQUAL/PERCENTAGE/EXACT), Items, Tickets, Balances, Settlements, Recurrentes, Plantillas, Monedas
+- [x] Dashboard: Balance, Score de Salud, Insights, Patrimonio Neto, Cashflow, Overview endpoint
+- [x] Backend: Compresion gzip, indexes de DB, dynamic imports, staleTime, Rendimiento optimizado
+- [x] Frontend: Modal compartido, Skeleton loading, Confirm dialog, Toast notifications
+- [x] Landing page: Hero, Problemas, Features, Splits, Precios, FAQ
+- [x] Deploy: Vercel + Render + Neon con Dockerfile
+- [x] Seguridad: JWT, bcrypt, Helmet, Rate limiting, CORS, Joi env validation
