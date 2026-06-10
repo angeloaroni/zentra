@@ -14,7 +14,9 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton, SkeletonTransactionRow } from "@/components/ui/skeleton"
 import { ConfirmAction } from "@/components/ui/confirm-dialog"
 import { Plus, Trash2, Repeat, Filter, X, Pencil, ArrowLeftRight, Search } from "lucide-react"
+import { Modal } from "@/components/ui/modal"
 import { TagInput } from "@/components/ui/tag-input"
+import { DateRangePicker } from "@/components/ui/date-range-picker"
 import Link from "next/link"
 
 interface Transaction {
@@ -143,10 +145,18 @@ export default function TransactionsPage() {
     paymentMethod: "",
     tagId: "",
   })
+  const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" })
+  const [accountFilter, setAccountFilter] = useState("")
 
   useEffect(() => {
     setSkip(0)
   }, [filterType, viewMode, debouncedSearch, filters, activeFamilyId])
+
+  useEffect(() => {
+    setSkip(0)
+    setDateRange({ startDate: "", endDate: "" })
+    setAccountFilter("")
+  }, [filterType, viewMode, debouncedSearch, activeFamilyId])
 
   const [form, setForm] = useState<FormState>(defaultForm())
 
@@ -154,7 +164,7 @@ export default function TransactionsPage() {
     transactions: Transaction[]
     total: number
   }>({
-    queryKey: ["transactions", filterType, viewMode, debouncedSearch, filters, activeFamilyId, skip],
+    queryKey: ["transactions", filterType, viewMode, debouncedSearch, filters, activeFamilyId, skip, dateRange, accountFilter],
     queryFn: () => {
       const params = new URLSearchParams({ take: "50", skip: String(skip) })
       if (filterType !== "all") params.set("type", filterType)
@@ -165,6 +175,9 @@ export default function TransactionsPage() {
       if (filters.categoryId) params.set("categoryId", filters.categoryId)
       if (filters.paymentMethod) params.set("paymentMethod", filters.paymentMethod)
       if (filters.tagId) params.set("tagId", filters.tagId)
+      if (dateRange.startDate) params.set("startDate", dateRange.startDate)
+      if (dateRange.endDate) params.set("endDate", dateRange.endDate)
+      if (accountFilter) params.set("accountId", accountFilter)
       if (activeFamilyId) params.set("familyId", activeFamilyId)
       return api(`/transactions?${params}`)
     },
@@ -360,186 +373,174 @@ export default function TransactionsPage() {
         </Button>
       </div>
 
-      {isFormVisible && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={cancelForm}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-              <h2 className="text-lg font-semibold">
-                {editingId ? "Editar transaccion" : "Nueva transaccion"}
-              </h2>
-              <button onClick={cancelForm} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                <X className="h-5 w-5" />
-              </button>
+      <Modal open={isFormVisible} onClose={cancelForm} title={editingId ? "Editar transaccion" : "Nueva transaccion"}>
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Tipo</Label>
+              <select
+                value={form.type}
+                onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value, categoryId: "" }))}
+                className={selectClass}
+              >
+                <option value="EXPENSE">Gasto</option>
+                <option value="INCOME">Ingreso</option>
+              </select>
             </div>
-            <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Tipo</Label>
-                  <select
-                    value={form.type}
-                    onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value, categoryId: "" }))}
-                    className={selectClass}
-                  >
-                    <option value="EXPENSE">Gasto</option>
-                    <option value="INCOME">Ingreso</option>
-                  </select>
-                </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Fecha</Label>
-                  <Input
-                    type="date"
-                    value={form.date}
-                    onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
-                    className="h-9"
-                  />
-                </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Fecha</Label>
+              <Input
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm(prev => ({ ...prev, date: e.target.value }))}
+                className="h-9"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Titulo</Label>
+            <Input
+              placeholder="Ej: Supermercado"
+              value={form.title}
+              onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+              className="h-9"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Monto ({getCurrencySymbol(currency)})</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={form.amount}
+                onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
+                className="h-9"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Categoria</Label>
+              <select
+                value={form.categoryId}
+                onChange={(e) => setForm(prev => ({ ...prev, categoryId: e.target.value }))}
+                className={selectClass}
+              >
+                <option value="">{catLoading ? "Cargando..." : "Seleccionar..."}</option>
+                {filteredCategories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {accounts && accounts.length > 0 && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Cuenta</Label>
+                <select
+                  className={selectClass}
+                  value={form.accountId}
+                  onChange={(e) => setForm(prev => ({ ...prev, accountId: e.target.value }))}
+                >
+                  <option value="">Sin cuenta</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Titulo</Label>
+                <Label className="text-xs">Metodo de pago</Label>
                 <Input
-                  placeholder="Ej: Supermercado"
-                  value={form.title}
-                  onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Ej: Tarjeta"
+                  value={form.paymentMethod}
+                  onChange={(e) => setForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
                   className="h-9"
                 />
               </div>
+            </div>
+          )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Monto ({getCurrencySymbol(currency)})</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={form.amount}
-                    onChange={(e) => setForm(prev => ({ ...prev, amount: e.target.value }))}
-                    className="h-9"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Categoria</Label>
-                  <select
-                    value={form.categoryId}
-                    onChange={(e) => setForm(prev => ({ ...prev, categoryId: e.target.value }))}
-                    className={selectClass}
-                  >
-                    <option value="">{catLoading ? "Cargando..." : "Seleccionar..."}</option>
-                    {filteredCategories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {accounts && accounts.length > 0 && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Cuenta</Label>
-                    <select
-                      className={selectClass}
-                      value={form.accountId}
-                      onChange={(e) => setForm(prev => ({ ...prev, accountId: e.target.value }))}
-                    >
-                      <option value="">Sin cuenta</option>
-                      {accounts.map((acc) => (
-                        <option key={acc.id} value={acc.id}>{acc.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Metodo de pago</Label>
-                    <Input
-                      placeholder="Ej: Tarjeta"
-                      value={form.paymentMethod}
-                      onChange={(e) => setForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                      className="h-9"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {!(accounts && accounts.length > 0) && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Metodo de pago</Label>
-                  <Input
-                    placeholder="Ej: Tarjeta de credito"
-                    value={form.paymentMethod}
-                    onChange={(e) => setForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                    className="h-9"
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Descripcion</Label>
-                  <Input
-                    placeholder="Opcional"
-                    value={form.description}
-                    onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                    className="h-9"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Recurrente</Label>
-                  <button
-                    type="button"
-                    onClick={() => setForm(prev => ({ ...prev, isRecurring: !prev.isRecurring }))}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors w-full h-9 ${
-                      form.isRecurring
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background border-input hover:bg-accent"
-                    }`}
-                  >
-                    <Repeat className="h-4 w-4" />
-                    {form.isRecurring ? "Si" : "No"}
-                  </button>
-                </div>
-              </div>
-
-              {form.isRecurring && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Frecuencia</Label>
-                  <select
-                    value={form.recurringFreq}
-                    onChange={(e) => setForm(prev => ({ ...prev, recurringFreq: e.target.value }))}
-                    className={selectClass}
-                  >
-                    {FREQUENCIES.map((f) => (
-                      <option key={f.value} value={f.value}>{f.label}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <TagInput
-                selectedTagIds={form.tagIds}
-                onTagsChange={(tagIds) => setForm(prev => ({ ...prev, tagIds }))}
-                allTags={allTags || []}
+          {!(accounts && accounts.length > 0) && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Metodo de pago</Label>
+              <Input
+                placeholder="Ej: Tarjeta de credito"
+                value={form.paymentMethod}
+                onChange={(e) => setForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                className="h-9"
               />
+            </div>
+          )}
 
-              {formError && (
-                <p className="text-sm text-red-500">{formError}</p>
-              )}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Descripcion</Label>
+              <Input
+                placeholder="Opcional"
+                value={form.description}
+                onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                className="h-9"
+              />
+            </div>
 
-              <div className="flex gap-2 pt-1 sticky bottom-0 bg-white dark:bg-gray-900 pb-4">
-                <Button type="submit" disabled={isPending} className="flex-1">
-                  {isPending ? "Guardando..." : editingId ? "Actualizar" : "Guardar"}
-                </Button>
-                <Button type="button" variant="outline" onClick={cancelForm}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Recurrente</Label>
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, isRecurring: !prev.isRecurring }))}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors w-full h-9 ${
+                  form.isRecurring
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-input hover:bg-accent"
+                }`}
+              >
+                <Repeat className="h-4 w-4" />
+                {form.isRecurring ? "Si" : "No"}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+
+          {form.isRecurring && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Frecuencia</Label>
+              <select
+                value={form.recurringFreq}
+                onChange={(e) => setForm(prev => ({ ...prev, recurringFreq: e.target.value }))}
+                className={selectClass}
+              >
+                {FREQUENCIES.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <TagInput
+            selectedTagIds={form.tagIds}
+            onTagsChange={(tagIds) => setForm(prev => ({ ...prev, tagIds }))}
+            allTags={allTags || []}
+          />
+
+          {formError && (
+            <p className="text-sm text-red-500">{formError}</p>
+          )}
+
+          <div className="flex gap-2 pt-1 sticky bottom-0 bg-white dark:bg-gray-900 pb-4">
+            <Button type="submit" disabled={isPending} className="flex-1">
+              {isPending ? "Guardando..." : editingId ? "Actualizar" : "Guardar"}
+            </Button>
+            <Button type="button" variant="outline" onClick={cancelForm}>
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -549,6 +550,13 @@ export default function TransactionsPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-[200px]"
           />
+          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          {accounts && accounts.length > 0 && (
+            <select className="h-9 rounded-md border border-input bg-background px-3 text-sm" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
+              <option value="">Todas las cuentas</option>
+              {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          )}
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex gap-1">
               {(["all", "INCOME", "EXPENSE"] as const).map((t) => (

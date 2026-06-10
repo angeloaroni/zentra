@@ -178,4 +178,34 @@ export class SplitsController {
   deleteTemplate(@Param('id') id: string, @Req() req: any) {
     return this.splitsService.deleteTemplate(id, req.user.id)
   }
+
+  @Post('expenses/:id/items')
+  addItem(@Param('id') id: string, @Body() dto: { name: string; amount: number; quantity?: number; assignedTo: string[] }, @Req() req: any) {
+    return this.splitsService.addExpenseItem(id, req.user.id, dto)
+  }
+
+  @Delete('expenses/items/:itemId')
+  removeItem(@Param('itemId') itemId: string, @Req() req: any) {
+    return this.splitsService.removeExpenseItem(itemId, req.user.id)
+  }
+
+  @Get('currencies/rates')
+  getCurrencyRates() {
+    return {
+      EUR: 1, USD: 1.08, GBP: 0.86, MXN: 19.5, COP: 4200,
+      ARS: 950, CLP: 950, PEN: 3.8, BRL: 5.4, VES: 36,
+    }
+  }
+
+  @Get('currencies/convert')
+  convertCurrency(@Query('amount') amount: string, @Query('from') from: string, @Query('to') to: string) {
+    const rates: Record<string, number> = {
+      EUR: 1, USD: 1.08, GBP: 0.86, MXN: 19.5, COP: 4200,
+      ARS: 950, CLP: 950, PEN: 3.8, BRL: 5.4, VES: 36,
+    }
+    const fromRate = rates[from] || 1
+    const toRate = rates[to] || 1
+    const result = (parseFloat(amount) / fromRate) * toRate
+    return { amount: parseFloat(amount), from, to, result: Math.round(result * 100) / 100 }
+  }
 }

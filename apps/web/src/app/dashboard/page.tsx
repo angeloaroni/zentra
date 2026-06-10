@@ -174,6 +174,12 @@ export default function DashboardPage() {
     staleTime: 300_000,
   })
 
+  const { data: overallBalance } = useQuery<{ owedToUser: number; userOwes: number }>({
+    queryKey: ["overall-balance"],
+    queryFn: () => api("/splits/groups/balances/overall"),
+    staleTime: 300_000,
+  })
+
   const pieData = (byCategory || []).map((item, i) => ({
     name: item.name || "Otro",
     value: item.amount,
@@ -476,6 +482,37 @@ export default function DashboardPage() {
                     } stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray={`${healthScore.score}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                   </svg>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </FadeIn>
+      )}
+
+      {overallBalance && (overallBalance.owedToUser > 0 || overallBalance.userOwes > 0) && (
+        <FadeIn>
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Division de gastos</p>
+                  <div className="flex items-center gap-4 mt-1">
+                    {overallBalance.owedToUser > 0 && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-emerald-600">Te deben</span>
+                        <span className="font-bold text-emerald-600">{formatMoney(overallBalance.owedToUser, currency)}</span>
+                      </div>
+                    )}
+                    {overallBalance.userOwes > 0 && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-red-600">Debes</span>
+                        <span className="font-bold text-red-600">{formatMoney(overallBalance.userOwes, currency)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Link href="/dashboard/splits" className="text-sm text-blue-600 hover:text-blue-700">
+                  Ver grupos
+                </Link>
               </div>
             </CardContent>
           </Card>

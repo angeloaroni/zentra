@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2, Pencil, Tag, X } from "lucide-react"
+import { Plus, Trash2, Pencil, Tag } from "lucide-react"
+import { Modal } from "@/components/ui/modal"
 import { useMounted } from "@/lib/settings"
 import { useToast } from "@/components/ui/toast"
 import { SkeletonCategoryCard } from "@/components/ui/skeleton"
@@ -166,88 +167,78 @@ export default function CategoriesPage() {
         </Button>
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={cancelForm}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-              <h2 className="text-lg font-semibold">
-                {editingId ? "Editar categoria" : "Nueva categoria"}
-              </h2>
-              <button onClick={cancelForm} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
+      <Modal open={showForm} onClose={cancelForm} title={editingId ? "Editar categoria" : "Nueva categoria"}>
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nombre</Label>
+              <Input
+                placeholder="Ej: Restaurantes"
+                value={form.name}
+                onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+              />
             </div>
-            <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Nombre</Label>
-                  <Input
-                    placeholder="Ej: Restaurantes"
-                    value={form.name}
-                    onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+
+            <div className="space-y-2">
+              <Label>Icono (nombre Lucide)</Label>
+              <Input
+                placeholder="Ej: coffee, car, home"
+                value={form.icon}
+                onChange={(e) => setForm(prev => ({ ...prev, icon: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <select
+                value={form.type}
+                onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value }))}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="EXPENSE">Gasto</option>
+                <option value="INCOME">Ingreso</option>
+                <option value="BOTH">Ambos</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Color</Label>
+              <div className="flex gap-2 flex-wrap">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`h-8 w-8 rounded-full border-2 transition-all ${
+                      form.color === c
+                        ? "border-foreground scale-110"
+                        : "border-transparent"
+                    }`}
+                    style={{ backgroundColor: c }}
+                    onClick={() => setForm(prev => ({ ...prev, color: c }))}
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Icono (nombre Lucide)</Label>
-                  <Input
-                    placeholder="Ej: coffee, car, home"
-                    value={form.icon}
-                    onChange={(e) => setForm(prev => ({ ...prev, icon: e.target.value }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Tipo</Label>
-                  <select
-                    value={form.type}
-                    onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value }))}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  >
-                    <option value="EXPENSE">Gasto</option>
-                    <option value="INCOME">Ingreso</option>
-                    <option value="BOTH">Ambos</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Color</Label>
-                  <div className="flex gap-2 flex-wrap">
-                    {PRESET_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        className={`h-8 w-8 rounded-full border-2 transition-all ${
-                          form.color === c
-                            ? "border-foreground scale-110"
-                            : "border-transparent"
-                        }`}
-                        style={{ backgroundColor: c }}
-                        onClick={() => setForm(prev => ({ ...prev, color: c }))}
-                      />
-                    ))}
-                  </div>
-                </div>
+                ))}
               </div>
-
-              {formError && (
-                <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-2 rounded">
-                  {formError}
-                </p>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <Button type="submit" disabled={editingId ? updateMutation.isPending : createMutation.isPending}>
-                  {editingId
-                    ? (updateMutation.isPending ? "Actualizando..." : "Actualizar")
-                    : (createMutation.isPending ? "Guardando..." : "Guardar")}
-                </Button>
-                <Button type="button" variant="outline" onClick={cancelForm}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
+
+          {formError && (
+            <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-2 rounded">
+              {formError}
+            </p>
+          )}
+
+          <div className="flex gap-2 pt-2">
+            <Button type="submit" disabled={editingId ? updateMutation.isPending : createMutation.isPending}>
+              {editingId
+                ? (updateMutation.isPending ? "Actualizando..." : "Actualizar")
+                : (createMutation.isPending ? "Guardando..." : "Guardar")}
+            </Button>
+            <Button type="button" variant="outline" onClick={cancelForm}>
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <div className="flex gap-2">
         <Button

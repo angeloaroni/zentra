@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { api, getUser } from "@/lib/api"
 import { useToast } from "@/components/ui/toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -129,6 +130,11 @@ function BillingContent() {
       addToast({ title: "Cancelado", description: "El proceso de suscripcion fue cancelado.", variant: "warning" })
     }
   }, [searchParams, addToast])
+
+  const { data: usage } = useQuery<Record<string, { used: number; limit: number | string }>>({
+    queryKey: ["subscription-usage"],
+    queryFn: () => api("/subscriptions/usage"),
+  })
 
   const currentPlan = subscription?.plan || "free"
 
@@ -276,6 +282,31 @@ function BillingContent() {
           )}
         </CardContent>
       </Card>
+
+      {usage && currentPlan === "free" && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader><CardTitle className="text-sm">Uso del plan</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            {Object.entries(usage).map(([key, data]) => (
+              <div key={key}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="capitalize">{key === "splitExpenses" ? "Gastos compartidos" : key}</span>
+                  <span className="text-muted-foreground">{data.used} / {data.limit}</span>
+                </div>
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      typeof data.limit === "number" && data.used / data.limit > 0.8 ? "bg-red-500" :
+                      typeof data.limit === "number" && data.used / data.limit > 0.5 ? "bg-amber-500" : "bg-emerald-500"
+                    }`}
+                    style={{ width: `${typeof data.limit === "number" ? Math.min((data.used / data.limit) * 100, 100) : 0}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Cambiar plan</h2>

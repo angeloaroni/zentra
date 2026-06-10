@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SkeletonCard } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/toast"
-import { Plus, PartyPopper, X } from "lucide-react"
+import { Plus, PartyPopper } from "lucide-react"
+import { Modal } from "@/components/ui/modal"
 import Link from "next/link"
 
 const TAG_COLORS = [
@@ -154,93 +155,85 @@ export default function EventsPage() {
         </Button>
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={() => { setShowForm(false); setFormError("") }}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-              <h2 className="text-lg font-semibold">Nuevo evento</h2>
-              <button onClick={() => { setShowForm(false); setFormError("") }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
+      <Modal open={showForm} onClose={() => { setShowForm(false); setFormError("") }} title="Nuevo evento">
+        <form onSubmit={handleCreate} className="p-4 sm:p-5 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Nombre</Label>
+              <Input
+                placeholder="Ej: Cumpleanos de Sofia"
+                value={form.name}
+                onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+              />
             </div>
-            <form onSubmit={handleCreate} className="p-4 sm:p-5 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>Nombre</Label>
-                  <Input
-                    placeholder="Ej: Cumpleanos de Sofia"
-                    value={form.name}
-                    onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-                  />
-                </div>
 
-                <div className="space-y-2">
-                  <Label>Presupuesto mensual (opcional)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Sin limite"
-                    value={form.budget}
-                    onChange={(e) => setForm(prev => ({ ...prev, budget: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Color</Label>
-                <div className="flex flex-wrap gap-2">
-                  {TAG_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className={`h-9 w-9 rounded-full border-2 transition-all ${
-                        form.color === c ? "border-foreground scale-110" : "border-transparent"
-                      }`}
-                      style={{ backgroundColor: c }}
-                      onClick={() => setForm(prev => ({ ...prev, color: c }))}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Icono</Label>
-                <div className="flex flex-wrap gap-2">
-                  {TAG_ICONS.map((iconName) => (
-                    <button
-                      key={iconName}
-                      type="button"
-                      className={`min-h-[44px] min-w-[44px] rounded-lg border-2 flex items-center justify-center text-xl transition-all ${
-                        form.icon === iconName
-                          ? "border-primary bg-primary/10"
-                          : "border-transparent bg-secondary"
-                      }`}
-                      onClick={() => setForm(prev => ({ ...prev, icon: iconName }))}
-                    >
-                      {renderTagIcon(iconName)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {formError && (
-                <p className="text-sm text-red-500">{formError}</p>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Creando..." : "Crear evento"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => { setShowForm(false); setFormError("") }}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+            <div className="space-y-2">
+              <Label>Presupuesto mensual (opcional)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="Sin limite"
+                value={form.budget}
+                onChange={(e) => setForm(prev => ({ ...prev, budget: e.target.value }))}
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="space-y-2">
+            <Label>Color</Label>
+            <div className="flex flex-wrap gap-2">
+              {TAG_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`h-9 w-9 rounded-full border-2 transition-all ${
+                    form.color === c ? "border-foreground scale-110" : "border-transparent"
+                  }`}
+                  style={{ backgroundColor: c }}
+                  onClick={() => setForm(prev => ({ ...prev, color: c }))}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Icono</Label>
+            <div className="flex flex-wrap gap-2">
+              {TAG_ICONS.map((iconName) => (
+                <button
+                  key={iconName}
+                  type="button"
+                  className={`min-h-[44px] min-w-[44px] rounded-lg border-2 flex items-center justify-center text-xl transition-all ${
+                    form.icon === iconName
+                      ? "border-primary bg-primary/10"
+                      : "border-transparent bg-secondary"
+                  }`}
+                  onClick={() => setForm(prev => ({ ...prev, icon: iconName }))}
+                >
+                  {renderTagIcon(iconName)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {formError && (
+            <p className="text-sm text-red-500">{formError}</p>
+          )}
+
+          <div className="flex gap-2 pt-2">
+            <Button type="submit" disabled={createMutation.isPending}>
+              {createMutation.isPending ? "Creando..." : "Crear evento"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => { setShowForm(false); setFormError("") }}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

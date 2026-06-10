@@ -19,6 +19,7 @@ import {
   Pencil, Eye, X, FileText, Image as ImageIcon, Clock, ChevronDown, ChevronUp,
   Search, RefreshCw,
 } from "lucide-react"
+import { Modal } from "@/components/ui/modal"
 import Link from "next/link"
 
 interface User {
@@ -50,6 +51,15 @@ interface SharedExpense {
   receiptMime?: string
   paidBy: User
   splits: ExpenseSplit[]
+  items?: ExpenseItem[]
+}
+
+interface ExpenseItem {
+  id: string
+  name: string
+  amount: number
+  quantity: number
+  assignedTo: string[]
 }
 
 interface Settlement {
@@ -133,6 +143,7 @@ export default function GroupDetailPage() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
   const [zoomImage, setZoomImage] = useState<string | null>(null)
+  const [showConverted, setShowConverted] = useState(false)
 
   const [expenseForm, setExpenseForm] = useState({
     title: "",
@@ -170,6 +181,17 @@ export default function GroupDetailPage() {
     queryKey: ["split-recurring", groupId],
     queryFn: () => api(`/splits/recurring?groupId=${groupId}`),
     enabled: !!groupId && activeTab === "recurring",
+  })
+
+  const { data: templates } = useQuery<{ id: string; name: string; splitType: string; memberIds: string[] }[]>({
+    queryKey: ["split-templates"],
+    queryFn: () => api("/splits/templates"),
+  })
+
+  const { data: conversionRate } = useQuery<{ result: number }>({
+    queryKey: ["currency-convert", group?.currency, currency],
+    queryFn: () => api(`/splits/currencies/convert?amount=1&from=${group!.currency}&to=${currency}`),
+    enabled: showConverted && !!group && group.currency !== currency,
   })
 
   const createExpenseMutation = useMutation({
@@ -411,6 +433,13 @@ export default function GroupDetailPage() {
     }))
   }
 
+  function formatAmount(amount: number, amountCurrency: string) {
+    if (showConverted && conversionRate && amountCurrency === group?.currency) {
+      return formatMoney(amount * conversionRate.result, currency)
+    }
+    return formatMoney(amount, amountCurrency)
+  }
+
   const filteredExpenses = group?.expenses.filter((e) =>
     !search || e.title.toLowerCase().includes(search.toLowerCase()) || e.description?.toLowerCase().includes(search.toLowerCase())
   ) || []
@@ -472,27 +501,19 @@ export default function GroupDetailPage() {
         )}
       </div>
 
-      {showEditGroup && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={() => setShowEditGroup(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-              <h2 className="text-lg font-semibold">Editar grupo</h2>
-              <button onClick={() => setShowEditGroup(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
+      <Modal open={showEditGroup} onClose={() => setShowEditGroup(false)} title="Editar grupo">
+        <div className="p-4 sm:p-5 space-y-3">
+          <form onSubmit={(e) => { e.preventDefault(); updateGroupMutation.mutate(editGroupForm) }} className="space-y-4">
+            <div className="space-y-2"><Label>Nombre</Label><Input value={editGroupForm.name} onChange={(e) => setEditGroupForm(prev => ({ ...prev, name: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Descripcion</Label><Input value={editGroupForm.description} onChange={(e) => setEditGroupForm(prev => ({ ...prev, description: e.target.value }))} /></div>
+            {formError && <p className="text-sm text-red-500">{formError}</p>}
+            <div className="flex gap-2">
+              <Button type="submit" disabled={updateGroupMutation.isPending}>Guardar</Button>
+              <Button type="button" variant="outline" onClick={() => setShowEditGroup(false)}>Cancelar</Button>
             </div>
-            <div className="p-4 sm:p-5 space-y-3">
-              <form onSubmit={(e) => { e.preventDefault(); updateGroupMutation.mutate(editGroupForm) }} className="space-y-4">
-                <div className="space-y-2"><Label>Nombre</Label><Input value={editGroupForm.name} onChange={(e) => setEditGroupForm(prev => ({ ...prev, name: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Descripcion</Label><Input value={editGroupForm.description} onChange={(e) => setEditGroupForm(prev => ({ ...prev, description: e.target.value }))} /></div>
-                {formError && <p className="text-sm text-red-500">{formError}</p>}
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={updateGroupMutation.isPending}>Guardar</Button>
-                  <Button type="button" variant="outline" onClick={() => setShowEditGroup(false)}>Cancelar</Button>
-                </div>
-              </form>
-            </div>
-          </div>
+          </form>
         </div>
-      )}
+      </Modal>
 
       <div className="flex gap-1 border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
         {tabs.map((tab) => (
@@ -513,90 +534,123 @@ export default function GroupDetailPage() {
             <Button onClick={() => { resetExpenseForm(); setShowExpenseForm(true) }}>
               <Plus className="h-4 w-4 mr-2" />Nuevo gasto
             </Button>
-          </div>
-
-          {showExpenseForm && (
-            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={() => resetExpenseForm()}>
-              <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-                  <h2 className="text-lg font-semibold">{editingExpense ? "Editar gasto" : "Nuevo gasto"}</h2>
-                  <button onClick={resetExpenseForm} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
-                </div>
-                <div className="p-4 sm:p-5 space-y-3">
-                  <form onSubmit={handleExpenseSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Titulo *</Label><Input placeholder="Ej: Cena, Taxi, Hotel" value={expenseForm.title} onChange={(e) => setExpenseForm(prev => ({ ...prev, title: e.target.value }))} required /></div>
-                      <div className="space-y-2"><Label>Monto ({group.currency}) *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={expenseForm.amount} onChange={(e) => setExpenseForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Fecha</Label><Input type="date" value={expenseForm.date} onChange={(e) => setExpenseForm(prev => ({ ...prev, date: e.target.value }))} /></div>
-                      <div className="space-y-2"><Label>Tipo de division</Label>
-                        <div className="flex gap-2">
-                          {(["EQUAL", "PERCENTAGE", "EXACT"] as const).map((type) => (
-                            <Button key={type} type="button" variant={expenseForm.splitType === type ? "default" : "outline"} size="sm"
-                              onClick={() => setExpenseForm(prev => ({ ...prev, splitType: type }))}>
-                              {type === "EQUAL" ? "Igual" : type === "PERCENTAGE" ? "%" : "Exacto"}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2"><Label>Descripcion (opcional)</Label><Input placeholder="Descripcion..." value={expenseForm.description} onChange={(e) => setExpenseForm(prev => ({ ...prev, description: e.target.value }))} /></div>
-                    <div className="space-y-2">
-                      <Label>Ticket/factura (opcional)</Label>
-                      <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileChange} />
-                      {receiptPreview ? (
-                        <div className="flex items-center gap-3 p-3 border rounded-lg">
-                          {receiptFile?.type.startsWith("image/") || receiptPreview.startsWith("data:image") ? (
-                            <img src={receiptPreview} alt="Preview" className="h-16 w-16 object-cover rounded" />
-                          ) : (
-                            <FileText className="h-8 w-8 text-blue-500" />
-                          )}
-                          <div className="flex-1"><p className="text-sm font-medium truncate">{receiptFile?.name || "Ticket subido"}</p></div>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => { setReceiptFile(null); setReceiptPreview(null) }}><X className="h-4 w-4" /></Button>
-                        </div>
-                      ) : (
-                        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                          <ImageIcon className="h-4 w-4 mr-2" />Subir imagen o PDF
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-2"><Label>Participantes</Label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {group.members.map((m) => {
-                          const isSelected = expenseForm.selectedMembers.includes(m.user.id) || expenseForm.selectedMembers.length === 0
-                          return (
-                            <div key={m.user.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? "border-primary bg-primary/5" : "border-gray-200 dark:border-gray-700"}`}
-                              onClick={() => toggleMemberSelection(m.user.id)}>
-                              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
-                                {m.user.name?.charAt(0)?.toUpperCase() || "U"}
-                              </div>
-                              <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{m.user.name}</p></div>
-                              {expenseForm.splitType === "PERCENTAGE" && isSelected && (
-                                <Input type="number" step="0.01" min="0" max="100" placeholder="%" className="w-20 h-8 shrink-0" value={expenseForm.percentages[m.user.id] || ""} onClick={(e) => e.stopPropagation()}
-                                  onChange={(e) => setExpenseForm(prev => ({ ...prev, percentages: { ...prev.percentages, [m.user.id]: e.target.value } }))} />
-                              )}
-                              {expenseForm.splitType === "EXACT" && isSelected && (
-                                <Input type="number" step="0.01" min="0" placeholder={group.currency} className="w-24 h-8 shrink-0" value={expenseForm.exactAmounts[m.user.id] || ""} onClick={(e) => e.stopPropagation()}
-                                  onChange={(e) => setExpenseForm(prev => ({ ...prev, exactAmounts: { ...prev.exactAmounts, [m.user.id]: e.target.value } }))} />
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                    {formError && <p className="text-sm text-red-500">{formError}</p>}
-                    <div className="flex gap-2">
-                      <Button type="submit" disabled={createExpenseMutation.isPending || updateExpenseMutation.isPending}>
-                        {editingExpense ? (updateExpenseMutation.isPending ? "Guardando..." : "Guardar") : (createExpenseMutation.isPending ? "Creando..." : "Crear gasto")}
-                      </Button>
-                      <Button type="button" variant="outline" onClick={resetExpenseForm}>Cancelar</Button>
-                    </div>
-                  </form>
+            {templates && templates.length > 0 && (
+              <div className="relative group">
+                <Button variant="outline" size="sm">
+                  <FileText className="h-4 w-4 mr-2" />Usar plantilla
+                </Button>
+                <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-900 border rounded-lg shadow-lg z-20 hidden group-hover:block">
+                  {templates.map((tpl) => (
+                    <button key={tpl.id} className="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-lg flex items-center gap-2"
+                      onClick={() => {
+                        setExpenseForm(prev => ({
+                          ...prev,
+                          splitType: tpl.splitType as any,
+                          selectedMembers: tpl.memberIds || [],
+                        }))
+                        setShowExpenseForm(true)
+                      }}>
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="truncate">{tpl.name}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">{tpl.splitType}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
+            )}
+          </div>
+
+          <Modal open={showExpenseForm} onClose={resetExpenseForm} title={editingExpense ? "Editar gasto" : "Nuevo gasto"}>
+            <div className="p-4 sm:p-5 space-y-3">
+              <form onSubmit={handleExpenseSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>Titulo *</Label><Input placeholder="Ej: Cena, Taxi, Hotel" value={expenseForm.title} onChange={(e) => setExpenseForm(prev => ({ ...prev, title: e.target.value }))} required /></div>
+                  <div className="space-y-2"><Label>Monto ({group.currency}) *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={expenseForm.amount} onChange={(e) => setExpenseForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>Fecha</Label><Input type="date" value={expenseForm.date} onChange={(e) => setExpenseForm(prev => ({ ...prev, date: e.target.value }))} /></div>
+                  <div className="space-y-2"><Label>Tipo de division</Label>
+                    <div className="flex gap-2">
+                      {(["EQUAL", "PERCENTAGE", "EXACT"] as const).map((type) => (
+                        <Button key={type} type="button" variant={expenseForm.splitType === type ? "default" : "outline"} size="sm"
+                          onClick={() => setExpenseForm(prev => ({ ...prev, splitType: type }))}>
+                          {type === "EQUAL" ? "Igual" : type === "PERCENTAGE" ? "%" : "Exacto"}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2"><Label>Descripcion (opcional)</Label><Input placeholder="Descripcion..." value={expenseForm.description} onChange={(e) => setExpenseForm(prev => ({ ...prev, description: e.target.value }))} /></div>
+                <div className="space-y-2">
+                  <Label>Ticket/factura (opcional)</Label>
+                  <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileChange} />
+                  {receiptPreview ? (
+                    <div className="flex items-center gap-3 p-3 border rounded-lg">
+                      {receiptFile?.type.startsWith("image/") || receiptPreview.startsWith("data:image") ? (
+                        <img src={receiptPreview} alt="Preview" className="h-16 w-16 object-cover rounded" />
+                      ) : (
+                        <FileText className="h-8 w-8 text-blue-500" />
+                      )}
+                      <div className="flex-1"><p className="text-sm font-medium truncate">{receiptFile?.name || "Ticket subido"}</p></div>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => { setReceiptFile(null); setReceiptPreview(null) }}><X className="h-4 w-4" /></Button>
+                    </div>
+                  ) : (
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                      <ImageIcon className="h-4 w-4 mr-2" />Subir imagen o PDF
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-2"><Label>Participantes</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {group.members.map((m) => {
+                      const isSelected = expenseForm.selectedMembers.includes(m.user.id) || expenseForm.selectedMembers.length === 0
+                      return (
+                        <div key={m.user.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? "border-primary bg-primary/5" : "border-gray-200 dark:border-gray-700"}`}
+                          onClick={() => toggleMemberSelection(m.user.id)}>
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
+                            {m.user.name?.charAt(0)?.toUpperCase() || "U"}
+                          </div>
+                          <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{m.user.name}</p></div>
+                          {expenseForm.splitType === "PERCENTAGE" && isSelected && (
+                            <Input type="number" step="0.01" min="0" max="100" placeholder="%" className="w-20 h-8 shrink-0" value={expenseForm.percentages[m.user.id] || ""} onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => setExpenseForm(prev => ({ ...prev, percentages: { ...prev.percentages, [m.user.id]: e.target.value } }))} />
+                          )}
+                          {expenseForm.splitType === "EXACT" && isSelected && (
+                            <Input type="number" step="0.01" min="0" placeholder={group.currency} className="w-24 h-8 shrink-0" value={expenseForm.exactAmounts[m.user.id] || ""} onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => setExpenseForm(prev => ({ ...prev, exactAmounts: { ...prev.exactAmounts, [m.user.id]: e.target.value } }))} />
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                {formError && <p className="text-sm text-red-500">{formError}</p>}
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={createExpenseMutation.isPending || updateExpenseMutation.isPending}>
+                    {editingExpense ? (updateExpenseMutation.isPending ? "Guardando..." : "Guardar") : (createExpenseMutation.isPending ? "Creando..." : "Crear gasto")}
+                  </Button>
+                  {editingExpense && (
+                    <Button type="button" variant="ghost" size="sm" onClick={async () => {
+                      try {
+                        await api("/splits/templates", { method: "POST", body: JSON.stringify({
+                          name: expenseForm.title,
+                          splitType: expenseForm.splitType,
+                          memberIds: expenseForm.selectedMembers.length > 0 ? expenseForm.selectedMembers : group.members.map(m => m.user.id),
+                        })})
+                        addToast({ title: "Plantilla guardada", variant: "success" })
+                        queryClient.invalidateQueries({ queryKey: ["split-templates"] })
+                      } catch (err: any) {
+                        addToast({ title: "Error", description: err.message, variant: "error" })
+                      }
+                    }}>
+                      Guardar como plantilla
+                    </Button>
+                  )}
+                  <Button type="button" variant="outline" onClick={resetExpenseForm}>Cancelar</Button>
+                </div>
+              </form>
             </div>
-          )}
+          </Modal>
 
           {filteredExpenses.length === 0 ? (
             <Card><CardContent className="py-12 text-center"><Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">{search ? "Sin resultados" : "Sin gastos aun"}</p></CardContent></Card>
@@ -649,7 +703,12 @@ export default function GroupDetailPage() {
             const hasDebts = membersOwed.length > 0
             return (
               <>
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                  {group.currency !== currency && (
+                    <Button variant="outline" size="sm" onClick={() => setShowConverted(!showConverted)}>
+                      {showConverted ? `Mostrar en ${group.currency}` : `Mostrar en ${currency}`}
+                    </Button>
+                  )}
                   <Button
                     onClick={() => {
                       if (!hasDebts) {
@@ -677,54 +736,46 @@ export default function GroupDetailPage() {
                     </div>
                   </div>
                 )}
-                {showSettlementForm && (
-                  <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={() => setShowSettlementForm(false)}>
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-                        <h2 className="text-lg font-semibold">Registrar pago</h2>
-                        <button onClick={() => setShowSettlementForm(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
-                      </div>
-                      <div className="p-4 sm:p-5 space-y-3">
-                        {(() => {
-                          const availableMembers = group.members.filter((m) => {
-                            if (m.user.id === user?.id) return false
-                            const memberBalance = balances?.netBalances?.find((b) => b.userId === m.user.id)
-                            return memberBalance && memberBalance.amount > 0
-                          })
-                          if (availableMembers.length === 0) {
-                            return (
-                              <div className="text-center py-6">
-                                <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
-                                  <Scale className="h-6 w-6 text-emerald-600" />
-                                </div>
-                                <p className="font-medium text-gray-900 dark:text-white">No puedes hacer pagos</p>
-                                <p className="text-sm text-muted-foreground mt-1">No debes dinero a ningun miembro del grupo</p>
-                                <Button variant="outline" size="sm" className="mt-4" onClick={() => setShowSettlementForm(false)}>Cerrar</Button>
-                              </div>
-                            )
-                          }
-                          return (
-                            <form onSubmit={(e) => { e.preventDefault(); setFormError(""); if (!settlementForm.toUserId || !settlementForm.amount) return; createSettlementMutation.mutate({ groupId, toUserId: settlementForm.toUserId, amount: parseFloat(settlementForm.amount), notes: settlementForm.notes || undefined }) }} className="space-y-4">
-                              <div className="space-y-2"><Label>Pagar a</Label>
-                                <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm" value={settlementForm.toUserId} onChange={(e) => setSettlementForm(prev => ({ ...prev, toUserId: e.target.value }))} required>
-                                  <option value="">Seleccionar...</option>
-                                  {availableMembers.map((m) => (<option key={m.user.id} value={m.user.id}>{m.user.name}</option>))}
-                                </select>
-                              </div>
-                              <div className="space-y-2"><Label>Monto ({group.currency}) *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={settlementForm.amount} onChange={(e) => setSettlementForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
-                              <div className="space-y-2"><Label>Notas</Label><Input placeholder="Nota..." value={settlementForm.notes} onChange={(e) => setSettlementForm(prev => ({ ...prev, notes: e.target.value }))} /></div>
-                              {formError && <p className="text-sm text-red-500">{formError}</p>}
-                              <div className="flex gap-2">
-                                <Button type="submit" disabled={createSettlementMutation.isPending}>{createSettlementMutation.isPending ? "Registrando..." : "Registrar pago"}</Button>
-                                <Button type="button" variant="outline" onClick={() => setShowSettlementForm(false)}>Cancelar</Button>
-                              </div>
-                            </form>
-                          )
-                        })()}
-                      </div>
-                    </div>
+                <Modal open={showSettlementForm} onClose={() => setShowSettlementForm(false)} title="Registrar pago">
+                  <div className="p-4 sm:p-5 space-y-3">
+                    {(() => {
+                      const availableMembers = group.members.filter((m) => {
+                        if (m.user.id === user?.id) return false
+                        const memberBalance = balances?.netBalances?.find((b) => b.userId === m.user.id)
+                        return memberBalance && memberBalance.amount > 0
+                      })
+                      if (availableMembers.length === 0) {
+                        return (
+                          <div className="text-center py-6">
+                            <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
+                              <Scale className="h-6 w-6 text-emerald-600" />
+                            </div>
+                            <p className="font-medium text-gray-900 dark:text-white">No puedes hacer pagos</p>
+                            <p className="text-sm text-muted-foreground mt-1">No debes dinero a ningun miembro del grupo</p>
+                            <Button variant="outline" size="sm" className="mt-4" onClick={() => setShowSettlementForm(false)}>Cerrar</Button>
+                          </div>
+                        )
+                      }
+                      return (
+                        <form onSubmit={(e) => { e.preventDefault(); setFormError(""); if (!settlementForm.toUserId || !settlementForm.amount) return; createSettlementMutation.mutate({ groupId, toUserId: settlementForm.toUserId, amount: parseFloat(settlementForm.amount), notes: settlementForm.notes || undefined }) }} className="space-y-4">
+                          <div className="space-y-2"><Label>Pagar a</Label>
+                            <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm" value={settlementForm.toUserId} onChange={(e) => setSettlementForm(prev => ({ ...prev, toUserId: e.target.value }))} required>
+                              <option value="">Seleccionar...</option>
+                              {availableMembers.map((m) => (<option key={m.user.id} value={m.user.id}>{m.user.name}</option>))}
+                            </select>
+                          </div>
+                          <div className="space-y-2"><Label>Monto ({group.currency}) *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={settlementForm.amount} onChange={(e) => setSettlementForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
+                          <div className="space-y-2"><Label>Notas</Label><Input placeholder="Nota..." value={settlementForm.notes} onChange={(e) => setSettlementForm(prev => ({ ...prev, notes: e.target.value }))} /></div>
+                          {formError && <p className="text-sm text-red-500">{formError}</p>}
+                          <div className="flex gap-2">
+                            <Button type="submit" disabled={createSettlementMutation.isPending}>{createSettlementMutation.isPending ? "Registrando..." : "Registrar pago"}</Button>
+                            <Button type="button" variant="outline" onClick={() => setShowSettlementForm(false)}>Cancelar</Button>
+                          </div>
+                        </form>
+                      )
+                    })()}
                   </div>
-                )}
+                </Modal>
                 {balances?.simplifiedDebts.length === 0 ? (
                   <Card><CardContent className="py-12 text-center"><Scale className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">Todos estan al dia</p><p className="text-sm text-muted-foreground mt-1">No hay deudas pendientes</p></CardContent></Card>
                 ) : (
@@ -736,7 +787,7 @@ export default function GroupDetailPage() {
                           <div><p className="font-medium">{debt.fromName}</p><p className="text-xs text-muted-foreground">debe</p></div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xl font-bold text-red-600">{formatMoney(debt.amount, group.currency)}</span>
+                          <span className="text-xl font-bold text-red-600">{formatAmount(debt.amount, group.currency)}</span>
                           <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm">{debt.toName?.charAt(0)?.toUpperCase()}</div>
                         </div>
                       </CardContent></Card>
@@ -760,7 +811,7 @@ export default function GroupDetailPage() {
                   <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-medium">{s.fromUser.name?.charAt(0)?.toUpperCase()}</div>
                   <div><p className="font-medium">{s.fromUser.name} pago a {s.toUser.name}</p><p className="text-xs text-muted-foreground">{formatDateShort(new Date(s.date))}</p>{s.notes && <p className="text-xs text-muted-foreground">{s.notes}</p>}</div>
                 </div>
-                <span className="font-bold text-emerald-600">{formatMoney(s.amount, group.currency)}</span>
+                <span className="font-bold text-emerald-600">{formatAmount(s.amount, group.currency)}</span>
               </CardContent></Card>
             ))
           )}
@@ -772,26 +823,18 @@ export default function GroupDetailPage() {
           <div className="flex justify-end">
             <Button onClick={() => { setShowInviteForm(!showInviteForm); setFormError("") }}><Plus className="h-4 w-4 mr-2" />Invitar</Button>
           </div>
-          {showInviteForm && (
-            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={() => setShowInviteForm(false)}>
-              <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-                  <h2 className="text-lg font-semibold">Invitar miembro</h2>
-                  <button onClick={() => setShowInviteForm(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
+          <Modal open={showInviteForm} onClose={() => setShowInviteForm(false)} title="Invitar miembro">
+            <div className="p-4 sm:p-5 space-y-3">
+              <form onSubmit={(e) => { e.preventDefault(); if (!inviteEmail.trim()) return; inviteMutation.mutate({ email: inviteEmail.trim() }) }} className="space-y-4">
+                <div className="space-y-2"><Label>Email del usuario</Label><Input type="email" placeholder="email@ejemplo.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required /></div>
+                {formError && <p className="text-sm text-red-500">{formError}</p>}
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={inviteMutation.isPending}>{inviteMutation.isPending ? "Invitando..." : "Invitar"}</Button>
+                  <Button type="button" variant="outline" onClick={() => setShowInviteForm(false)}>Cancelar</Button>
                 </div>
-                <div className="p-4 sm:p-5 space-y-3">
-                  <form onSubmit={(e) => { e.preventDefault(); if (!inviteEmail.trim()) return; inviteMutation.mutate({ email: inviteEmail.trim() }) }} className="space-y-4">
-                    <div className="space-y-2"><Label>Email del usuario</Label><Input type="email" placeholder="email@ejemplo.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required /></div>
-                    {formError && <p className="text-sm text-red-500">{formError}</p>}
-                    <div className="flex gap-2">
-                      <Button type="submit" disabled={inviteMutation.isPending}>{inviteMutation.isPending ? "Invitando..." : "Invitar"}</Button>
-                      <Button type="button" variant="outline" onClick={() => setShowInviteForm(false)}>Cancelar</Button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+              </form>
             </div>
-          )}
+          </Modal>
           <div className="space-y-3">
             {group.members.map((m) => (
               <Card key={m.user.id}><CardContent className="p-4 flex items-center justify-between">
@@ -813,37 +856,29 @@ export default function GroupDetailPage() {
           <div className="flex justify-end">
             <Button onClick={() => { setShowRecurringForm(!showRecurringForm); setFormError("") }}><Plus className="h-4 w-4 mr-2" />Nuevo recurrente</Button>
           </div>
-          {showRecurringForm && (
-            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={() => setShowRecurringForm(false)}>
-              <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-                  <h2 className="text-lg font-semibold">Gasto recurrente</h2>
-                  <button onClick={() => setShowRecurringForm(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
+          <Modal open={showRecurringForm} onClose={() => setShowRecurringForm(false)} title="Gasto recurrente">
+            <div className="p-4 sm:p-5 space-y-3">
+              <form onSubmit={(e) => { e.preventDefault(); setFormError(""); if (!recurringForm.title.trim() || !recurringForm.amount) return; createRecurringMutation.mutate({ groupId, title: recurringForm.title.trim(), amount: parseFloat(recurringForm.amount), frequency: recurringForm.frequency, splitType: "EQUAL", nextDueDate: new Date(recurringForm.nextDueDate).toISOString(), splits: group.members.map((m) => ({ userId: m.user.id, amount: 0 })) }) }} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>Titulo *</Label><Input placeholder="Ej: Alquiler, Internet" value={recurringForm.title} onChange={(e) => setRecurringForm(prev => ({ ...prev, title: e.target.value }))} required /></div>
+                  <div className="space-y-2"><Label>Monto *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={recurringForm.amount} onChange={(e) => setRecurringForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
                 </div>
-                <div className="p-4 sm:p-5 space-y-3">
-                  <form onSubmit={(e) => { e.preventDefault(); setFormError(""); if (!recurringForm.title.trim() || !recurringForm.amount) return; createRecurringMutation.mutate({ groupId, title: recurringForm.title.trim(), amount: parseFloat(recurringForm.amount), frequency: recurringForm.frequency, splitType: "EQUAL", nextDueDate: new Date(recurringForm.nextDueDate).toISOString(), splits: group.members.map((m) => ({ userId: m.user.id, amount: 0 })) }) }} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Titulo *</Label><Input placeholder="Ej: Alquiler, Internet" value={recurringForm.title} onChange={(e) => setRecurringForm(prev => ({ ...prev, title: e.target.value }))} required /></div>
-                      <div className="space-y-2"><Label>Monto *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={recurringForm.amount} onChange={(e) => setRecurringForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Frecuencia</Label>
-                        <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm" value={recurringForm.frequency} onChange={(e) => setRecurringForm(prev => ({ ...prev, frequency: e.target.value }))}>
-                          <option value="DAILY">Diario</option><option value="WEEKLY">Semanal</option><option value="MONTHLY">Mensual</option><option value="YEARLY">Anual</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2"><Label>Proxima fecha</Label><Input type="date" value={recurringForm.nextDueDate} onChange={(e) => setRecurringForm(prev => ({ ...prev, nextDueDate: e.target.value }))} /></div>
-                    </div>
-                    {formError && <p className="text-sm text-red-500">{formError}</p>}
-                    <div className="flex gap-2">
-                      <Button type="submit" disabled={createRecurringMutation.isPending}>{createRecurringMutation.isPending ? "Creando..." : "Crear"}</Button>
-                      <Button type="button" variant="outline" onClick={() => setShowRecurringForm(false)}>Cancelar</Button>
-                    </div>
-                  </form>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>Frecuencia</Label>
+                    <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm" value={recurringForm.frequency} onChange={(e) => setRecurringForm(prev => ({ ...prev, frequency: e.target.value }))}>
+                      <option value="DAILY">Diario</option><option value="WEEKLY">Semanal</option><option value="MONTHLY">Mensual</option><option value="YEARLY">Anual</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2"><Label>Proxima fecha</Label><Input type="date" value={recurringForm.nextDueDate} onChange={(e) => setRecurringForm(prev => ({ ...prev, nextDueDate: e.target.value }))} /></div>
                 </div>
-              </div>
+                {formError && <p className="text-sm text-red-500">{formError}</p>}
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={createRecurringMutation.isPending}>{createRecurringMutation.isPending ? "Creando..." : "Crear"}</Button>
+                  <Button type="button" variant="outline" onClick={() => setShowRecurringForm(false)}>Cancelar</Button>
+                </div>
+              </form>
             </div>
-          )}
+          </Modal>
           {!recurringExpenses?.length ? (
             <Card><CardContent className="py-12 text-center"><RefreshCw className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">Sin gastos recurrentes</p><p className="text-sm text-muted-foreground mt-1">Crea gastos que se repitan automaticamente</p></CardContent></Card>
           ) : (
@@ -865,64 +900,68 @@ export default function GroupDetailPage() {
         </div>
       )}
 
-      {detailExpense && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={() => setDetailExpense(null)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-lg max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="font-semibold text-lg">{detailExpense.title}</h3>
-              <button onClick={() => setDetailExpense(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
+      <Modal open={!!detailExpense} onClose={() => setDetailExpense(null)} title={detailExpense?.title || ""} maxWidth="sm:max-w-lg">
+        <div className="p-4 space-y-4">
+          {detailExpense?.description && <p className="text-sm text-muted-foreground">{detailExpense.description}</p>}
+          <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Monto total</span><span className="text-xl font-bold">{formatMoney(detailExpense?.amount || 0, detailExpense?.currency || group.currency)}</span></div>
+          <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Pagado por</span><span className="font-medium">{detailExpense?.paidBy.name}</span></div>
+          <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Fecha</span><span className="font-medium">{detailExpense ? formatDateShort(new Date(detailExpense.date)) : ""}</span></div>
+          <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Tipo</span><span className="font-medium">{detailExpense?.splitType === "EQUAL" ? "Igual para todos" : detailExpense?.splitType === "PERCENTAGE" ? "Por porcentaje" : "Monto exacto"}</span></div>
+          {detailExpense?.receiptData && detailExpense?.receiptMime && (
+            <div><p className="text-sm text-muted-foreground mb-2">Ticket/factura</p>
+              {detailExpense.receiptMime === "application/pdf" ? (
+                <a href={`data:application/pdf;base64,${detailExpense.receiptData}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline"><FileText className="h-5 w-5" />Ver PDF</a>
+              ) : (
+                <button onClick={() => setZoomImage(`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`)} className="block cursor-pointer hover:opacity-80 transition-opacity w-full">
+                  <img src={`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`} alt="Ticket" className="w-full max-h-64 object-contain rounded-lg border" />
+                </button>
+              )}
             </div>
-            <div className="p-4 space-y-4">
-              {detailExpense.description && <p className="text-sm text-muted-foreground">{detailExpense.description}</p>}
-              <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Monto total</span><span className="text-xl font-bold">{formatMoney(detailExpense.amount, detailExpense.currency)}</span></div>
-              <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Pagado por</span><span className="font-medium">{detailExpense.paidBy.name}</span></div>
-              <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Fecha</span><span className="font-medium">{formatDateShort(new Date(detailExpense.date))}</span></div>
-              <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Tipo</span><span className="font-medium">{detailExpense.splitType === "EQUAL" ? "Igual para todos" : detailExpense.splitType === "PERCENTAGE" ? "Por porcentaje" : "Monto exacto"}</span></div>
-              {detailExpense.receiptData && detailExpense.receiptMime && (
-                <div><p className="text-sm text-muted-foreground mb-2">Ticket/factura</p>
-                  {detailExpense.receiptMime === "application/pdf" ? (
-                    <a href={`data:application/pdf;base64,${detailExpense.receiptData}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline"><FileText className="h-5 w-5" />Ver PDF</a>
-                  ) : (
-                    <button onClick={() => setZoomImage(`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`)} className="block cursor-pointer hover:opacity-80 transition-opacity w-full">
-                      <img src={`data:${detailExpense.receiptMime};base64,${detailExpense.receiptData}`} alt="Ticket" className="w-full max-h-64 object-contain rounded-lg border" />
-                    </button>
-                  )}
+          )}
+          <div><p className="text-sm font-medium mb-2">Divisiones</p>
+            <div className="space-y-2">
+              {detailExpense?.splits.map((split) => (
+                <div key={split.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-medium">{split.user.name?.charAt(0)?.toUpperCase()}</div>
+                    <span className="text-sm">{split.user.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{formatMoney(split.amount, detailExpense?.currency || group.currency)}</span>
+                    {(user?.id === detailExpense?.paidBy.id || user?.id === split.userId) && (
+                      <Button size="sm" variant={split.isPaid ? "ghost" : "outline"} className={`h-7 text-xs ${split.isPaid ? "text-emerald-600 hover:text-red-500" : ""}`}
+                        onClick={() => markSplitPaidMutation.mutate({ expenseId: detailExpense!.id, splitId: split.id })} disabled={markSplitPaidMutation.isPending}>
+                        {split.isPaid ? "Pagado ✓" : "Marcar pagado"}
+                      </Button>
+                    )}
+                    {!split.isPaid && (user?.id !== detailExpense?.paidBy.id && user?.id !== split.userId) && (
+                      <span className="text-xs text-amber-600">Pendiente</span>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div><p className="text-sm font-medium mb-2">Divisiones</p>
-                <div className="space-y-2">
-                  {detailExpense.splits.map((split) => (
-                    <div key={split.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
-                      <div className="flex items-center gap-2">
-                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-medium">{split.user.name?.charAt(0)?.toUpperCase()}</div>
-                        <span className="text-sm">{split.user.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{formatMoney(split.amount, detailExpense.currency)}</span>
-                        {(user?.id === detailExpense.paidBy.id || user?.id === split.userId) && (
-                          <Button size="sm" variant={split.isPaid ? "ghost" : "outline"} className={`h-7 text-xs ${split.isPaid ? "text-emerald-600 hover:text-red-500" : ""}`}
-                            onClick={() => markSplitPaidMutation.mutate({ expenseId: detailExpense.id, splitId: split.id })} disabled={markSplitPaidMutation.isPending}>
-                            {split.isPaid ? "Pagado ✓" : "Marcar pagado"}
-                          </Button>
-                        )}
-                        {!split.isPaid && (user?.id !== detailExpense.paidBy.id && user?.id !== split.userId) && (
-                          <span className="text-xs text-amber-600">Pendiente</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {(user?.id === detailExpense.paidBy.id || user?.id === group.createdBy.id) && (
-                <div className="flex gap-2 pt-2 border-t">
-                  <Button variant="outline" size="sm" onClick={() => { setDetailExpense(null); startEditExpense(detailExpense) }}><Pencil className="h-4 w-4 mr-1" />Editar</Button>
-                  <Button variant="outline" size="sm" className="text-red-500" onClick={() => { setDetailExpense(null); setDeleteExpenseId(detailExpense.id) }}><Trash2 className="h-4 w-4 mr-1" />Eliminar</Button>
-                </div>
-              )}
+              ))}
             </div>
           </div>
+          {detailExpense?.items && detailExpense.items.length > 0 && (
+            <div><p className="text-sm font-medium mb-2">Items</p>
+              <div className="space-y-1">
+                {detailExpense.items.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <span className="text-sm">{item.name} {item.quantity > 1 ? `x${item.quantity}` : ""}</span>
+                    <span className="text-sm font-medium">{formatMoney(item.amount, detailExpense?.currency || group.currency)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {(user?.id === detailExpense?.paidBy.id || user?.id === group.createdBy.id) && (
+            <div className="flex gap-2 pt-2 border-t">
+              <Button variant="outline" size="sm" onClick={() => { const exp = detailExpense; setDetailExpense(null); if (exp) startEditExpense(exp) }}><Pencil className="h-4 w-4 mr-1" />Editar</Button>
+              <Button variant="outline" size="sm" className="text-red-500" onClick={() => { const id = detailExpense?.id; setDetailExpense(null); if (id) setDeleteExpenseId(id) }}><Trash2 className="h-4 w-4 mr-1" />Eliminar</Button>
+            </div>
+          )}
         </div>
-      )}
+      </Modal>
 
       <ConfirmAction open={deleteExpenseId !== null} onOpenChange={(open) => !open && setDeleteExpenseId(null)} title="Eliminar gasto" description="Esta accion no se puede deshacer." confirmLabel="Eliminar" onConfirm={() => deleteExpenseId && deleteExpenseMutation.mutate(deleteExpenseId)} loading={deleteExpenseMutation.isPending} />
       <ConfirmAction open={deleteGroupId} onOpenChange={setDeleteGroupId} title="Eliminar grupo" description="Todos los gastos y balances se perderan permanentemente." confirmLabel="Eliminar grupo" onConfirm={() => deleteGroupMutation.mutate()} loading={deleteGroupMutation.isPending} />

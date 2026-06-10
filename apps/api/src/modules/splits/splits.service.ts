@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit, Logger } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { DebtSimplifierService, DebtTransfer } from './debt-simplifier.service'
 import { PlanLimitsService } from '../subscriptions/plan-limits.service'
@@ -13,12 +13,20 @@ import {
 } from './dto'
 
 @Injectable()
-export class SplitsService {
+export class SplitsService implements OnModuleInit {
+  private readonly logger = new Logger(SplitsService.name)
+
   constructor(
     private prisma: PrismaService,
     private debtSimplifier: DebtSimplifierService,
     private planLimits: PlanLimitsService,
   ) {}
+
+  async onModuleInit() {
+    this.logger.log('Starting recurring split expense processor')
+    setInterval(() => this.processRecurringExpenses(), 60 * 60 * 1000) // Every hour
+    await this.processRecurringExpenses()
+  }
 
   async createGroup(userId: string, dto: CreateGroupDto) {
     await this.planLimits.checkSplitGroupLimit(userId)
@@ -385,6 +393,7 @@ export class SplitsService {
             user: { select: { id: true, name: true, avatar: true } },
           },
         },
+        items: true,
       },
       orderBy: { date: 'desc' },
     })
@@ -415,6 +424,7 @@ export class SplitsService {
             user: { select: { id: true, name: true, avatar: true } },
           },
         },
+        items: true,
       },
     })
 
@@ -967,5 +977,103 @@ export class SplitsService {
     if (!template) throw new NotFoundException('Template not found')
     if (template.userId !== userId) throw new ForbiddenException('Not authorized')
     return this.prisma.splitTemplate.delete({ where: { id } })
+  }
+
+  async addExpenseItem(expenseId: string, userId: string, dto: { name: string; amount: number; quantity?: number; assignedTo: string[] }) {
+    const expense = await this.prisma.sharedExpense.findUnique({ where: { id: expenseId } })
+    if (!expense) throw new NotFoundException('Expense not found')
+    if (expense.paidById !== userId) throw new ForbiddenException('Only the payer can add items')
+
+    return this.prisma.expenseItem.create({
+      data: {
+        expenseId,
+        name: dto.name,
+        amount: dto.amount,
+        quantity: dto.quantity || 1,
+        assignedTo: dto.assignedTo,
+      },
+    })
+  }
+
+  async removeExpenseItem(itemId: string, userId: string) {
+    const item = await this.prisma.expenseItem.findUnique({ where: { id: itemId } })
+    if (!item) throw new NotFoundException('Item not found')
+
+    const expense = await this.prisma.sharedExpense.findUnique({ where: { id: item.expenseId } })
+    if (!expense || expense.paidById !== userId) throw new ForbiddenException('Not authorized')
+
+    return this.prisma.expenseItem.delete({ where: { id: itemId } })
+  }
+
+  async processRecurringExpenses() {
+    try {
+      const now = new Date()
+      const dueExpenses = await this.prisma.recurringSplitExpense.findMany({
+        where: {
+          active: true,
+          nextDueDate: { lte: now },
+        },
+        include: {
+          group: { include: { members: true } },
+        },
+      })
+
+      for (const recurring of dueExpenses) {
+        try {
+          const memberIds = recurring.group.members.map((m) => m.userId)
+          const perPerson = recurring.amount / memberIds.length
+
+          await this.prisma.sharedExpense.create({
+            data: {
+              groupId: recurring.groupId,
+              paidById: recurring.paidById,
+              title: recurring.title,
+              amount: recurring.amount,
+              currency: recurring.currency,
+              date: now,
+              splitType: recurring.splitType,
+              splits: {
+                create: memberIds.map((userId) => ({
+                  userId,
+                  amount: Math.round(perPerson * 100) / 100,
+                })),
+              },
+            },
+          })
+
+          const next = new Date(recurring.nextDueDate)
+          switch (recurring.frequency) {
+            case 'DAILY': next.setDate(next.getDate() + 1); break
+            case 'WEEKLY': next.setDate(next.getDate() + 7); break
+            case 'MONTHLY': next.setMonth(next.getMonth() + 1); break
+            case 'YEARLY': next.setFullYear(next.getFullYear() + 1); break
+          }
+
+          await this.prisma.recurringSplitExpense.update({
+            where: { id: recurring.id },
+            data: { nextDueDate: next },
+          })
+
+          this.logger.log(`Auto-generated recurring expense: ${recurring.title} for group ${recurring.groupId}`)
+
+          const otherMembers = recurring.group.members.filter((m) => m.userId !== recurring.paidById)
+          for (const member of otherMembers) {
+            await this.prisma.notification.create({
+              data: {
+                type: 'SPLIT_EXPENSE',
+                title: `Gasto recurrente: ${recurring.title}`,
+                message: `Se creo automaticamente un gasto de ${recurring.amount} ${recurring.currency} en el grupo.`,
+                userId: member.userId,
+                data: JSON.stringify({ groupId: recurring.groupId }),
+              },
+            })
+          }
+        } catch (error) {
+          this.logger.error(`Error processing recurring expense ${recurring.id}: ${error}`)
+        }
+      }
+    } catch (error) {
+      this.logger.error(`Error in recurring expense processor: ${error}`)
+    }
   }
 }
