@@ -540,10 +540,11 @@ export class TransactionsService {
     });
   }
 
-  async getOverview(userId: string, familyId?: string) {
+  async getOverview(userId: string, familyId?: string, startDate?: string, endDate?: string) {
     const userIds = await getScopeUserIds(this.prisma, userId, familyId)
     const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const start = startDate ? new Date(startDate) : new Date(now.getFullYear(), now.getMonth(), 1)
+    const end = endDate ? new Date(endDate + 'T23:59:59') : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
@@ -563,12 +564,12 @@ export class TransactionsService {
       cashflowExpense,
     ] = await Promise.all([
       this.prisma.transaction.aggregate({
-        where: { ...baseWhere, date: { gte: startOfMonth } },
+        where: { ...baseWhere, date: { gte: start, lte: end } },
         _sum: { amount: true },
         _count: true,
       }),
       this.prisma.transaction.findMany({
-        where: baseWhere,
+        where: { ...baseWhere, date: { gte: start, lte: end } },
         include: {
           category: { select: { id: true, name: true, icon: true, color: true } },
           tags: { select: { id: true, name: true, color: true, icon: true } },
@@ -578,7 +579,7 @@ export class TransactionsService {
       }),
       this.prisma.transaction.groupBy({
         by: ['categoryId'],
-        where: { ...baseWhere, type: 'EXPENSE', date: { gte: startOfMonth } },
+        where: { ...baseWhere, type: 'EXPENSE', date: { gte: start, lte: end } },
         _sum: { amount: true },
         _count: true,
       }),
@@ -588,11 +589,11 @@ export class TransactionsService {
       }),
       this.prisma.$transaction([
         this.prisma.transaction.aggregate({
-          where: { ...baseWhere, type: 'INCOME', date: { gte: startOfMonth } },
+          where: { ...baseWhere, type: 'INCOME', date: { gte: start, lte: end } },
           _sum: { amount: true },
         }),
         this.prisma.transaction.aggregate({
-          where: { ...baseWhere, type: 'EXPENSE', date: { gte: startOfMonth } },
+          where: { ...baseWhere, type: 'EXPENSE', date: { gte: start, lte: end } },
           _sum: { amount: true },
         }),
         this.prisma.transaction.aggregate({
@@ -627,15 +628,17 @@ export class TransactionsService {
     const pctChange = (current: number, previous: number) =>
       previous > 0 ? ((current - previous) / previous) * 100 : current > 0 ? 100 : 0
 
-    const categoriesWithNames = await Promise.all(
-      byCategory.map(async (cat) => {
-        const category = await this.prisma.category.findUnique({
-          where: { id: cat.categoryId },
-          select: { name: true, icon: true, color: true },
-        })
-        return { ...category, amount: cat._sum.amount || 0, count: cat._count }
-      })
-    )
+    const categoryIds = byCategory.map(c => c.categoryId)
+    const categories = await this.prisma.category.findMany({
+      where: { id: { in: categoryIds } },
+      select: { id: true, name: true, icon: true, color: true },
+    })
+    const categoryMap = new Map(categories.map(c => [c.id, c]))
+    const categoriesWithNames = byCategory.map(cat => ({
+      ...categoryMap.get(cat.categoryId),
+      amount: cat._sum.amount || 0,
+      count: cat._count,
+    }))
 
     const monthlyMap: Record<string, { income: number; expense: number }> = {}
     for (let i = 0; i < 6; i++) {

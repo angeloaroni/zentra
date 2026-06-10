@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { getUser } from "@/lib/api"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Users, User, CreditCard } from "lucide-react"
 import Link from "next/link"
 
@@ -29,7 +30,14 @@ export default function SettingsPage() {
   }, [])
 
   if (!mounted || !hydrated || !familyHydrated) {
-    return <div className="space-y-6"><p className="text-center text-muted-foreground py-8">Cargando...</p></div>
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+      </div>
+    )
   }
 
   return (

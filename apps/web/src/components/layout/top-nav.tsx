@@ -181,7 +181,9 @@ export function TopNav() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <>
+        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-x-0 top-16 z-50 lg:hidden border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <nav className="p-2 space-y-1">
             {navItems.map((item) => {
               const isActive =
@@ -231,6 +233,7 @@ export function TopNav() {
             </div>
           </nav>
         </div>
+        </>
       )}
     </header>
   )

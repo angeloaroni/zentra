@@ -128,6 +128,7 @@ export default function TransactionsPage() {
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [showFilters, setShowFilters] = useState(false)
+  const [skip, setSkip] = useState(0)
   const [formError, setFormError] = useState("")
 
   useEffect(() => {
@@ -143,15 +144,19 @@ export default function TransactionsPage() {
     tagId: "",
   })
 
+  useEffect(() => {
+    setSkip(0)
+  }, [filterType, viewMode, debouncedSearch, filters, activeFamilyId])
+
   const [form, setForm] = useState<FormState>(defaultForm())
 
   const { data: txData, isLoading: txLoading, error: txError } = useQuery<{
     transactions: Transaction[]
     total: number
   }>({
-    queryKey: ["transactions", filterType, viewMode, debouncedSearch, filters, activeFamilyId],
+    queryKey: ["transactions", filterType, viewMode, debouncedSearch, filters, activeFamilyId, skip],
     queryFn: () => {
-      const params = new URLSearchParams({ take: "200" })
+      const params = new URLSearchParams({ take: "50", skip: String(skip) })
       if (filterType !== "all") params.set("type", filterType)
       if (viewMode === "recurring") params.set("recurring", "true")
       if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim())
@@ -763,6 +768,14 @@ export default function TransactionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {txData && txData.total > skip + 50 && (
+        <div className="flex justify-center py-4">
+          <Button variant="outline" onClick={() => setSkip(prev => prev + 50)}>
+            Cargar mas
+          </Button>
+        </div>
+      )}
 
       <ConfirmAction
         open={deleteId !== null}

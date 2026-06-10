@@ -126,6 +126,7 @@ model Transaction {
   @@index([familyId, date])
   @@index([userId, type, date])
   @@index([categoryId])
+  @@index([accountId])
 }
 
 model Category {

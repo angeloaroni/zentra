@@ -104,8 +104,8 @@ export class TransactionsController {
 
   @Get('overview')
   @UseGuards(JwtAuthGuard)
-  getOverview(@Req() req: any, @Query('familyId') familyId?: string) {
-    return this.transactionsService.getOverview(req.user.id, familyId);
+  getOverview(@Req() req: any, @Query('familyId') familyId?: string, @Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
+    return this.transactionsService.getOverview(req.user.id, familyId, startDate, endDate);
   }
 
   @Get(':id')

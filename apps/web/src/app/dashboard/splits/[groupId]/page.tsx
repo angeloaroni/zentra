@@ -126,6 +126,7 @@ export default function GroupDetailPage() {
   const [showSettlementForm, setShowSettlementForm] = useState(false)
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [showEditGroup, setShowEditGroup] = useState(false)
+  const [deleteRecurringId, setDeleteRecurringId] = useState<string | null>(null)
   const [showRecurringForm, setShowRecurringForm] = useState(false)
   const [formError, setFormError] = useState("")
   const [search, setSearch] = useState("")
@@ -219,16 +220,34 @@ export default function GroupDetailPage() {
   const markSplitPaidMutation = useMutation({
     mutationFn: ({ expenseId, splitId }: { expenseId: string; splitId: string }) =>
       api(`/splits/expenses/${expenseId}/splits/${splitId}/pay`, { method: "PATCH" }),
-    onSuccess: async () => {
+    onMutate: async ({ splitId }) => {
+      await queryClient.cancelQueries({ queryKey: ["split-group", groupId] })
+      const previous = queryClient.getQueryData<SplitGroup>(["split-group", groupId])
+      if (previous) {
+        queryClient.setQueryData<SplitGroup>(["split-group", groupId], (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            expenses: old.expenses.map(e => ({
+              ...e,
+              splits: e.splits.map(s =>
+                s.id === splitId ? { ...s, isPaid: !s.isPaid, paidAt: s.isPaid ? undefined : new Date().toISOString() } : s
+              ),
+            })),
+          }
+        })
+      }
+      return { previous }
+    },
+    onError: (err, variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["split-group", groupId], context.previous)
+      }
+      addToast({ title: "Error", description: err.message, variant: "error" })
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
       queryClient.invalidateQueries({ queryKey: ["split-balances", groupId] })
-      if (detailExpense) {
-        try {
-          const updated = await api<SharedExpense>(`/splits/expenses/${detailExpense.id}`)
-          setDetailExpense(updated)
-        } catch {}
-      }
-      addToast({ title: "Marcado como pagado", variant: "success" })
     },
   })
 
@@ -812,7 +831,7 @@ export default function GroupDetailPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold">{formatMoney(r.amount, r.currency)}</span>
-                    <button onClick={() => { if (confirm("Eliminar gasto recurrente?")) deleteRecurringMutation.mutate(r.id) }} className="text-muted-foreground hover:text-red-500 p-2"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => setDeleteRecurringId(r.id)} className="text-muted-foreground hover:text-red-500 p-2"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </CardContent></Card>
               ))}
@@ -883,6 +902,7 @@ export default function GroupDetailPage() {
       <ConfirmAction open={deleteExpenseId !== null} onOpenChange={(open) => !open && setDeleteExpenseId(null)} title="Eliminar gasto" description="Esta accion no se puede deshacer." confirmLabel="Eliminar" onConfirm={() => deleteExpenseId && deleteExpenseMutation.mutate(deleteExpenseId)} loading={deleteExpenseMutation.isPending} />
       <ConfirmAction open={deleteGroupId} onOpenChange={setDeleteGroupId} title="Eliminar grupo" description="Todos los gastos y balances se perderan permanentemente." confirmLabel="Eliminar grupo" onConfirm={() => deleteGroupMutation.mutate()} loading={deleteGroupMutation.isPending} />
       <ConfirmAction open={deleteMemberId !== null} onOpenChange={(open) => !open && setDeleteMemberId(null)} title="Remover miembro" description="El miembro sera removido del grupo." confirmLabel="Remover" onConfirm={() => deleteMemberId && removeMemberMutation.mutate(deleteMemberId)} loading={removeMemberMutation.isPending} />
+      <ConfirmAction open={deleteRecurringId !== null} onOpenChange={(open) => !open && setDeleteRecurringId(null)} title="Eliminar gasto recurrente" description="Esta accion no se puede deshacer." confirmLabel="Eliminar" onConfirm={() => deleteRecurringId && deleteRecurringMutation.mutate(deleteRecurringId)} loading={deleteRecurringMutation.isPending} />
 
       {zoomImage && (
         <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-2 sm:p-4 cursor-zoom-out" onClick={() => setZoomImage(null)}>

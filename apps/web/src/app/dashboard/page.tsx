@@ -7,8 +7,10 @@ import { api, getUser } from "@/lib/api"
 import { useSettings, formatMoney, formatDateShort, formatMonthYear, useHasHydrated } from "@/lib/settings"
 import { useFamilyStore } from "@/lib/family"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { FadeIn } from "@/components/ui/fade-in"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   TrendingUp,
   TrendingDown,
@@ -17,6 +19,7 @@ import {
   Target,
   ArrowUpRight,
   ArrowDownRight,
+  Download,
 } from "lucide-react"
 import Link from "next/link"
 const CashflowChart = dynamic(() => import("./components/CashflowChart"), {
@@ -120,6 +123,16 @@ export default function DashboardPage() {
     })
   }, [])
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        // Close any open modals (handled by individual components)
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
   const familyParam = activeFamilyId ? `?familyId=${activeFamilyId}` : ""
 
   const { data: overview, isLoading: overviewLoading } = useQuery<{
@@ -130,8 +143,10 @@ export default function DashboardPage() {
     comparison: Comparison
     cashflow: CashflowItem[]
   }>({
-    queryKey: ["dashboard-overview", activeFamilyId],
-    queryFn: () => api(`/transactions/overview${familyParam}`),
+    queryKey: ["dashboard-overview", activeFamilyId, dateRange.startDate, dateRange.endDate],
+    queryFn: () => api(`/transactions/overview?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}${familyParam}`),
+    enabled: !!dateRange.startDate,
+    staleTime: 60_000,
   })
 
   const summary = overview?.summary
@@ -144,16 +159,19 @@ export default function DashboardPage() {
   const { data: netWorth } = useQuery<{ date: string; balance: number }[]>({
     queryKey: ["net-worth"],
     queryFn: () => api("/net-worth?months=12"),
+    staleTime: 300_000,
   })
 
   const { data: insights } = useQuery<{ type: string; title: string; message: string; icon: string }[]>({
     queryKey: ["insights"],
     queryFn: () => api("/insights"),
+    staleTime: 300_000,
   })
 
   const { data: healthScore } = useQuery<{ score: number; label: string; breakdown: Record<string, { score: number; max: number; description: string }> }>({
     queryKey: ["health-score"],
     queryFn: () => api("/health-score"),
+    staleTime: 300_000,
   })
 
   const pieData = (byCategory || []).map((item, i) => ({
@@ -170,12 +188,19 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Hola, ...</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Cargando...</p>
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-32" />
           </div>
+          <Skeleton className="h-10 w-40" />
         </div>
-        <p className="text-center text-muted-foreground py-8">Cargando...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+        </div>
       </div>
     )
   }
@@ -195,7 +220,32 @@ export default function DashboardPage() {
             }
           </p>
         </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => {
+            if (!overview) return
+            const rows = [
+              ["Metrica", "Valor"],
+              ["Ingresos", overview.summary.totalIncome],
+              ["Gastos", overview.summary.totalExpense],
+              ["Balance", overview.summary.balance],
+              ["Tasa de ahorro", `${overview.summary.savingsRate.toFixed(1)}%`],
+              [],
+              ["Categoria", "Monto", "Transacciones"],
+              ...overview.byCategory.map(c => [c.name, c.amount, c.count]),
+            ]
+            const csv = rows.map(r => r.join(",")).join("\n")
+            const blob = new Blob([csv], { type: "text/csv" })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url
+            a.download = `zentra-resumen-${new Date().toISOString().split("T")[0]}.csv`
+            a.click()
+            URL.revokeObjectURL(url)
+          }} className="hidden sm:flex">
+            <Download className="h-4 w-4 mr-1" />Exportar
+          </Button>
+          <DateRangePicker value={dateRange} onChange={setDateRange} />
+        </div>
       </div>
 
       {/* Balance Card */}
@@ -502,11 +552,11 @@ export default function DashboardPage() {
                          </p>
                        </div>
                      </div>
-                     <span
-                       className={`text-sm font-semibold shrink-0 ${
-                         tx.type === "INCOME" ? "text-emerald-600" : "text-gray-900 dark:text-white"
-                       }`}
-                     >
+                      <span
+                        className={`text-sm font-semibold shrink-0 ${
+                          tx.type === "INCOME" ? "text-emerald-600" : "text-red-600"
+                        }`}
+                      >
                        {tx.type === "INCOME" ? "+" : "-"}{formatMoney(tx.amount, tx.currency || currency)}
                      </span>
                    </div>

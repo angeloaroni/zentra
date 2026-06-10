@@ -275,7 +275,11 @@ export default function AccountsPage() {
       )}
 
       {isLoading ? (
-        <p className="text-center text-muted-foreground py-8">Cargando...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonAccountCard key={i} />
+          ))}
+        </div>
       ) : !accounts?.length ? (
         <Card>
           <CardContent className="py-12 text-center">
