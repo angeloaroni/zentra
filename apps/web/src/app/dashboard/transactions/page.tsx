@@ -548,21 +548,25 @@ export default function TransactionsPage() {
             placeholder="Buscar transacciones..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-[200px] h-10"
+            className="w-full sm:flex-1 h-10"
           />
           <div className="flex items-end gap-2">
             <DateRangePicker value={dateRange} onChange={setDateRange} />
             {accounts && accounts.length > 0 && (
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground invisible">Cuenta</Label>
-                <select className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
+                <select
+                  className="h-10 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-ring"
+                  value={accountFilter}
+                  onChange={(e) => setAccountFilter(e.target.value)}
+                >
                   <option value="">Todas las cuentas</option>
                   {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
               </div>
             )}
           </div>
-          <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-wrap items-end gap-1">
             <div className="flex gap-1">
               {(["all", "INCOME", "EXPENSE"] as const).map((t) => (
                 <Button
