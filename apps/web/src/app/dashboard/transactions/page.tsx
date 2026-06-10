@@ -548,14 +548,14 @@ export default function TransactionsPage() {
             placeholder="Buscar transacciones..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-[200px] h-9"
+            className="w-full sm:w-[200px] h-10"
           />
           <div className="flex items-end gap-2">
             <DateRangePicker value={dateRange} onChange={setDateRange} />
             {accounts && accounts.length > 0 && (
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground invisible">Cuenta</Label>
-                <select className="h-9 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 text-sm" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
+                <select className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
                   <option value="">Todas las cuentas</option>
                   {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
@@ -570,7 +570,7 @@ export default function TransactionsPage() {
                   variant={filterType === t ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilterType(t)}
-                  className="h-9"
+                  className="h-10"
                 >
                   {t === "all" ? "Todas" : t === "INCOME" ? "Ingresos" : "Gastos"}
                 </Button>
@@ -581,7 +581,7 @@ export default function TransactionsPage() {
                 variant={viewMode === "all" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("all")}
-                className="h-9"
+                className="h-10"
               >
                 Todas
               </Button>
@@ -589,7 +589,7 @@ export default function TransactionsPage() {
                 variant={viewMode === "recurring" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("recurring")}
-                className="h-9"
+                className="h-10"
               >
                 <Repeat className="h-3 w-3 mr-1" />
                 Recurrentes
@@ -599,7 +599,7 @@ export default function TransactionsPage() {
               variant={showFilters ? "default" : "outline"}
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="h-9"
+              className="h-10"
             >
               <Filter className="h-3 w-3 mr-1" />
               Filtros
@@ -635,7 +635,7 @@ export default function TransactionsPage() {
                 a.click()
                 URL.revokeObjectURL(url)
               }}
-              className="h-9"
+              className="h-10"
             >
               CSV
             </Button>
