@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Trash2, CreditCard, Landmark, Banknote, Pencil, Wallet } from "lucide-react"
+import { Plus, Trash2, CreditCard, Landmark, Banknote, Pencil, Wallet, X } from "lucide-react"
 
 interface Account {
   id: string
@@ -128,6 +128,13 @@ export default function AccountsPage() {
     })
   }
 
+  function cancelForm() {
+    setShowForm(false)
+    setFormError("")
+    setEditingId(null)
+    setForm(defaultForm)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormError("")
@@ -196,82 +203,85 @@ export default function AccountsPage() {
       </Card>
 
       {showForm && (
-        <Card>
-          <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold mb-4">
-              {editingId ? "Editar cuenta" : "Nueva cuenta"}
-            </h2>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Nombre</Label>
-                <Input
-                  placeholder="Ej: Banco principal"
-                  value={form.name}
-                  onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={cancelForm}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
+              <h2 className="text-lg font-semibold">
+                {editingId ? "Editar cuenta" : "Nueva cuenta"}
+              </h2>
+              <button onClick={cancelForm} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nombre</Label>
+                  <Input
+                    placeholder="Ej: Banco principal"
+                    value={form.name}
+                    onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select value={form.type} onValueChange={(v) => setForm(prev => ({ ...prev, type: v }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ACCOUNT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Select value={form.type} onValueChange={(v) => setForm(prev => ({ ...prev, type: v }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACCOUNT_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{editingId ? "Balance" : "Balance inicial"} ({getCurrencySymbol(currency)})</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.balance}
+                    onChange={(e) => setForm(prev => ({ ...prev, balance: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Color</Label>
+                  <div className="flex gap-2 flex-wrap">
+                    {PRESET_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        className={`h-8 w-8 rounded-full border-2 transition-all ${
+                          form.color === c ? "border-foreground scale-110" : "border-transparent"
+                        }`}
+                        style={{ backgroundColor: c }}
+                        onClick={() => setForm(prev => ({ ...prev, color: c }))}
+                      />
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{editingId ? "Balance" : "Balance inicial"} ({getCurrencySymbol(currency)})</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={form.balance}
-                  onChange={(e) => setForm(prev => ({ ...prev, balance: e.target.value }))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Color</Label>
-                <div className="flex gap-2 flex-wrap">
-                  {PRESET_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className={`h-8 w-8 rounded-full border-2 transition-all ${
-                        form.color === c ? "border-foreground scale-110" : "border-transparent"
-                      }`}
-                      style={{ backgroundColor: c }}
-                      onClick={() => setForm(prev => ({ ...prev, color: c }))}
-                    />
-                  ))}
+                  </div>
                 </div>
               </div>
 
               {formError && (
-                <div className="md:col-span-2">
-                  <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-2 rounded">{formError}</p>
-                </div>
+                <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-2 rounded">{formError}</p>
               )}
 
-              <div className="md:col-span-2 flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <Button type="submit" disabled={editingId ? updateMutation.isPending : createMutation.isPending}>
                   {editingId
                     ? (updateMutation.isPending ? "Actualizando..." : "Actualizar")
                     : (createMutation.isPending ? "Guardando..." : "Guardar")}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setFormError(""); setEditingId(null); setForm(defaultForm) }}>
+                <Button type="button" variant="outline" onClick={cancelForm}>
                   Cancelar
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {isLoading ? (

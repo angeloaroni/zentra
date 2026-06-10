@@ -676,6 +676,11 @@ export class SplitsService {
       select: { name: true },
     })
 
+    const payerUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    })
+
     const settlements = await this.prisma.settlement.findMany({
       where: { groupId: dto.groupId },
     })
@@ -748,7 +753,7 @@ export class SplitsService {
       await tx.transaction.create({
         data: {
           type: 'INCOME',
-          title: `Pago recibido de ${userId}`,
+          title: `Pago recibido de ${payerUser?.name || 'alguien'}`,
           description: dto.notes || `Pago de deuda en grupo ${group.name}`,
           amount: dto.amount,
           currency: group.currency,

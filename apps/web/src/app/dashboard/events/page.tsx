@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SkeletonCard } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/toast"
-import { Plus, PartyPopper } from "lucide-react"
+import { Plus, PartyPopper, X } from "lucide-react"
 import Link from "next/link"
 
 const TAG_COLORS = [
@@ -155,19 +155,33 @@ export default function EventsPage() {
       </div>
 
       {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Nuevo evento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Nombre</Label>
-                <Input
-                  placeholder="Ej: Cumpleanos de Sofia"
-                  value={form.name}
-                  onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-                />
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={() => { setShowForm(false); setFormError("") }}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
+              <h2 className="text-lg font-semibold">Nuevo evento</h2>
+              <button onClick={() => { setShowForm(false); setFormError("") }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="h-5 w-5" /></button>
+            </div>
+            <form onSubmit={handleCreate} className="p-4 sm:p-5 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Nombre</Label>
+                  <Input
+                    placeholder="Ej: Cumpleanos de Sofia"
+                    value={form.name}
+                    onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Presupuesto mensual (opcional)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Sin limite"
+                    value={form.budget}
+                    onChange={(e) => setForm(prev => ({ ...prev, budget: e.target.value }))}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -207,22 +221,11 @@ export default function EventsPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Presupuesto mensual (opcional)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="Sin limite"
-                  value={form.budget}
-                  onChange={(e) => setForm(prev => ({ ...prev, budget: e.target.value }))}
-                />
-              </div>
-
               {formError && (
                 <p className="text-sm text-red-500">{formError}</p>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <Button type="submit" disabled={createMutation.isPending}>
                   {createMutation.isPending ? "Creando..." : "Crear evento"}
                 </Button>
@@ -235,8 +238,8 @@ export default function EventsPage() {
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {isLoading ? (
