@@ -361,12 +361,17 @@ export default function TransactionsPage() {
       </div>
 
       {isFormVisible && (
-        <Card>
-          <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold mb-4">
-              {editingId ? "Editar transaccion" : "Nueva transaccion"}
-            </h2>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4" onClick={cancelForm}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-[calc(100vw-1rem)] sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold">
+                {editingId ? "Editar transaccion" : "Nueva transaccion"}
+              </h2>
+              <button onClick={cancelForm} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
               <div className="space-y-2">
                 <Label>Tipo</Label>
                 <select
@@ -499,12 +504,10 @@ export default function TransactionsPage() {
               </div>
 
               {formError && (
-                <div className="md:col-span-2">
-                  <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-2 rounded">{formError}</p>
-                </div>
+                <p className="text-sm text-red-500">{formError}</p>
               )}
 
-              <div className="md:col-span-2 flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <Button type="submit" disabled={isPending}>
                   {isPending ? "Guardando..." : editingId ? "Actualizar" : "Guardar"}
                 </Button>
@@ -513,88 +516,92 @@ export default function TransactionsPage() {
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Buscar transacciones..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-[200px]"
-        />
-        <div className="flex gap-1">
-          {(["all", "INCOME", "EXPENSE"] as const).map((t) => (
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <Input
+            placeholder="Buscar transacciones..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full sm:w-[200px]"
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex gap-1">
+              {(["all", "INCOME", "EXPENSE"] as const).map((t) => (
+                <Button
+                  key={t}
+                  variant={filterType === t ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType(t)}
+                >
+                  {t === "all" ? "Todas" : t === "INCOME" ? "Ingresos" : "Gastos"}
+                </Button>
+              ))}
+            </div>
+            <div className="flex gap-1">
+              <Button
+                variant={viewMode === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("all")}
+              >
+                Todas
+              </Button>
+              <Button
+                variant={viewMode === "recurring" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("recurring")}
+              >
+                <Repeat className="h-3 w-3 mr-1" />
+                Recurrentes
+              </Button>
+            </div>
             <Button
-              key={t}
-              variant={filterType === t ? "default" : "outline"}
+              variant={showFilters ? "default" : "outline"}
               size="sm"
-              onClick={() => setFilterType(t)}
+              onClick={() => setShowFilters(!showFilters)}
             >
-              {t === "all" ? "Todas" : t === "INCOME" ? "Ingresos" : "Gastos"}
+              <Filter className="h-3 w-3 mr-1" />
+              Filtros
+              {(filters.minAmount || filters.maxAmount || filters.categoryId || filters.paymentMethod) && (
+                <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
+                  {[filters.minAmount, filters.maxAmount, filters.categoryId, filters.paymentMethod].filter(Boolean).length}
+                </Badge>
+              )}
             </Button>
-          ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const txs = txData?.transactions || []
+                if (!txs.length) return
+                const header = "Fecha,Tipo,Titulo,Categoria,Monto,Moneda,Descripcion\n"
+                const rows = txs.map((tx) =>
+                  [
+                    tx.date,
+                    tx.type,
+                    tx.title,
+                    tx.category?.name || "",
+                    tx.amount,
+                    tx.currency || currency,
+                    tx.description || "",
+                  ].join(",")
+                ).join("\n")
+                const blob = new Blob([header + rows], { type: "text/csv" })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement("a")
+                a.href = url
+                a.download = `transacciones-${new Date().toISOString().split("T")[0]}.csv`
+                a.click()
+                URL.revokeObjectURL(url)
+              }}
+            >
+              CSV
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-1">
-          <Button
-            variant={viewMode === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("all")}
-          >
-            Todas
-          </Button>
-          <Button
-            variant={viewMode === "recurring" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("recurring")}
-          >
-            <Repeat className="h-3 w-3 mr-1" />
-            Recurrentes
-          </Button>
-        </div>
-        <Button
-          variant={showFilters ? "default" : "outline"}
-          size="sm"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter className="h-3 w-3 mr-1" />
-          Filtros
-          {(filters.minAmount || filters.maxAmount || filters.categoryId || filters.paymentMethod) && (
-            <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
-              {[filters.minAmount, filters.maxAmount, filters.categoryId, filters.paymentMethod].filter(Boolean).length}
-            </Badge>
-          )}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            const txs = txData?.transactions || []
-            if (!txs.length) return
-            const header = "Fecha,Tipo,Titulo,Categoria,Monto,Moneda,Descripcion\n"
-            const rows = txs.map((tx) =>
-              [
-                tx.date,
-                tx.type,
-                tx.title,
-                tx.category?.name || "",
-                tx.amount,
-                tx.currency || currency,
-                tx.description || "",
-              ].join(",")
-            ).join("\n")
-            const blob = new Blob([header + rows], { type: "text/csv" })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement("a")
-            a.href = url
-            a.download = `transacciones-${new Date().toISOString().split("T")[0]}.csv`
-            a.click()
-            URL.revokeObjectURL(url)
-          }}
-        >
-          CSV
-        </Button>
       </div>
 
       {showFilters && (
