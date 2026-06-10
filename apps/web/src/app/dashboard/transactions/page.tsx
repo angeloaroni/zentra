@@ -562,12 +562,12 @@ export default function TransactionsPage() {
             {accounts && accounts.length > 0 && (
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground invisible">Cuenta</Label>
-                <Select value={accountFilter} onValueChange={setAccountFilter}>
+                <Select value={accountFilter || "all"} onValueChange={(v) => setAccountFilter(v === "all" ? "" : v)}>
                   <SelectTrigger className="h-10 w-[180px]">
                     <SelectValue placeholder="Todas las cuentas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las cuentas</SelectItem>
+                    <SelectItem value="all">Todas las cuentas</SelectItem>
                     {accounts.map((a) => (
                       <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                     ))}
