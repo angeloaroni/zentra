@@ -550,13 +550,18 @@ export default function TransactionsPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-[200px] h-9"
           />
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
-          {accounts && accounts.length > 0 && (
-            <select className="h-9 rounded-md border border-input bg-background px-3 text-sm" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
-              <option value="">Todas las cuentas</option>
-              {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
-          )}
+          <div className="flex items-end gap-2">
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+            {accounts && accounts.length > 0 && (
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground invisible">Cuenta</Label>
+                <select className="h-9 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 text-sm" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
+                  <option value="">Todas las cuentas</option>
+                  {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap items-end gap-2">
             <div className="flex gap-1">
               {(["all", "INCOME", "EXPENSE"] as const).map((t) => (
@@ -565,6 +570,7 @@ export default function TransactionsPage() {
                   variant={filterType === t ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilterType(t)}
+                  className="h-9"
                 >
                   {t === "all" ? "Todas" : t === "INCOME" ? "Ingresos" : "Gastos"}
                 </Button>
@@ -575,6 +581,7 @@ export default function TransactionsPage() {
                 variant={viewMode === "all" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("all")}
+                className="h-9"
               >
                 Todas
               </Button>
@@ -582,6 +589,7 @@ export default function TransactionsPage() {
                 variant={viewMode === "recurring" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("recurring")}
+                className="h-9"
               >
                 <Repeat className="h-3 w-3 mr-1" />
                 Recurrentes
@@ -591,6 +599,7 @@ export default function TransactionsPage() {
               variant={showFilters ? "default" : "outline"}
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
+              className="h-9"
             >
               <Filter className="h-3 w-3 mr-1" />
               Filtros
@@ -626,6 +635,7 @@ export default function TransactionsPage() {
                 a.click()
                 URL.revokeObjectURL(url)
               }}
+              className="h-9"
             >
               CSV
             </Button>
