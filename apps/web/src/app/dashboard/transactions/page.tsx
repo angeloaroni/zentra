@@ -543,12 +543,12 @@ export default function TransactionsPage() {
       </Modal>
 
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-2">
           <Input
             placeholder="Buscar transacciones..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-[200px]"
+            className="w-full sm:w-[200px] h-9"
           />
           <DateRangePicker value={dateRange} onChange={setDateRange} />
           {accounts && accounts.length > 0 && (
@@ -557,7 +557,7 @@ export default function TransactionsPage() {
               {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           )}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-end gap-2">
             <div className="flex gap-1">
               {(["all", "INCOME", "EXPENSE"] as const).map((t) => (
                 <Button
