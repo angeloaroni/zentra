@@ -17,7 +17,7 @@ import { ConfirmAction } from "@/components/ui/confirm-dialog"
 import {
   ArrowLeft, Plus, Trash2, Users, Receipt, Scale, History, UserMinus, Send,
   Pencil, Eye, X, FileText, Image as ImageIcon, Clock, ChevronDown, ChevronUp,
-  Search, RefreshCw,
+  Search, RefreshCw, MoreVertical,
 } from "lucide-react"
 import { Modal } from "@/components/ui/modal"
 import Link from "next/link"
@@ -144,6 +144,8 @@ export default function GroupDetailPage() {
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
   const [zoomImage, setZoomImage] = useState<string | null>(null)
   const [showConverted, setShowConverted] = useState(false)
+  const [menuExpenseId, setMenuExpenseId] = useState<string | null>(null)
+  const [showTemplates, setShowTemplates] = useState(false)
 
   const [expenseForm, setExpenseForm] = useState({
     title: "",
@@ -164,6 +166,25 @@ export default function GroupDetailPage() {
   })
 
   useEffect(() => { setUser(getUser()) }, [])
+
+  useEffect(() => {
+    function handleClickOutside() { setMenuExpenseId(null) }
+    if (menuExpenseId) {
+      document.addEventListener("click", handleClickOutside)
+      return () => document.removeEventListener("click", handleClickOutside)
+    }
+  }, [menuExpenseId])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as HTMLElement
+      if (!target.closest(".templates-dropdown")) setShowTemplates(false)
+    }
+    if (showTemplates) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showTemplates])
 
   const { data: group, isLoading } = useQuery<SplitGroup>({
     queryKey: ["split-group", groupId],
@@ -526,6 +547,30 @@ export default function GroupDetailPage() {
 
       {activeTab === "expenses" && (
         <div className="space-y-4">
+          {group && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Total del grupo</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    {formatMoney(group.expenses.reduce((sum, e) => sum + e.amount, 0), group.currency)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Tu parte</p>
+                  <p className="text-xl font-bold text-blue-600">
+                    {formatMoney(
+                      group.expenses.reduce((sum, e) => {
+                        const mySplit = e.splits.find((s) => s.userId === user?.id)
+                        return sum + (mySplit?.amount || 0)
+                      }, 0),
+                      group.currency
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row gap-2 justify-between">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -535,27 +580,30 @@ export default function GroupDetailPage() {
               <Plus className="h-4 w-4 mr-2" />Nuevo gasto
             </Button>
             {templates && templates.length > 0 && (
-              <div className="relative group">
-                <Button variant="outline" size="sm">
+              <div className="relative templates-dropdown">
+                <Button variant="outline" size="sm" onClick={() => setShowTemplates(!showTemplates)}>
                   <FileText className="h-4 w-4 mr-2" />Usar plantilla
                 </Button>
-                <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-900 border rounded-lg shadow-lg z-20 hidden group-hover:block">
-                  {templates.map((tpl) => (
-                    <button key={tpl.id} className="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-lg flex items-center gap-2"
-                      onClick={() => {
-                        setExpenseForm(prev => ({
-                          ...prev,
-                          splitType: tpl.splitType as any,
-                          selectedMembers: tpl.memberIds || [],
-                        }))
-                        setShowExpenseForm(true)
-                      }}>
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="truncate">{tpl.name}</span>
-                      <span className="text-xs text-muted-foreground ml-auto">{tpl.splitType}</span>
-                    </button>
-                  ))}
-                </div>
+                {showTemplates && (
+                  <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-900 border rounded-lg shadow-lg z-20">
+                    {templates.map((tpl) => (
+                      <button key={tpl.id} className="w-full text-left px-3 py-2 text-sm hover:bg-accent rounded-lg flex items-center gap-2"
+                        onClick={() => {
+                          setExpenseForm(prev => ({
+                            ...prev,
+                            splitType: tpl.splitType as any,
+                            selectedMembers: tpl.memberIds || [],
+                          }))
+                          setShowExpenseForm(true)
+                          setShowTemplates(false)
+                        }}>
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{tpl.name}</span>
+                        <span className="text-xs text-muted-foreground ml-auto">{tpl.splitType}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -656,41 +704,106 @@ export default function GroupDetailPage() {
             <Card><CardContent className="py-12 text-center"><Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">{search ? "Sin resultados" : "Sin gastos aun"}</p></CardContent></Card>
           ) : (
             <div className="space-y-3">
-              {filteredExpenses.map((expense) => (
-                <Card key={expense.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDetailExpense(expense)}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
-                          {expense.paidBy.name?.charAt(0)?.toUpperCase() || "U"}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold truncate">{expense.title}</p>
-                            {expense.receiptData && <Receipt className="h-3 w-3 text-blue-500 shrink-0" />}
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {expense.paidBy.name} pago &middot; {formatDateShort(new Date(expense.date))}
-                          </p>
-                        </div>
+              {(() => {
+                const grouped: Record<string, SharedExpense[]> = {}
+                filteredExpenses.forEach(expense => {
+                  const dateKey = new Date(expense.date).toISOString().split('T')[0]
+                  if (!grouped[dateKey]) grouped[dateKey] = []
+                  grouped[dateKey].push(expense)
+                })
+
+                return Object.entries(grouped).map(([dateKey, expenses]) => {
+                  const date = new Date(dateKey)
+                  const today = new Date()
+                  const yesterday = new Date(today)
+                  yesterday.setDate(yesterday.getDate() - 1)
+
+                  let dateLabel = formatDateShort(date)
+                  if (date.toDateString() === today.toDateString()) dateLabel = "Hoy"
+                  else if (date.toDateString() === yesterday.toDateString()) dateLabel = "Ayer"
+
+                  return (
+                    <div key={dateKey} className="space-y-3">
+                      <div className="flex items-center gap-2 sticky top-16 z-10 bg-gray-50 dark:bg-gray-950 py-2">
+                        <span className="text-xs font-medium text-gray-500">{dateLabel}</span>
+                        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-sm font-bold ${expense.splitType !== "EQUAL" ? "text-blue-600" : ""}`}>
-                          {formatMoney(expense.amount, expense.currency)}
-                        </span>
-                        {expense.splitType !== "EQUAL" && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">{expense.splitType}</span>}
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {expense.splits.map((split) => (
-                        <div key={split.id} className={`text-xs px-2 py-1 rounded-full ${split.isPaid ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"}`}>
-                          {split.user.name}: {formatMoney(split.amount, expense.currency)}{split.isPaid ? " ✓" : ""}
-                        </div>
+                      {expenses.map((expense) => (
+                        <Card key={expense.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDetailExpense(expense)}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
+                                  {expense.paidBy.name?.charAt(0)?.toUpperCase() || "U"}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-semibold truncate">{expense.title}</p>
+                                    {expense.receiptData && <Receipt className="h-3 w-3 text-blue-500 shrink-0" />}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {expense.paidBy.name} pago &middot; {formatDateShort(new Date(expense.date))}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className={`text-sm font-bold ${expense.splitType !== "EQUAL" ? "text-blue-600" : ""}`}>
+                                  {formatMoney(expense.amount, expense.currency)}
+                                </span>
+                                {expense.splitType !== "EQUAL" && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">{expense.splitType}</span>}
+                                <div className="relative">
+                                  <button onClick={(e) => { e.stopPropagation(); setMenuExpenseId(menuExpenseId === expense.id ? null : expense.id) }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                  </button>
+                                  {menuExpenseId === expense.id && (
+                                    <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+                                      <button onClick={() => { setMenuExpenseId(null); setDetailExpense(expense) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">Ver detalle</button>
+                                      {(user?.id === expense.paidBy.id || user?.id === group.createdBy.id) && (
+                                        <>
+                                          <button onClick={() => { setMenuExpenseId(null); startEditExpense(expense) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">Editar</button>
+                                          <button onClick={() => { setMenuExpenseId(null); setDeleteExpenseId(expense.id) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 text-red-600">Eliminar</button>
+                                        </>
+                                      )}
+                                      <button onClick={() => {
+                                        setMenuExpenseId(null)
+                                        setEditingExpense(null)
+                                        setShowExpenseForm(true)
+                                        setExpenseForm({
+                                          title: expense.title,
+                                          description: expense.description || "",
+                                          amount: String(expense.amount),
+                                          date: new Date().toISOString().split("T")[0],
+                                          splitType: expense.splitType as any,
+                                          selectedMembers: expense.splits.map(s => s.userId),
+                                          percentages: Object.fromEntries(expense.splits.filter(s => s.percentage).map(s => [s.userId, String(s.percentage)])),
+                                          exactAmounts: Object.fromEntries(expense.splits.map(s => [s.userId, String(s.amount)])),
+                                        })
+                                      }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">Duplicar</button>
+                                      <button onClick={() => {
+                                        setMenuExpenseId(null)
+                                        const text = `${expense.title}: ${formatMoney(expense.amount, expense.currency)} pagado por ${expense.paidBy.name}. Divisiones: ${expense.splits.map(s => `${s.user.name} ${formatMoney(s.amount, expense.currency)}`).join(', ')}`
+                                        navigator.clipboard.writeText(text)
+                                        addToast({ title: "Copiado", variant: "success" })
+                                      }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">Compartir</button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {expense.splits.map((split) => (
+                                <div key={split.id} className={`text-xs px-2 py-1 rounded-full ${split.isPaid ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"}`}>
+                                  {split.user.name}: {formatMoney(split.amount, expense.currency)}{split.isPaid ? " ✓" : ""}
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  )
+                })
+              })()}
             </div>
           )}
         </div>
@@ -724,6 +837,21 @@ export default function GroupDetailPage() {
                   >
                     <Send className="h-4 w-4 mr-2" />Registrar pago
                   </Button>
+                  {balances?.simplifiedDebts.some(d => d.from === user?.id) && (
+                    <Button variant="outline" onClick={async () => {
+                      const myDebts = balances.simplifiedDebts.filter(d => d.from === user?.id)
+                      const total = myDebts.reduce((sum, d) => sum + d.amount, 0)
+                      if (confirm(`Liquidar ${myDebts.length} deudas por un total de ${formatMoney(total, group.currency)}?`)) {
+                        for (const debt of myDebts) {
+                          await createSettlementMutation.mutateAsync({
+                            groupId, toUserId: debt.to, amount: debt.amount, notes: "Liquidacion automatica"
+                          })
+                        }
+                      }
+                    }}>
+                      Liquidar todo ({balances.simplifiedDebts.filter(d => d.from === user?.id).length})
+                    </Button>
+                  )}
                 </div>
                 {!hasDebts && (
                   <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center gap-3">
@@ -788,6 +916,14 @@ export default function GroupDetailPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-xl font-bold text-red-600">{formatAmount(debt.amount, group.currency)}</span>
+                          {debt.from === user?.id && (
+                            <Button size="sm" variant="outline" onClick={() => {
+                              setShowSettlementForm(true)
+                              setSettlementForm({ toUserId: debt.to, amount: String(debt.amount), notes: "" })
+                            }}>
+                              Pagar
+                            </Button>
+                          )}
                           <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm">{debt.toName?.charAt(0)?.toUpperCase()}</div>
                         </div>
                       </CardContent></Card>
