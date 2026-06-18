@@ -36,24 +36,37 @@ export async function api<T>(
     headers["Authorization"] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  })
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+    })
 
-  if (res.status === 401) {
-    clearToken()
-    window.location.href = "/login"
-    throw new Error("Unauthorized")
+    if (res.status === 401) {
+      clearToken()
+      window.location.href = "/login"
+      throw new Error("Unauthorized")
+    }
+
+    const text = await res.text()
+    let data: any
+    try {
+      data = JSON.parse(text)
+    } catch {
+      throw new Error(`Server error (${res.status})`)
+    }
+
+    if (!res.ok) {
+      throw new Error(data.message || `Error ${res.status}`)
+    }
+
+    return data as T
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('No se pudo conectar al servidor. Verifica tu conexion.')
+    }
+    throw error
   }
-
-  const data = await res.json()
-
-  if (!res.ok) {
-    throw new Error(data.message || "API error")
-  }
-
-  return data as T
 }
 
 export async function uploadFile<T>(

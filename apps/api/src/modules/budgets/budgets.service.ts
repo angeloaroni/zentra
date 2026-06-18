@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { getScopeUserIds, isFamilyMember } from '../families/family-access.helper';
 import { PlanLimitsService } from '../subscriptions/plan-limits.service';
@@ -46,7 +46,7 @@ export class BudgetsService {
     });
 
     if (!category) {
-      throw new Error('Invalid category');
+      throw new BadRequestException('Invalid category');
     }
 
     return this.prisma.budget.create({

@@ -74,6 +74,13 @@ function getFreqLabel(freq?: string) {
   return FREQUENCIES.find((f) => f.value === freq)?.label || freq
 }
 
+function escapeCSV(value: string) {
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+  return value
+}
+
 function renderTxIcon(iconName: string, className = "h-3 w-3") {
   const icons = {
     cake: "🎂", gift: "🎁", heart: "❤️", star: "⭐", home: "🏠",
@@ -625,11 +632,11 @@ export default function TransactionsPage() {
                   [
                     tx.date,
                     tx.type,
-                    tx.title,
-                    tx.category?.name || "",
+                    escapeCSV(tx.title),
+                    escapeCSV(tx.category?.name || ""),
                     tx.amount,
                     tx.currency || currency,
-                    tx.description || "",
+                    escapeCSV(tx.description || ""),
                   ].join(",")
                 ).join("\n")
                 const blob = new Blob([header + rows], { type: "text/csv" })

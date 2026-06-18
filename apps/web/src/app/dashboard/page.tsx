@@ -87,6 +87,13 @@ function formatDate(d: string) {
   return formatDateShort(d)
 }
 
+function escapeCSV(value: string) {
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+  return value
+}
+
 const COLORS = ["#3B82F6", "#6366F1", "#10B981", "#EF4444", "#F59E0B", "#8B5CF6", "#EC4899", "#14B8A6"]
 
 function ComparisonTag({ value, invertColor = false }: { value: number; invertColor?: boolean }) {
@@ -105,7 +112,7 @@ export default function DashboardPage() {
   const { currency } = useSettings()
   const hydrated = useHasHydrated()
   const { activeFamilyId } = useFamilyStore()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ id: string; name: string; email: string; role?: string } | null>(null)
   const [mounted, setMounted] = useState(false)
 
   const [dateRange, setDateRange] = useState({
@@ -121,16 +128,6 @@ export default function DashboardPage() {
       startDate: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0],
       endDate: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0],
     })
-  }, [])
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        // Close any open modals (handled by individual components)
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
   }, [])
 
   const familyParam = activeFamilyId ? `?familyId=${activeFamilyId}` : ""
@@ -237,7 +234,7 @@ export default function DashboardPage() {
               ["Tasa de ahorro", `${overview.summary.savingsRate.toFixed(1)}%`],
               [],
               ["Categoria", "Monto", "Transacciones"],
-              ...overview.byCategory.map(c => [c.name, c.amount, c.count]),
+              ...overview.byCategory.map(c => [escapeCSV(c.name), c.amount, c.count]),
             ]
             const csv = rows.map(r => r.join(",")).join("\n")
             const blob = new Blob([csv], { type: "text/csv" })

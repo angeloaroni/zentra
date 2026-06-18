@@ -41,43 +41,46 @@ export class TransactionsService {
       ? { tags: { connect: dto.tagIds.map(id => ({ id })) } }
       : {};
 
-    const transaction = await this.prisma.transaction.create({
-      data: {
-        type: dto.type,
-        title: dto.title,
-        description: dto.description,
-        amount: dto.amount,
-        currency: dto.currency || 'USD',
-        date: dto.date,
-        categoryId: dto.categoryId,
-        subcategory: dto.subcategory,
-        paymentMethod: dto.paymentMethod,
-        isRecurring: dto.isRecurring,
-        recurringFreq: dto.recurringFreq,
-        attachmentUrl: dto.attachmentUrl,
-        userId,
-        familyId,
-        accountId: dto.accountId || null,
-        ...tagsConnect,
-      },
-      include: {
-        category: {
-          select: { id: true, name: true, icon: true, color: true },
+    const transaction = await this.prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.create({
+        data: {
+          type: dto.type,
+          title: dto.title,
+          description: dto.description,
+          amount: dto.amount,
+          currency: dto.currency || 'EUR',
+          date: dto.date,
+          categoryId: dto.categoryId,
+          subcategory: dto.subcategory,
+          paymentMethod: dto.paymentMethod,
+          isRecurring: dto.isRecurring,
+          recurringFreq: dto.recurringFreq,
+          attachmentUrl: dto.attachmentUrl,
+          userId,
+          familyId,
+          accountId: dto.accountId || null,
+          ...tagsConnect,
         },
-        tags: {
-          select: { id: true, name: true, color: true, icon: true },
+        include: {
+          category: {
+            select: { id: true, name: true, icon: true, color: true },
+          },
+          tags: {
+            select: { id: true, name: true, color: true, icon: true },
+          },
         },
-      },
-    });
-
-    // Update account balance
-    if (dto.accountId) {
-      const balanceChange = dto.type === 'INCOME' ? dto.amount : -dto.amount;
-      await this.prisma.account.update({
-        where: { id: dto.accountId },
-        data: { balance: { increment: balanceChange } },
       });
-    }
+
+      if (dto.accountId) {
+        const balanceChange = dto.type === 'INCOME' ? dto.amount : -dto.amount;
+        await tx.account.update({
+          where: { id: dto.accountId },
+          data: { balance: { increment: balanceChange } },
+        });
+      }
+
+      return transaction;
+    });
 
     // Check tag budgets for notifications
     if (dto.tagIds?.length && dto.type === 'EXPENSE') {
@@ -270,53 +273,55 @@ export class TransactionsService {
       }
     }
 
-    // Revert old account balance
-    if (transaction.accountId) {
-      const oldChange = transaction.type === 'INCOME' ? -transaction.amount : transaction.amount;
-      await this.prisma.account.update({
-        where: { id: transaction.accountId },
-        data: { balance: { increment: oldChange } },
-      });
-    }
+    return this.prisma.$transaction(async (tx) => {
+      // Revert old account balance
+      if (transaction.accountId) {
+        const oldChange = transaction.type === 'INCOME' ? -transaction.amount : transaction.amount;
+        await tx.account.update({
+          where: { id: transaction.accountId },
+          data: { balance: { increment: oldChange } },
+        });
+      }
 
-    const updated = await this.prisma.transaction.update({
-      where: { id },
-      data: {
-        ...(dto.type && { type: dto.type }),
-        ...(dto.title && { title: dto.title }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.amount && { amount: dto.amount }),
-        ...(dto.currency && { currency: dto.currency }),
-        ...(dto.date && { date: new Date(dto.date) }),
-        ...(dto.categoryId && { categoryId: dto.categoryId }),
-        ...(dto.subcategory !== undefined && { subcategory: dto.subcategory }),
-        ...(dto.paymentMethod !== undefined && { paymentMethod: dto.paymentMethod }),
-        ...(dto.isRecurring !== undefined && { isRecurring: dto.isRecurring }),
-        ...(dto.recurringFreq !== undefined && { recurringFreq: dto.recurringFreq }),
-        ...(dto.attachmentUrl !== undefined && { attachmentUrl: dto.attachmentUrl }),
-        ...(dto.familyId !== undefined && { familyId: dto.familyId }),
-        ...(dto.accountId !== undefined && { accountId: dto.accountId || null }),
-      },
-      include: {
-        category: {
-          select: { id: true, name: true, icon: true, color: true },
+      const updated = await tx.transaction.update({
+        where: { id },
+        data: {
+          ...(dto.type && { type: dto.type }),
+          ...(dto.title && { title: dto.title }),
+          ...(dto.description !== undefined && { description: dto.description }),
+          ...(dto.amount && { amount: dto.amount }),
+          ...(dto.currency && { currency: dto.currency }),
+          ...(dto.date && { date: new Date(dto.date) }),
+          ...(dto.categoryId && { categoryId: dto.categoryId }),
+          ...(dto.subcategory !== undefined && { subcategory: dto.subcategory }),
+          ...(dto.paymentMethod !== undefined && { paymentMethod: dto.paymentMethod }),
+          ...(dto.isRecurring !== undefined && { isRecurring: dto.isRecurring }),
+          ...(dto.recurringFreq !== undefined && { recurringFreq: dto.recurringFreq }),
+          ...(dto.attachmentUrl !== undefined && { attachmentUrl: dto.attachmentUrl }),
+          ...(dto.familyId !== undefined && { familyId: dto.familyId }),
+          ...(dto.accountId !== undefined && { accountId: dto.accountId || null }),
         },
-      },
-    });
-
-    // Apply new account balance
-    const newAccountId = dto.accountId || transaction.accountId;
-    if (newAccountId) {
-      const newType = dto.type || transaction.type;
-      const newAmount = dto.amount || transaction.amount;
-      const newChange = newType === 'INCOME' ? newAmount : -newAmount;
-      await this.prisma.account.update({
-        where: { id: newAccountId },
-        data: { balance: { increment: newChange } },
+        include: {
+          category: {
+            select: { id: true, name: true, icon: true, color: true },
+          },
+        },
       });
-    }
 
-    return updated;
+      // Apply new account balance
+      const newAccountId = dto.accountId !== undefined ? dto.accountId : transaction.accountId;
+      if (newAccountId) {
+        const newType = dto.type || transaction.type;
+        const newAmount = dto.amount || transaction.amount;
+        const newChange = newType === 'INCOME' ? newAmount : -newAmount;
+        await tx.account.update({
+          where: { id: newAccountId },
+          data: { balance: { increment: newChange } },
+        });
+      }
+
+      return updated;
+    });
   }
 
   async remove(id: string, userId: string) {
@@ -338,16 +343,16 @@ export class TransactionsService {
       }
     }
 
-    // Revert account balance
-    if (transaction.accountId) {
-      const revertChange = transaction.type === 'INCOME' ? -transaction.amount : transaction.amount;
-      await this.prisma.account.update({
-        where: { id: transaction.accountId },
-        data: { balance: { increment: revertChange } },
-      });
-    }
-
-    return this.prisma.transaction.delete({ where: { id } });
+    return this.prisma.$transaction(async (tx) => {
+      if (transaction.accountId) {
+        const revertChange = transaction.type === 'INCOME' ? -transaction.amount : transaction.amount;
+        await tx.account.update({
+          where: { id: transaction.accountId },
+          data: { balance: { increment: revertChange } },
+        });
+      }
+      return tx.transaction.delete({ where: { id } });
+    });
   }
 
   async getSummary(userId: string, options: {

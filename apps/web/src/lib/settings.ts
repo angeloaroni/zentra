@@ -22,9 +22,18 @@ export function getCurrencySymbol(code: string) {
 }
 
 export function formatMoney(n: number, currency: string) {
-  const sym = getCurrencySymbol(currency)
-  const formatted = n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-  return `${formatted} ${sym}`
+  try {
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n)
+  } catch {
+    const sym = getCurrencySymbol(currency)
+    const formatted = Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+    return `${n < 0 ? "-" : ""}${formatted} ${sym}`
+  }
 }
 
 const MONTHS_ES = [

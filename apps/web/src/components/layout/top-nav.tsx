@@ -39,7 +39,7 @@ const navItems = [
 
 export function TopNav() {
   const pathname = usePathname()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ id: string; name: string; email: string; role?: string } | null>(null)
   const [mounted, setMounted] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)

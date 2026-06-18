@@ -51,7 +51,7 @@ model Account {
   icon         String   @default("wallet")
   color        String   @default("#6366F1")
   balance      Float    @default(0)
-  currency     String   @default("USD")
+  currency     String   @default("EUR")
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   familyId     String?
@@ -100,7 +100,7 @@ model Transaction {
   title         String
   description   String?
   amount        Float
-  currency      String   @default("USD")
+  currency      String   @default("EUR")
   date          DateTime
   categoryId    String
   category      Category @relation(fields: [categoryId], references: [id])
@@ -243,7 +243,7 @@ model SplitGroup {
   description String?
   icon        String   @default("users")
   color       String   @default("#3B82F6")
-  currency    String   @default("USD")
+  currency    String   @default("EUR")
   createdById String
   createdBy   User     @relation(fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
@@ -278,10 +278,10 @@ model SharedExpense {
   title       String
   description String?
   amount      Float
-  currency    String   @default("USD")
+  currency    String   @default("EUR")
   date        DateTime
   splitType   String   @default("EQUAL")
-  receiptUrl  String?
+  receiptUrl  String?  // @deprecated - legacy field, kept for existing data
   receiptData String?
   receiptMime String?
   createdAt   DateTime @default(now())
@@ -336,7 +336,7 @@ model RecurringSplitExpense {
   paidById    String
   title       String
   amount      Float
-  currency    String   @default("USD")
+  currency    String   @default("EUR")
   frequency   String   @default("MONTHLY")
   splitType   String   @default("EQUAL")
   nextDueDate DateTime
