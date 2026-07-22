@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { Reflector } from '@nestjs/core'
+import { IS_PUBLIC_KEY } from '../../common/guards/public.decorator'
 
 export const PLAN_KEY = 'plan'
 
@@ -12,6 +13,14 @@ export class PlanGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ])
+    if (isPublic) {
+      return true
+    }
+
     const requiredPlan = this.reflector.getAllAndOverride<string[]>(PLAN_KEY, [
       context.getHandler(),
       context.getClass(),

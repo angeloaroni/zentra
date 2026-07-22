@@ -11,6 +11,7 @@ import {
   Req,
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { Public } from '../../common/guards/public.decorator'
 import { PlanGuard } from '../subscriptions/plan.guard'
 import { Plan } from '../subscriptions/plan.decorator'
 import { SplitsService } from './splits.service'
@@ -78,6 +79,27 @@ export class SplitsController {
     @Req() req: any,
   ) {
     return this.splitsService.removeMember(id, req.user.id, memberUserId)
+  }
+
+  @Public()
+  @Get('invitations/:token')
+  getInvitationByToken(@Param('token') token: string) {
+    return this.splitsService.getInvitationByToken(token)
+  }
+
+  @Post('invitations/:token/accept')
+  acceptInvitation(@Param('token') token: string, @Req() req: any) {
+    return this.splitsService.acceptInvitation(token, req.user.id)
+  }
+
+  @Get('groups/:id/invitations')
+  getPendingInvitations(@Param('id') id: string, @Req() req: any) {
+    return this.splitsService.getPendingInvitations(id, req.user.id)
+  }
+
+  @Delete('invitations/:id')
+  cancelInvitation(@Param('id') id: string, @Req() req: any) {
+    return this.splitsService.cancelInvitation(id, req.user.id)
   }
 
   @Post('expenses')

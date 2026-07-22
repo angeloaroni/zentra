@@ -42,6 +42,10 @@ export class CreateExpenseDto {
   @IsIn(['EQUAL', 'PERCENTAGE', 'EXACT'])
   splitType: string
 
+  @IsString()
+  @IsOptional()
+  paidById?: string
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SplitInput)

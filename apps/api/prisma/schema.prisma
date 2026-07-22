@@ -42,6 +42,7 @@ model User {
   splitTemplates    SplitTemplate[]
   netWorthSnapshots NetWorthSnapshot[]
   achievements      UserAchievement[]
+  sentInvitations   PendingInvitation[] @relation("InvitedBy")
 }
 
 model Account {
@@ -253,6 +254,7 @@ model SplitGroup {
   expenses    SharedExpense[]
   settlements Settlement[]
   recurringExpenses RecurringSplitExpense[]
+  pendingInvitations PendingInvitation[]
 
   @@index([createdById])
 }
@@ -413,4 +415,21 @@ model UserAchievement {
 
   @@unique([userId, achievementId])
   @@index([userId])
+}
+
+model PendingInvitation {
+  id        String   @id @default(cuid())
+  email     String
+  groupId   String
+  group     SplitGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  invitedBy String
+  inviter   User     @relation("InvitedBy", fields: [invitedBy], references: [id])
+  token     String   @unique
+  status    String   @default("pending") // pending, accepted, expired
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@unique([email, groupId])
+  @@index([token])
+  @@index([email])
 }

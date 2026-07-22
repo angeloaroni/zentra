@@ -102,6 +102,15 @@ interface BalancesResponse {
   simplifiedDebts: SimplifiedDebt[]
 }
 
+interface PendingInvitation {
+  id: string
+  email: string
+  status: string
+  createdAt: string
+  expiresAt: string
+  inviter: User
+}
+
 interface DirectConsumption {
   user: User
   total: number
@@ -191,6 +200,7 @@ export default function GroupDetailPage() {
     selectedMembers: [] as string[],
     percentages: {} as Record<string, string>,
     exactAmounts: {} as Record<string, string>,
+    paidBy: "" as string,
   })
 
   const [settlementForm, setSettlementForm] = useState({ toUserId: "", amount: "", notes: "" })
@@ -242,6 +252,12 @@ export default function GroupDetailPage() {
   const { data: templates } = useQuery<{ id: string; name: string; splitType: string; memberIds: string[] }[]>({
     queryKey: ["split-templates"],
     queryFn: () => api("/splits/templates"),
+  })
+
+  const { data: pendingInvitations } = useQuery<PendingInvitation[]>({
+    queryKey: ["split-invitations", groupId],
+    queryFn: () => api(`/splits/groups/${groupId}/invitations`),
+    enabled: !!groupId && activeTab === "members",
   })
 
   const { data: conversionRate } = useQuery<{ result: number }>({
@@ -342,15 +358,32 @@ export default function GroupDetailPage() {
     onError: (err: Error) => setFormError(err.message),
   })
 
+  const [inviteResult, setInviteResult] = useState<{ message: string; inviteUrl: string; pending: boolean } | null>(null)
+
   const inviteMutation = useMutation({
     mutationFn: (data: any) => api(`/splits/groups/${groupId}/invite`, { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
-      setShowInviteForm(false)
-      setInviteEmail("")
-      addToast({ title: "Miembro invitado", variant: "success" })
+      queryClient.invalidateQueries({ queryKey: ["split-invitations", groupId] })
+      if (result?.pending) {
+        setInviteResult(result)
+        setInviteEmail("")
+      } else {
+        setShowInviteForm(false)
+        setInviteEmail("")
+        setInviteResult(null)
+        addToast({ title: "Miembro invitado", variant: "success" })
+      }
     },
     onError: (err: Error) => setFormError(err.message),
+  })
+
+  const cancelInvitationMutation = useMutation({
+    mutationFn: (invitationId: string) => api(`/splits/invitations/${invitationId}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["split-invitations", groupId] })
+      addToast({ title: "Invitacion cancelada", variant: "success" })
+    },
   })
 
   const removeMemberMutation = useMutation({
@@ -407,7 +440,7 @@ export default function GroupDetailPage() {
     setFormError("")
     setReceiptFile(null)
     setReceiptPreview(null)
-    setExpenseForm({ title: "", description: "", amount: "", date: new Date().toISOString().split("T")[0], splitType: "EQUAL", selectedMembers: [], percentages: {}, exactAmounts: {} })
+    setExpenseForm({ title: "", description: "", amount: "", date: new Date().toISOString().split("T")[0], splitType: "EQUAL", selectedMembers: [], percentages: {}, exactAmounts: {}, paidBy: "" })
   }
 
   async function uploadReceiptBase64(expenseId: string, file: File) {
@@ -438,6 +471,7 @@ export default function GroupDetailPage() {
       selectedMembers: expense.splits.map((s) => s.userId),
       percentages: Object.fromEntries(expense.splits.filter((s) => s.percentage).map((s) => [s.userId, String(s.percentage)])),
       exactAmounts: Object.fromEntries(expense.splits.map((s) => [s.userId, String(s.amount)])),
+      paidBy: expense.paidBy.id,
     })
     if (expense.receiptData && expense.receiptMime) setReceiptPreview(`data:${expense.receiptMime};base64,${expense.receiptData}`)
     else if (expense.receiptUrl) setReceiptPreview(`${API_BASE}${expense.receiptUrl}`)
@@ -463,6 +497,7 @@ export default function GroupDetailPage() {
     const payload = {
       groupId, title: expenseForm.title.trim(), description: expenseForm.description.trim() || undefined,
       amount, splitType: expenseForm.splitType, date: new Date(expenseForm.date).toISOString(), splits,
+      paidById: expenseForm.paidBy || undefined,
     }
 
     if (editingExpense) {
@@ -652,6 +687,15 @@ export default function GroupDetailPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Fecha</Label><Input type="date" value={expenseForm.date} onChange={(e) => setExpenseForm(prev => ({ ...prev, date: e.target.value }))} /></div>
+                  <div className="space-y-2"><Label>¿Quién pago?</Label>
+                    <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900 text-sm" value={expenseForm.paidBy || user?.id || ""} onChange={(e) => setExpenseForm(prev => ({ ...prev, paidBy: e.target.value }))}>
+                      {group.members.map((m) => (
+                        <option key={m.user.id} value={m.user.id}>{m.user.name}{m.user.id === user?.id ? " (tu)" : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Tipo de division</Label>
                     <div className="flex gap-2">
                       {(["EQUAL", "PERCENTAGE", "EXACT"] as const).map((type) => (
@@ -812,6 +856,7 @@ export default function GroupDetailPage() {
                                           selectedMembers: expense.splits.map(s => s.userId),
                                           percentages: Object.fromEntries(expense.splits.filter(s => s.percentage).map(s => [s.userId, String(s.percentage)])),
                                           exactAmounts: Object.fromEntries(expense.splits.map(s => [s.userId, String(s.amount)])),
+                                          paidBy: expense.paidBy.id,
                                         })
                                       }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">Duplicar</button>
                                       <button onClick={() => {
@@ -1055,16 +1100,37 @@ export default function GroupDetailPage() {
           <div className="flex justify-end">
             <Button onClick={() => { setShowInviteForm(!showInviteForm); setFormError("") }}><Plus className="h-4 w-4 mr-2" />Invitar</Button>
           </div>
-          <Modal open={showInviteForm} onClose={() => setShowInviteForm(false)} title="Invitar miembro">
+          <Modal open={showInviteForm} onClose={() => { setShowInviteForm(false); setInviteResult(null) }} title="Invitar miembro">
             <div className="p-4 sm:p-5 space-y-3">
-              <form onSubmit={(e) => { e.preventDefault(); if (!inviteEmail.trim()) return; inviteMutation.mutate({ email: inviteEmail.trim() }) }} className="space-y-4">
-                <div className="space-y-2"><Label>Email del usuario</Label><Input type="email" placeholder="email@ejemplo.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required /></div>
-                {formError && <p className="text-sm text-red-500">{formError}</p>}
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={inviteMutation.isPending}>{inviteMutation.isPending ? "Invitando..." : "Invitar"}</Button>
-                  <Button type="button" variant="outline" onClick={() => setShowInviteForm(false)}>Cancelar</Button>
+              {inviteResult ? (
+                <div className="space-y-4">
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
+                    <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Invitacion enviada</p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">{inviteResult.message}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(inviteResult.inviteUrl); addToast({ title: "Enlace copiado", variant: "success" }) }}>
+                      Copiar enlace
+                    </Button>
+                    <a href={`https://wa.me/?text=${encodeURIComponent(`Te he invitado a unirte al grupo "${group.name}" en Zentra. Registrate aqui: ${inviteResult.inviteUrl}`)}`} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" size="sm" className="bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30">
+                        Compartir por WhatsApp
+                      </Button>
+                    </a>
+                  </div>
+                  <Button variant="outline" onClick={() => { setInviteResult(null); setInviteEmail("") }}>Invitar a otro</Button>
                 </div>
-              </form>
+              ) : (
+                <form onSubmit={(e) => { e.preventDefault(); if (!inviteEmail.trim()) return; inviteMutation.mutate({ email: inviteEmail.trim() }) }} className="space-y-4">
+                  <div className="space-y-2"><Label>Email del usuario</Label><Input type="email" placeholder="email@ejemplo.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required /></div>
+                  <p className="text-xs text-muted-foreground">Si el usuario no esta registrado en Zentra, recibira un email con un enlace para registrarse y unirse al grupo.</p>
+                  {formError && <p className="text-sm text-red-500">{formError}</p>}
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={inviteMutation.isPending}>{inviteMutation.isPending ? "Invitando..." : "Invitar"}</Button>
+                    <Button type="button" variant="outline" onClick={() => setShowInviteForm(false)}>Cancelar</Button>
+                  </div>
+                </form>
+              )}
             </div>
           </Modal>
           <div className="space-y-3">
@@ -1080,6 +1146,34 @@ export default function GroupDetailPage() {
               </CardContent></Card>
             ))}
           </div>
+          {pendingInvitations && pendingInvitations.length > 0 && (
+            <div className="space-y-3 pt-4 border-t">
+              <p className="text-sm font-medium text-muted-foreground">Invitaciones pendientes</p>
+              {pendingInvitations.map((inv) => (
+                <Card key={inv.id}><CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-bold text-sm">{inv.email.charAt(0)?.toUpperCase()}</div>
+                    <div>
+                      <p className="font-medium">{inv.email}</p>
+                      <p className="text-xs text-muted-foreground">Invitado por {inv.inviter.name} · Expira {formatDateShort(new Date(inv.expiresAt))}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a href={`https://wa.me/?text=${encodeURIComponent(`Te he invitado a unirte al grupo "${group.name}" en Zentra. Registrate aqui: ${window.location.origin}/login?invite=${inv.id}`)}`} target="_blank" rel="noopener noreferrer">
+                      <button className="text-emerald-600 hover:text-emerald-700 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center" title="Compartir por WhatsApp">
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                      </button>
+                    </a>
+                    {user?.id === group.createdBy.id && (
+                      <button onClick={() => cancelInvitationMutation.mutate(inv.id)} className="text-muted-foreground hover:text-red-500 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center" title="Cancelar invitacion">
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </CardContent></Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

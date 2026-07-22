@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { randomUUID } from 'crypto'
 import { PrismaService } from '../../database/prisma.service'
 import { DebtSimplifierService, DebtTransfer } from './debt-simplifier.service'
 import { PlanLimitsService } from '../subscriptions/plan-limits.service'
+import { EmailService } from '../../common/services/email.service'
 import {
   CreateGroupDto,
   UpdateGroupDto,
@@ -15,12 +18,17 @@ import {
 @Injectable()
 export class SplitsService implements OnModuleInit {
   private readonly logger = new Logger(SplitsService.name)
+  private readonly frontendUrl: string
 
   constructor(
     private prisma: PrismaService,
     private debtSimplifier: DebtSimplifierService,
     private planLimits: PlanLimitsService,
-  ) {}
+    private emailService: EmailService,
+    private config: ConfigService,
+  ) {
+    this.frontendUrl = this.config.get('FRONTEND_URL', 'http://localhost:3000')
+  }
 
   async onModuleInit() {
     this.logger.log('Starting recurring split expense processor')
@@ -207,9 +215,52 @@ export class SplitsService implements OnModuleInit {
     })
 
     if (!user) {
-      throw new NotFoundException(
-        'No se encontro ningun usuario con ese email. El usuario debe estar registrado en Zentra.',
+      // Usuario no registrado - crear invitación pendiente
+      const existingInvitation = await this.prisma.pendingInvitation.findFirst({
+        where: {
+          email: { equals: email, mode: 'insensitive' },
+          groupId,
+          status: 'pending',
+        },
+      })
+
+      if (existingInvitation && existingInvitation.expiresAt > new Date()) {
+        throw new BadRequestException('Ya se envio una invitacion a este email')
+      }
+
+      const token = randomUUID()
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 7)
+
+      await this.prisma.pendingInvitation.create({
+        data: {
+          email: email.toLowerCase(),
+          groupId,
+          invitedBy: userId,
+          token,
+          expiresAt,
+        },
+      })
+
+      const inviter = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      })
+
+      const inviteUrl = `${this.frontendUrl}/login?invite=${token}`
+
+      await this.emailService.sendSplitInviteEmail(
+        email,
+        inviter?.name || 'Alguien',
+        group.name,
+        inviteUrl,
       )
+
+      return {
+        message: `Invitacion enviada a ${email}. Se unira al grupo cuando se registre.`,
+        inviteUrl,
+        pending: true,
+      }
     }
 
     const existing = await this.prisma.splitGroupMember.findFirst({
@@ -276,6 +327,116 @@ export class SplitsService implements OnModuleInit {
     })
   }
 
+  async getInvitationByToken(token: string) {
+    const invitation = await this.prisma.pendingInvitation.findUnique({
+      where: { token },
+      include: {
+        group: { select: { id: true, name: true } },
+        inviter: { select: { id: true, name: true } },
+      },
+    })
+
+    if (!invitation) {
+      throw new NotFoundException('Invitacion no encontrada')
+    }
+
+    if (invitation.status !== 'pending') {
+      throw new BadRequestException('Esta invitacion ya fue procesada')
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      await this.prisma.pendingInvitation.update({
+        where: { id: invitation.id },
+        data: { status: 'expired' },
+      })
+      throw new BadRequestException('Esta invitacion ha expirado')
+    }
+
+    return invitation
+  }
+
+  async acceptInvitation(token: string, userId: string) {
+    const invitation = await this.getInvitationByToken(token)
+
+    const existingMember = await this.prisma.splitGroupMember.findFirst({
+      where: { groupId: invitation.groupId, userId },
+    })
+
+    if (existingMember) {
+      await this.prisma.pendingInvitation.update({
+        where: { id: invitation.id },
+        data: { status: 'accepted' },
+      })
+      return { message: 'Ya eres miembro de este grupo', groupId: invitation.groupId }
+    }
+
+    await this.prisma.splitGroupMember.create({
+      data: {
+        groupId: invitation.groupId,
+        userId,
+      },
+    })
+
+    await this.prisma.pendingInvitation.update({
+      where: { id: invitation.id },
+      data: { status: 'accepted' },
+    })
+
+    return { message: 'Te has unido al grupo exitosamente', groupId: invitation.groupId }
+  }
+
+  async getPendingInvitations(groupId: string, userId: string) {
+    const group = await this.prisma.splitGroup.findUnique({ where: { id: groupId } })
+
+    if (!group) {
+      throw new NotFoundException('Group not found')
+    }
+
+    const isMember = await this.prisma.splitGroupMember.findFirst({
+      where: { groupId, userId },
+    })
+
+    if (!isMember && group.createdById !== userId) {
+      throw new ForbiddenException('Not authorized')
+    }
+
+    return this.prisma.pendingInvitation.findMany({
+      where: {
+        groupId,
+        status: 'pending',
+        expiresAt: { gt: new Date() },
+      },
+      include: {
+        inviter: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
+  async cancelInvitation(invitationId: string, userId: string) {
+    const invitation = await this.prisma.pendingInvitation.findUnique({
+      where: { id: invitationId },
+      include: { group: true },
+    })
+
+    if (!invitation) {
+      throw new NotFoundException('Invitacion no encontrada')
+    }
+
+    if (invitation.group.createdById !== userId) {
+      const member = await this.prisma.splitGroupMember.findFirst({
+        where: { groupId: invitation.groupId, userId },
+      })
+      if (!member || member.role !== 'ADMIN') {
+        throw new ForbiddenException('Not authorized')
+      }
+    }
+
+    return this.prisma.pendingInvitation.delete({
+      where: { id: invitationId },
+    })
+  }
+
   async createExpense(userId: string, dto: CreateExpenseDto) {
     await this.planLimits.checkSplitExpenseLimit(userId)
 
@@ -293,14 +454,20 @@ export class SplitsService implements OnModuleInit {
       throw new ForbiddenException('You are not a member of this group')
     }
 
+    // Validar paidById si se proporciona
+    let paidById = userId
+    if (dto.paidById) {
+      const isPayerMember = group.members.some((m) => m.userId === dto.paidById)
+      if (!isPayerMember) {
+        throw new BadRequestException('El miembro seleccionado como pagador debe pertenecer al grupo')
+      }
+      paidById = dto.paidById
+    }
+
     const memberIds = group.members.map((m) => m.userId)
     const invalidSplits = dto.splits.filter((s) => !memberIds.includes(s.userId))
     if (invalidSplits.length > 0) {
       throw new BadRequestException('All split participants must be group members')
-    }
-
-    if (!dto.splits.some((s) => s.userId === userId)) {
-      throw new BadRequestException('You must include yourself in the splits')
     }
 
     if (dto.splitType === 'EQUAL') {
@@ -331,7 +498,7 @@ export class SplitsService implements OnModuleInit {
     const expense = await this.prisma.sharedExpense.create({
       data: {
         groupId: dto.groupId,
-        paidById: userId,
+        paidById: paidById,
         title: dto.title,
         description: dto.description,
         amount: dto.amount,
@@ -356,7 +523,7 @@ export class SplitsService implements OnModuleInit {
       },
     })
 
-    const otherMembers = group.members.filter((m) => m.userId !== userId)
+    const otherMembers = group.members.filter((m) => m.userId !== paidById)
     for (const member of otherMembers) {
       await this.prisma.notification.create({
         data: {
