@@ -997,10 +997,15 @@ export default function GroupDetailPage() {
                           >
                             {showOptimalTransfers ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                             <span>Ver transferencias optimas</span>
-                            <span className="text-xs">(minimiza el numero de pagos)</span>
                           </button>
                           {showOptimalTransfers && (
-                            <div className="space-y-3 mt-3 pl-4 border-l-2 border-muted">
+                            <>
+                              <div className="mt-2 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
+                                <p className="font-medium text-foreground mb-1">¿Qué son las transferencias óptimas?</p>
+                                <p>Es el número mínimo de pagos necesarios para saldar todas las deudas del grupo. Los montos pueden diferir del consumo directo porque se basan en cuánto prestó realmente cada persona al grupo (lo que pagó menos lo que consumió).</p>
+                                <p className="mt-1">Si solo hay una persona que debe, las transferencias óptimas y el consumo directo suman lo mismo pero se distribuyen diferente.</p>
+                              </div>
+                              <div className="space-y-3 mt-3 pl-4 border-l-2 border-muted">
                               {balances.simplifiedDebts.map((debt, i) => (
                                 <Card key={i}><CardContent className="p-4 flex items-center justify-between">
                                   <div className="flex items-center gap-3">
@@ -1014,6 +1019,7 @@ export default function GroupDetailPage() {
                                 </CardContent></Card>
                               ))}
                             </div>
+                            </>
                           )}
                         </div>
                       )}
