@@ -16,5 +16,7 @@ services:
         sync: false
       - key: SMTP_FROM
         value: Zentra <onboarding@resend.dev>
+      - key: FRONTEND_URL
+        value: https://zentra-web-one.vercel.app
       - key: NODE_ENV
         value: production
