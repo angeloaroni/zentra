@@ -102,6 +102,40 @@ interface BalancesResponse {
   simplifiedDebts: SimplifiedDebt[]
 }
 
+interface DirectConsumption {
+  user: User
+  total: number
+  breakdown: Array<{ title: string; amount: number }>
+}
+
+function getDirectConsumption(
+  userId: string,
+  expenses: SharedExpense[],
+  members: Array<{ user: User; role: string }>
+): DirectConsumption[] {
+  const consumptionMap = new Map<string, { total: number; breakdown: Array<{ title: string; amount: number }> }>()
+
+  for (const expense of expenses) {
+    if (expense.paidBy.id === userId) continue
+    const userSplit = expense.splits.find((s) => s.userId === userId)
+    if (!userSplit) continue
+
+    const existing = consumptionMap.get(expense.paidBy.id) || { total: 0, breakdown: [] }
+    existing.total += userSplit.amount
+    existing.breakdown.push({ title: expense.title, amount: userSplit.amount })
+    consumptionMap.set(expense.paidBy.id, existing)
+  }
+
+  return Array.from(consumptionMap.entries())
+    .map(([paidById, data]) => ({
+      user: members.find((m) => m.user.id === paidById)?.user || { id: paidById, name: "Unknown" },
+      total: Math.round(data.total * 100) / 100,
+      breakdown: data.breakdown,
+    }))
+    .filter((c) => c.total > 0.01)
+    .sort((a, b) => b.total - a.total)
+}
+
 interface RecurringExpense {
   id: string
   title: string
@@ -146,6 +180,7 @@ export default function GroupDetailPage() {
   const [showConverted, setShowConverted] = useState(false)
   const [menuExpenseId, setMenuExpenseId] = useState<string | null>(null)
   const [showTemplates, setShowTemplates] = useState(false)
+  const [showOptimalTransfers, setShowOptimalTransfers] = useState(false)
 
   const [expenseForm, setExpenseForm] = useState({
     title: "",
@@ -837,21 +872,23 @@ export default function GroupDetailPage() {
                   >
                     <Send className="h-4 w-4 mr-2" />Registrar pago
                   </Button>
-                  {balances?.simplifiedDebts.some(d => d.from === user?.id) && (
-                    <Button variant="outline" onClick={async () => {
-                      const myDebts = balances.simplifiedDebts.filter(d => d.from === user?.id)
-                      const total = myDebts.reduce((sum, d) => sum + d.amount, 0)
-                      if (confirm(`Liquidar ${myDebts.length} deudas por un total de ${formatMoney(total, group.currency)}?`)) {
-                        for (const debt of myDebts) {
-                          await createSettlementMutation.mutateAsync({
-                            groupId, toUserId: debt.to, amount: debt.amount, notes: "Liquidacion automatica"
-                          })
+                  {(() => {
+                    const myConsumption = user ? getDirectConsumption(user.id, group.expenses, group.members) : []
+                    return myConsumption.length > 0 ? (
+                      <Button variant="outline" onClick={async () => {
+                        const total = myConsumption.reduce((sum, c) => sum + c.total, 0)
+                        if (confirm(`Liquidar ${myConsumption.length} deudas por un total de ${formatMoney(total, group.currency)}?`)) {
+                          for (const c of myConsumption) {
+                            await createSettlementMutation.mutateAsync({
+                              groupId, toUserId: c.user.id, amount: c.total, notes: "Liquidacion automatica"
+                            })
+                          }
                         }
-                      }
-                    }}>
-                      Liquidar todo ({balances.simplifiedDebts.filter(d => d.from === user?.id).length})
-                    </Button>
-                  )}
+                      }}>
+                        Liquidar todo ({myConsumption.length})
+                      </Button>
+                    ) : null
+                  })()}
                 </div>
                 {!hasDebts && (
                   <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center gap-3">
@@ -904,32 +941,85 @@ export default function GroupDetailPage() {
                     })()}
                   </div>
                 </Modal>
-                {balances?.simplifiedDebts.length === 0 ? (
-                  <Card><CardContent className="py-12 text-center"><Scale className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">Todos estan al dia</p><p className="text-sm text-muted-foreground mt-1">No hay deudas pendientes</p></CardContent></Card>
-                ) : (
-                  <div className="space-y-3">
-                    {balances?.simplifiedDebts.map((debt, i) => (
-                      <Card key={i}><CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-sm">{debt.fromName?.charAt(0)?.toUpperCase()}</div>
-                          <div><p className="font-medium">{debt.fromName}</p><p className="text-xs text-muted-foreground">debe</p></div>
+                {(() => {
+                  const myConsumption = user ? getDirectConsumption(user.id, group.expenses, group.members) : []
+                  const hasConsumption = myConsumption.length > 0
+                  const totalConsumption = myConsumption.reduce((sum, c) => sum + c.total, 0)
+
+                  if (!hasConsumption && (!balances?.simplifiedDebts || balances.simplifiedDebts.length === 0)) {
+                    return (
+                      <Card><CardContent className="py-12 text-center"><Scale className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">Todos estan al dia</p><p className="text-sm text-muted-foreground mt-1">No hay deudas pendientes</p></CardContent></Card>
+                    )
+                  }
+
+                  return (
+                    <>
+                      {hasConsumption && (
+                        <div className="space-y-3">
+                          <p className="text-sm font-medium text-muted-foreground">Lo que debes por persona</p>
+                          {myConsumption.map((c) => (
+                            <Card key={c.user.id}><CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-sm">{c.user.name?.charAt(0)?.toUpperCase()}</div>
+                                  <div>
+                                    <p className="font-medium">{c.user.name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {c.breakdown.map((b, i) => (
+                                        <span key={i}>{b.title} {formatAmount(b.amount, group.currency)}{i < c.breakdown.length - 1 ? " + " : ""}</span>
+                                      ))}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xl font-bold text-red-600">{formatAmount(c.total, group.currency)}</span>
+                                  <Button size="sm" variant="outline" onClick={() => {
+                                    setShowSettlementForm(true)
+                                    setSettlementForm({ toUserId: c.user.id, amount: String(c.total), notes: "" })
+                                  }}>
+                                    Pagar
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent></Card>
+                          ))}
+                          <div className="flex justify-end pt-1">
+                            <p className="text-sm font-medium text-muted-foreground">Total: <span className="text-red-600">{formatAmount(totalConsumption, group.currency)}</span></p>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xl font-bold text-red-600">{formatAmount(debt.amount, group.currency)}</span>
-                          {debt.from === user?.id && (
-                            <Button size="sm" variant="outline" onClick={() => {
-                              setShowSettlementForm(true)
-                              setSettlementForm({ toUserId: debt.to, amount: String(debt.amount), notes: "" })
-                            }}>
-                              Pagar
-                            </Button>
+                      )}
+
+                      {balances?.simplifiedDebts && balances.simplifiedDebts.length > 0 && (
+                        <div className="pt-2">
+                          <button
+                            onClick={() => setShowOptimalTransfers(!showOptimalTransfers)}
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+                          >
+                            {showOptimalTransfers ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            <span>Ver transferencias optimas</span>
+                            <span className="text-xs">(minimiza el numero de pagos)</span>
+                          </button>
+                          {showOptimalTransfers && (
+                            <div className="space-y-3 mt-3 pl-4 border-l-2 border-muted">
+                              {balances.simplifiedDebts.map((debt, i) => (
+                                <Card key={i}><CardContent className="p-4 flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-sm">{debt.fromName?.charAt(0)?.toUpperCase()}</div>
+                                    <div><p className="font-medium">{debt.fromName}</p><p className="text-xs text-muted-foreground">debe</p></div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xl font-bold text-red-600">{formatAmount(debt.amount, group.currency)}</span>
+                                    <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm">{debt.toName?.charAt(0)?.toUpperCase()}</div>
+                                  </div>
+                                </CardContent></Card>
+                              ))}
+                            </div>
                           )}
-                          <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm">{debt.toName?.charAt(0)?.toUpperCase()}</div>
                         </div>
-                      </CardContent></Card>
-                    ))}
-                  </div>
-                )}
+                      )}
+                    </>
+                  )
+                })()}
               </>
             )
           })()}
