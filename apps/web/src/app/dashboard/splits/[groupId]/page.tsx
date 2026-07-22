@@ -105,6 +105,7 @@ interface BalancesResponse {
 interface PendingInvitation {
   id: string
   email: string
+  token: string
   status: string
   createdAt: string
   expiresAt: string
