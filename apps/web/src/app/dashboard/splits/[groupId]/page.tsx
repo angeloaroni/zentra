@@ -115,35 +115,78 @@ interface PendingInvitation {
 interface DirectConsumption {
   user: User
   total: number
+  theyOweMe: number
+  netAmount: number
+  settled: number
+  pending: number
   breakdown: Array<{ title: string; amount: number }>
+  theyOweBreakdown: Array<{ title: string; amount: number }>
 }
 
 function getDirectConsumption(
   userId: string,
   expenses: SharedExpense[],
-  members: Array<{ user: User; role: string }>
+  members: Array<{ user: User; role: string }>,
+  settlements: Settlement[]
 ): DirectConsumption[] {
   const consumptionMap = new Map<string, { total: number; breakdown: Array<{ title: string; amount: number }> }>()
+  const theyOweMap = new Map<string, { total: number; breakdown: Array<{ title: string; amount: number }> }>()
 
   for (const expense of expenses) {
-    if (expense.paidBy.id === userId) continue
     const userSplit = expense.splits.find((s) => s.userId === userId)
-    if (!userSplit) continue
 
-    const existing = consumptionMap.get(expense.paidBy.id) || { total: 0, breakdown: [] }
-    existing.total += userSplit.amount
-    existing.breakdown.push({ title: expense.title, amount: userSplit.amount })
-    consumptionMap.set(expense.paidBy.id, existing)
+    if (expense.paidBy.id !== userId && userSplit) {
+      const existing = consumptionMap.get(expense.paidBy.id) || { total: 0, breakdown: [] }
+      existing.total += userSplit.amount
+      existing.breakdown.push({ title: expense.title, amount: userSplit.amount })
+      consumptionMap.set(expense.paidBy.id, existing)
+    }
+
+    if (expense.paidBy.id === userId) {
+      for (const split of expense.splits) {
+        if (split.userId === userId) continue
+        const existing = theyOweMap.get(split.userId) || { total: 0, breakdown: [] }
+        existing.total += split.amount
+        existing.breakdown.push({ title: expense.title, amount: split.amount })
+        theyOweMap.set(split.userId, existing)
+      }
+    }
   }
 
-  return Array.from(consumptionMap.entries())
-    .map(([paidById, data]) => ({
-      user: members.find((m) => m.user.id === paidById)?.user || { id: paidById, name: "Unknown" },
-      total: Math.round(data.total * 100) / 100,
-      breakdown: data.breakdown,
-    }))
-    .filter((c) => c.total > 0.01)
-    .sort((a, b) => b.total - a.total)
+  const settledMap = new Map<string, number>()
+  for (const s of settlements) {
+    if (s.fromUser.id === userId) {
+      settledMap.set(s.toUser.id, (settledMap.get(s.toUser.id) || 0) + s.amount)
+    }
+  }
+
+  const allUserIds = Array.from(new Set([...Array.from(consumptionMap.keys()), ...Array.from(theyOweMap.keys())]))
+
+  return Array.from(allUserIds)
+    .map((otherUserId) => {
+      const consumed = consumptionMap.get(otherUserId) || { total: 0, breakdown: [] }
+      const theyOwe = theyOweMap.get(otherUserId) || { total: 0, breakdown: [] }
+      const settled = settledMap.get(otherUserId) || 0
+
+      const total = Math.round(consumed.total * 100) / 100
+      const theyOweMe = Math.round(theyOwe.total * 100) / 100
+      const netAmount = Math.round((total - theyOweMe) * 100) / 100
+      const settledRounded = Math.round(settled * 100) / 100
+      const pending = Math.round((netAmount - settledRounded) * 100) / 100
+
+      return {
+        user: members.find((m) => m.user.id === otherUserId)?.user || { id: otherUserId, name: "Unknown" },
+        total,
+        theyOweMe,
+        netAmount: Math.max(0, netAmount),
+        settled: settledRounded,
+        pending: Math.max(0, pending),
+        breakdown: consumed.breakdown,
+        theyOweBreakdown: theyOwe.breakdown,
+      }
+    })
+    .filter((c) => c.total > 0.01 || c.theyOweMe > 0.01)
+    .sort((a, b) => b.pending - a.pending)
 }
 
 interface RecurringExpense {
@@ -919,19 +962,20 @@ export default function GroupDetailPage() {
                     <Send className="h-4 w-4 mr-2" />Registrar pago
                   </Button>
                   {(() => {
-                    const myConsumption = user ? getDirectConsumption(user.id, group.expenses, group.members) : []
-                    return myConsumption.length > 0 ? (
+                    const myConsumption = user ? getDirectConsumption(user.id, group.expenses, group.members, group.settlements) : []
+                    const pendingItems = myConsumption.filter(c => c.pending > 0.01)
+                    return pendingItems.length > 0 ? (
                       <Button variant="outline" onClick={async () => {
-                        const total = myConsumption.reduce((sum, c) => sum + c.total, 0)
-                        if (confirm(`Liquidar ${myConsumption.length} deudas por un total de ${formatMoney(total, group.currency)}?`)) {
-                          for (const c of myConsumption) {
+                        const total = pendingItems.reduce((sum, c) => sum + c.pending, 0)
+                        if (confirm(`Liquidar ${pendingItems.length} deudas por un total de ${formatMoney(total, group.currency)}?`)) {
+                          for (const c of pendingItems) {
                             await createSettlementMutation.mutateAsync({
-                              groupId, toUserId: c.user.id, amount: c.total, notes: "Liquidacion automatica"
+                              groupId, toUserId: c.user.id, amount: c.pending, notes: "Liquidacion automatica"
                             })
                           }
                         }
                       }}>
-                        Liquidar todo ({myConsumption.length})
+                        Liquidar todo ({pendingItems.length})
                       </Button>
                     ) : null
                   })()}
@@ -988,9 +1032,9 @@ export default function GroupDetailPage() {
                   </div>
                 </Modal>
                 {(() => {
-                  const myConsumption = user ? getDirectConsumption(user.id, group.expenses, group.members) : []
+                  const myConsumption = user ? getDirectConsumption(user.id, group.expenses, group.members, group.settlements) : []
                   const hasConsumption = myConsumption.length > 0
-                  const totalConsumption = myConsumption.reduce((sum, c) => sum + c.total, 0)
+                  const totalConsumption = myConsumption.reduce((sum, c) => sum + c.pending, 0)
 
                   if (!hasConsumption && (!balances?.simplifiedDebts || balances.simplifiedDebts.length === 0)) {
                     return (
@@ -1002,36 +1046,82 @@ export default function GroupDetailPage() {
                     <>
                       {hasConsumption && (
                         <div className="space-y-3">
-                          <p className="text-sm font-medium text-muted-foreground">Lo que debes por persona</p>
-                          {myConsumption.map((c) => (
-                            <Card key={c.user.id}><CardContent className="p-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-sm">{c.user.name?.charAt(0)?.toUpperCase()}</div>
-                                  <div>
-                                    <p className="font-medium">{c.user.name}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {c.breakdown.map((b, i) => (
-                                        <span key={i}>{b.title} {formatAmount(b.amount, group.currency)}{i < c.breakdown.length - 1 ? " + " : ""}</span>
-                                      ))}
-                                    </p>
+                          {myConsumption.filter(c => c.pending > 0.01).length > 0 && (
+                            <>
+                              <p className="text-sm font-medium text-muted-foreground">Lo que debes por persona</p>
+                              {myConsumption.filter(c => c.pending > 0.01).map((c) => (
+                                <Card key={c.user.id}><CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-sm">{c.user.name?.charAt(0)?.toUpperCase()}</div>
+                                      <div>
+                                        <p className="font-medium">{c.user.name}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {c.breakdown.map((b, i) => (
+                                            <span key={i}>{b.title} {formatAmount(b.amount, group.currency)}{i < c.breakdown.length - 1 ? " + " : ""}</span>
+                                          ))}
+                                          {c.theyOweMe > 0 && (
+                                            <span className="text-emerald-600 dark:text-emerald-400"> | {c.user.name} te debe {formatAmount(c.theyOweMe, group.currency)}</span>
+                                          )}
+                                        </p>
+                                        {c.theyOweBreakdown.length > 0 && (
+                                          <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                                            {c.theyOweBreakdown.map((b, i) => (
+                                              <span key={i}>{b.title} {formatAmount(b.amount, group.currency)}{i < c.theyOweBreakdown.length - 1 ? " + " : ""}</span>
+                                            ))}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <div className="text-right">
+                                        <span className="text-xl font-bold text-red-600">{formatAmount(c.pending, group.currency)}</span>
+                                        {c.theyOweMe > 0 && (
+                                          <p className="text-xs text-muted-foreground">Neto: {formatAmount(c.netAmount, group.currency)}</p>
+                                        )}
+                                      </div>
+                                      <Button size="sm" variant="outline" onClick={() => {
+                                        setShowSettlementForm(true)
+                                        setSettlementForm({ toUserId: c.user.id, amount: String(c.pending), notes: "" })
+                                      }}>
+                                        Pagar
+                                      </Button>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-xl font-bold text-red-600">{formatAmount(c.total, group.currency)}</span>
-                                  <Button size="sm" variant="outline" onClick={() => {
-                                    setShowSettlementForm(true)
-                                    setSettlementForm({ toUserId: c.user.id, amount: String(c.total), notes: "" })
-                                  }}>
-                                    Pagar
-                                  </Button>
-                                </div>
+                                </CardContent></Card>
+                              ))}
+                              <div className="flex justify-end pt-1">
+                                <p className="text-sm font-medium text-muted-foreground">Total pendiente: <span className="text-red-600">{formatAmount(totalConsumption, group.currency)}</span></p>
                               </div>
-                            </CardContent></Card>
-                          ))}
-                          <div className="flex justify-end pt-1">
-                            <p className="text-sm font-medium text-muted-foreground">Total: <span className="text-red-600">{formatAmount(totalConsumption, group.currency)}</span></p>
-                          </div>
+                            </>
+                          )}
+
+                          {myConsumption.filter(c => c.pending <= 0.01 && (c.total > 0.01 || c.theyOweMe > 0.01)).length > 0 && (
+                            <div className="space-y-3 pt-2">
+                              <p className="text-sm font-medium text-muted-foreground">Saldados</p>
+                              {myConsumption.filter(c => c.pending <= 0.01 && (c.total > 0.01 || c.theyOweMe > 0.01)).map((c) => (
+                                <Card key={c.user.id} className="opacity-60"><CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm">{c.user.name?.charAt(0)?.toUpperCase()}</div>
+                                      <div>
+                                        <p className="font-medium">{c.user.name} ✓</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Consumo: {formatAmount(c.total, group.currency)}
+                                          {c.theyOweMe > 0 && ` | ${c.user.name} te debe: ${formatAmount(c.theyOweMe, group.currency)}`}
+                                          {c.netAmount > 0 && ` | Neto: ${formatAmount(c.netAmount, group.currency)}`}
+                                          {c.settled > 0 && ` | Pagado: ${formatAmount(c.settled, group.currency)}`}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-emerald-600">Saldado</span>
+                                    </div>
+                                  </div>
+                                </CardContent></Card>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
 
