@@ -43,6 +43,28 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
+  const allowedOrigins = [
+    'https://zentra-web-one.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://zentra-api-production.up.railway.app',
+  ];
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin;
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      res.header('Access-Control-Allow-Origin', origin || '*');
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
+    }
+    next();
+  });
+
   app.use(helmet.default({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
@@ -51,26 +73,6 @@ async function bootstrap() {
   app.use(compression());
 
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
-
-  const allowedOrigins = [
-    'https://zentra-web-one.vercel.app',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://zentra-api-production.up.railway.app',
-  ];
-
-  app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  });
 
   app.useGlobalPipes(
     new ValidationPipe({
