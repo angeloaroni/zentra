@@ -21,6 +21,8 @@ RUN npm run build --workspace=@zentra/api
 
 FROM node:18-alpine AS production
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 COPY --from=base /app/node_modules ./node_modules
