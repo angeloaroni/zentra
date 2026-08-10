@@ -56,6 +56,7 @@ async function bootstrap() {
     'https://zentra-web-one.vercel.app',
     'http://localhost:3000',
     'http://localhost:3001',
+    'https://zentra-api-production.up.railway.app',
   ];
 
   app.enableCors({
