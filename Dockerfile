@@ -31,6 +31,8 @@ COPY --from=base /app/apps/api/prisma ./apps/api/prisma
 COPY --from=base /app/apps/api/package.json ./apps/api/package.json
 COPY --from=base /app/package.json ./package.json
 
+RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
+
 ENV NODE_ENV=production
 EXPOSE 3001
 
