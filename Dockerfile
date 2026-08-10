@@ -32,4 +32,5 @@ COPY --from=base /app/package.json ./package.json
 ENV NODE_ENV=production
 EXPOSE 3001
 
+# Railway deploy
 CMD ["sh", "-c", "npx prisma db push --schema=apps/api/prisma/schema.prisma --skip-generate && node apps/api/dist/main"]
