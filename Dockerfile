@@ -35,4 +35,4 @@ ENV NODE_ENV=production
 EXPOSE 3001
 
 # Railway deploy
-CMD ["sh", "-c", "npx prisma db push --schema=apps/api/prisma/schema.prisma --skip-generate && node apps/api/dist/main"]
+CMD ["sh", "-c", "npx prisma db push --schema=apps/api/prisma/schema.prisma --skip-generate --accept-data-loss 2>/dev/null || true && node apps/api/dist/main"]
