@@ -33,7 +33,9 @@ export class SplitsService implements OnModuleInit {
   async onModuleInit() {
     this.logger.log('Starting recurring split expense processor')
     setInterval(() => this.processRecurringExpenses(), 60 * 60 * 1000) // Every hour
-    await this.processRecurringExpenses()
+    this.processRecurringExpenses().catch((err) => {
+      this.logger.warn(`Initial recurring split check failed (will retry in 1 hour): ${err.message}`)
+    })
   }
 
   async createGroup(userId: string, dto: CreateGroupDto) {

@@ -9,7 +9,9 @@ export class RecurringService implements OnModuleInit {
 
   onModuleInit() {
     setInterval(() => this.processRecurring(), 60 * 60 * 1000);
-    this.processRecurring();
+    this.processRecurring().catch((err) => {
+      this.logger.warn(`Initial recurring check failed (will retry in 1 hour): ${err.message}`);
+    });
   }
 
   async processRecurring() {
