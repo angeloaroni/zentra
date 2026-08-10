@@ -48,6 +48,7 @@ async function bootstrap() {
     'http://localhost:3000',
     'http://localhost:3001',
     'https://zentra-api-production.up.railway.app',
+    'https://zentra-api-production-dee5.up.railway.app',
   ];
 
   app.use((req: Request, res: Response, next: NextFunction) => {
