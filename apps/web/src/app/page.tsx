@@ -75,7 +75,7 @@ function Nav() {
             Crear cuenta gratis
           </Link>
         </div>
-        <button onClick={() => setOpen(!open)} className="md:hidden text-white">
+        <button onClick={() => setOpen(!open)} className="md:hidden text-white" aria-label={open ? "Cerrar menú de navegación" : "Abrir menú de navegación"}>
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
