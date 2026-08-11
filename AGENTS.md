@@ -247,6 +247,49 @@ npm run db:studio      # Abrir Prisma Studio
 - DB: PostgreSQL (Neon) + indexes optimizados
 - Deploy: Vercel (frontend), Render (backend), Neon (database)
 
+## Reglas de Accesibilidad (WCAG 2.2 AA)
+
+**IMPORTANTE: Todos los cambios y nuevas funcionalidades DEBEN cumplir estas reglas.**
+
+### Botones e interactivos
+- Todo botón sin texto visible DEBE tener `aria-label` descriptivo
+- Iconos dentro de botones deben tener `aria-hidden="true"`
+- Botones de toggle/dropdown DEBEN tener `aria-expanded` y `aria-haspopup`
+- Tamaño minimo de touch target: `min-h-[44px] min-w-[44px]`
+
+### Formularios
+- Todo `<input>` DEBE estar vinculado a un `<Label>` con `htmlFor`/`id`
+- Errores DEBEN usar `role="alert"` y estar vinculados con `aria-describedby`
+- Inputs invalidos DEBEN tener `aria-invalid="true"`
+- Selects nativos DEBEN tener un `<Label>` asociado
+
+### Contenido dinamico
+- Toasts/notificaciones DEBEN usar `role="status"` y `aria-live="polite"`
+- Mensajes de error DEBEN usar `role="alert"`
+- Estados de carga DEBEN usar `aria-live="polite"`
+
+### Navegacion por teclado
+- Elementos con `onClick` en `<div>` o `<span>` DEBEN ser `<button>` o tener `role="button"`, `tabIndex={0}`, y `onKeyDown`
+- NO usar `window.confirm()` - usar el componente `ConfirmAction`
+- Zoom de imagenes DEBE ser un dialog con focus trap
+
+### HTML semantico
+- Todas las paginas DEBEN tener un landmark `<main>`
+- Jerarquia de headings: NO saltar de h1 a h3
+- NO anidar `<button>` dentro de `<a>`
+- SVGs decorativos DEBEN tener `aria-hidden="true"`
+
+### Contraste de color
+- Texto normal (<18px): minimo 4.5:1
+- Texto grande (>=18px): minimo 3:1
+- NO usar `text-gray-400` sobre fondos claros (falla contraste)
+- Preferir `text-gray-500` o mas oscuro sobre fondos claros
+
+### Modales y dialogs
+- DEBEN usar Radix Dialog o tener `role="dialog"`, `aria-modal="true"`
+- Boton de cerrar DEBE tener `aria-label="Cerrar"`
+- Focus DEBE retornar al elemento que abrio el modal
+
 ## Hecho (Features Completadas)
 
 - [x] CRUD completo: Auth, Users, Families, Transactions, Categories, Budgets, Goals, Accounts, Recurring, Tags, Subscriptions, Notifications, Achievements

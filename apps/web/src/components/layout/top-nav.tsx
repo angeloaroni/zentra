@@ -144,6 +144,9 @@ export function TopNav() {
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label="Menu de usuario"
+              aria-expanded={showUserMenu}
+              aria-haspopup="true"
             >
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-medium">
                 {mounted ? (user?.name?.charAt(0)?.toUpperCase() || "U") : ""}

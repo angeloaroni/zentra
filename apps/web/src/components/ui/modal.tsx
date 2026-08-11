@@ -28,8 +28,8 @@ export function Modal({ open, onClose, title, children, className, maxWidth = "s
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10 rounded-t-xl">
             <DialogPrimitive.Title className="text-lg font-semibold">{title}</DialogPrimitive.Title>
-            <DialogPrimitive.Close className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors">
-              <X className="h-5 w-5" />
+            <DialogPrimitive.Close className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" aria-label="Cerrar">
+              <X className="h-5 w-5" aria-hidden="true" />
             </DialogPrimitive.Close>
           </div>
           {children}

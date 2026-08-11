@@ -77,6 +77,8 @@ export function NotificationBell() {
         onClick={() => setOpen(!open)}
         className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         aria-label="Notificaciones"
+        aria-expanded={open}
+        aria-haspopup="true"
       >
         <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
         {unreadCount > 0 && (
@@ -131,7 +133,7 @@ export function NotificationBell() {
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
                           {n.message}
                         </p>
-                        <p className="text-[10px] text-gray-400 mt-1">
+                        <p className="text-[11px] text-gray-500 mt-1">
                           {new Date(n.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                         </p>
                       </div>
@@ -139,18 +141,18 @@ export function NotificationBell() {
                         {!n.read && (
                           <button
                             onClick={() => markAsRead(n.id)}
-                            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-                            title="Marcar como leido"
+                            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                            aria-label="Marcar como leido"
                           >
-                            <Check className="h-3.5 w-3.5 text-gray-400" />
+                            <Check className="h-4 w-4 text-gray-400" aria-hidden="true" />
                           </button>
                         )}
                         <button
                           onClick={() => deleteNotification(n.id)}
-                          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-                          title="Eliminar"
+                          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                          aria-label="Eliminar notificacion"
                         >
-                          <X className="h-3.5 w-3.5 text-gray-400" />
+                          <X className="h-4 w-4 text-gray-400" aria-hidden="true" />
                         </button>
                       </div>
                     </div>

@@ -78,10 +78,11 @@ function ToastContainer({
   if (toasts.length === 0) return null
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
+    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm" role="status" aria-live="polite" aria-label="Notificaciones">
       {toasts.map((toast) => (
         <div
           key={toast.id}
+          role="alert"
           className={cn(
             "flex items-start gap-3 p-4 rounded-xl border shadow-lg animate-in slide-in-from-bottom-5 fade-in duration-200",
             variantStyles[toast.variant || "default"]
@@ -98,6 +99,7 @@ function ToastContainer({
                 toast.variant === "warning" &&
                   "bg-amber-500 text-white"
               )}
+              aria-hidden="true"
             >
               {variantIcons[toast.variant]}
             </span>
@@ -116,9 +118,10 @@ function ToastContainer({
           </div>
           <button
             onClick={() => removeToast(toast.id)}
-            className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Cerrar notificacion"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       ))}
