@@ -35,8 +35,8 @@ export class TransactionsController {
     return this.transactionsService.findMany(req.user.id, {
       skip: skip ? parseInt(skip) : undefined,
       take: take ? parseInt(take) : undefined,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
+      startDate: startDate ? new Date(startDate + 'T00:00:00') : undefined,
+      endDate: endDate ? new Date(endDate + 'T23:59:59') : undefined,
       type,
       categoryId,
       familyId,
@@ -57,8 +57,8 @@ export class TransactionsController {
     @Query('familyId') familyId?: string,
   ) {
     return this.transactionsService.getSummary(req.user.id, {
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
+      startDate: startDate ? new Date(startDate + 'T00:00:00') : undefined,
+      endDate: endDate ? new Date(endDate + 'T23:59:59') : undefined,
       familyId,
     });
   }
@@ -90,8 +90,8 @@ export class TransactionsController {
     @Query('familyId') familyId?: string,
   ) {
     return this.transactionsService.getByCategory(req.user.id, {
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
+      startDate: startDate ? new Date(startDate + 'T00:00:00') : undefined,
+      endDate: endDate ? new Date(endDate + 'T23:59:59') : undefined,
       familyId,
     });
   }
