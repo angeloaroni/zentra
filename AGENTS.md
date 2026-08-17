@@ -126,17 +126,21 @@ npm run db:studio      # Abrir Prisma Studio
 ### Dividir Gastos (Splits)
 - Independiente de familias (funciona con cualquier usuario registrado)
 - Requiere plan `pro`
-- **Grupos**: CRUD con invitacion por email, gestion de miembros
+- **Grupos**: CRUD con invitacion por email, gestion de miembros, eliminacion con confirmacion, orden por mas recientes
 - **Gastos**: 3 tipos de division: EQUAL, PERCENTAGE, EXACT
+- **Seleccionar quién pago**: Campo `paidById` opcional para añadir gastos en nombre de otro miembro
+- **Colores únicos**: Cada miembro tiene un color consistente en avatares
 - **Items**: Itemizar gastos individuales (POST/DELETE `/splits/expenses/:id/items`)
 - **Tickets**: Base64 almacenado en DB (campos `receiptData`, `receiptMime`)
-- **Balances**: Algoritmo de simplificacion de deudas (minimiza transfers)
+- **Balances**: Consumos directos (lo que debes a cada persona con desglose) + Transferencias optimas (algoritmo de simplificacion de deudas)
 - **Settlements**: Registrar pagos → auto-crear Transaction con NOMBRE del pagador (no ID)
 - **Recurrentes**: Auto-generar gastos compartidos cada hora via `OnModuleInit`
 - **Plantillas**: Guardar configuraciones de division comunes (`POST/GET/DELETE /splits/templates`)
 - **Monedas**: Conversion de divisas (`/splits/currencies/rates`, `/splits/currencies/convert`)
 - Toggle `isPaid` en splits de gastos (marcar/desmarcar como pagado)
-- Notificaciones: `SPLIT_INVITE`, `SPLIT_EXPENSE`, `SPLIT_SETTLEMENT`
+- **Invitaciones**: Email a no registrados + compartir por WhatsApp (enlace wa.me)
+- **PendingInvitation**: Modelo para invitaciones pendientes con token y expiracion (7 dias)
+- Notificaciones con redirección al grupo: `SPLIT_INVITE`, `SPLIT_EXPENSE`, `SPLIT_SETTLEMENT`
 
 ### Conversion de Divisas (Splits)
 - `GET /splits/currencies/rates` - retorna tasas de cambio

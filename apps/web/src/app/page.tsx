@@ -388,7 +388,7 @@ function FeaturesSection() {
       icon: <Users size={24} />,
       badge: "Dividir gastos",
       title: "Divide gastos con amigos sin complicaciones",
-      text: "Crea grupos, divide gastos igual o por porcentaje, simplifica deudas automaticamente. Todo integrado con tus finanzas personales.",
+      text: "Crea grupos, invita por WhatsApp, divide gastos igual o por porcentaje, elige quién pagó. Balances claros con consumos directos y transferencias optimizadas. Notificaciones con redirección al grupo.",
       mockup: (
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -418,14 +418,15 @@ function FeaturesSection() {
             </div>
           </div>
           <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-            <p className="text-xs font-medium text-blue-800 mb-2">Balances simplificados</p>
+            <p className="text-xs font-medium text-blue-800 mb-2">Lo que debes por persona</p>
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-red-600 font-medium">Maria</span>
-              <span className="text-gray-400">le debe</span>
-              <span className="text-emerald-600 font-medium">27,50 €</span>
-              <span className="text-gray-400">a</span>
+              <span className="text-gray-400">Debes a</span>
               <span className="text-blue-600 font-medium">Juan</span>
+              <span className="text-red-600 font-medium">27,50 €</span>
             </div>
+          </div>
+          <div className="mt-2 p-2 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+            <p className="text-[10px] text-gray-400 text-center">Invitar por WhatsApp · Seleccionar quién pagó</p>
           </div>
         </div>
       ),

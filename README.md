@@ -181,15 +181,19 @@ zentra/
 - Alertas de presupuesto por evento
 
 ### 8. Dividir gastos (Splits)
-- Grupos con miembros
+- Grupos con miembros y colores únicos por persona
 - 3 tipos de división: Igual, Porcentaje, Monto exacto
-- Balances por persona con desglose
-- Transferencias óptimas (algoritmo de simplificación de deudas)
+- **Seleccionar quién pagó** al crear un gasto (para añadir gastos en nombre de otro)
+- Balances con **consumos directos** (lo que debes a cada persona con desglose)
+- **Transferencias óptimas** (algoritmo de simplificación de deudas)
 - Pagos (settlements) con auto-creación de transacciones
 - Gastos recurrentes compartidos
 - Tickets/facturas (base64 en DB)
-- Invitaciones por email a no registrados
-- Compartir por WhatsApp
+- **Invitaciones por email** a usuarios no registrados
+- **Compartir por WhatsApp** con enlace de registro directo
+- Invitaciones pendientes visibles en la pestaña Miembros
+- Eliminación de grupos con confirmación
+- Orden de grupos por más recientes
 
 ### 9. Dashboard
 - Score de salud financiera (0-100)
