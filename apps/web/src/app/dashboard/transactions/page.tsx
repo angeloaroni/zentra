@@ -164,7 +164,6 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     setSkip(0)
-    setDateRange({ startDate: "", endDate: "" })
     setAccountFilter("")
   }, [filterType, viewMode, debouncedSearch, activeFamilyId])
 
