@@ -6,6 +6,7 @@ import { api } from "@/lib/api"
 import { useToast } from "@/components/ui/toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { ConfirmAction } from "@/components/ui/confirm-dialog"
 import { getUser } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import {
@@ -65,6 +66,7 @@ export default function AdminPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ userId: string; userName: string } | null>(null)
 
   useEffect(() => {
     if (!user || user.role !== "ADMIN") {
@@ -114,9 +116,7 @@ export default function AdminPage() {
   })
 
   function handleDelete(userId: string, userName: string) {
-    if (confirm(`Estas seguro de que quieres eliminar la cuenta de "${userName}"? Esta accion no se puede deshacer.`)) {
-      deleteUser.mutate(userId)
-    }
+    setDeleteConfirm({ userId, userName })
   }
 
   if (!user || user.role !== "ADMIN") return null
@@ -343,6 +343,21 @@ export default function AdminPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ConfirmAction
+        open={!!deleteConfirm}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+        onConfirm={() => {
+          if (deleteConfirm) {
+            deleteUser.mutate(deleteConfirm.userId)
+            setDeleteConfirm(null)
+          }
+        }}
+        title="Eliminar cuenta"
+        description={`Estas seguro de que quieres eliminar la cuenta de "${deleteConfirm?.userName}"? Esta accion no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        variant="danger"
+      />
     </div>
   )
 }

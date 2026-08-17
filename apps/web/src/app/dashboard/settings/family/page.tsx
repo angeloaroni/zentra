@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ConfirmAction } from "@/components/ui/confirm-dialog"
 import { Users, UserPlus, Trash2, ArrowLeft, Copy, Check } from "lucide-react"
 import Link from "next/link"
 
@@ -35,6 +36,7 @@ export default function FamilyPage() {
   const [joinFamilyId, setJoinFamilyId] = useState("")
   const [error, setError] = useState("")
   const [copied, setCopied] = useState(false)
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
 
   const { data: families } = useQuery<Family[]>({
     queryKey: ["families"],
@@ -223,15 +225,23 @@ export default function FamilyPage() {
               <div className="border-t border-gray-100 dark:border-gray-800 pt-4 mt-4">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    if (confirm("¿Seguro que quieres salir de la familia?")) {
-                      leaveFamilyMut.mutate()
-                    }
-                  }}
+                  onClick={() => setShowLeaveConfirm(true)}
                   className="text-red-600 hover:text-red-700"
                 >
                   Salir de la familia
                 </Button>
+                <ConfirmAction
+                  open={showLeaveConfirm}
+                  onOpenChange={setShowLeaveConfirm}
+                  title="Salir de la familia"
+                  description="¿Seguro que quieres salir de la familia?"
+                  confirmLabel="Salir"
+                  variant="danger"
+                  onConfirm={() => {
+                    leaveFamilyMut.mutate()
+                    setShowLeaveConfirm(false)
+                  }}
+                />
               </div>
             )}
           </CardContent>
