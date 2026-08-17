@@ -292,6 +292,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => setOpenMenu(openMenu === u.id ? null : u.id)}
                           className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                          data-user-id={u.id}
                         >
                           <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         </button>
@@ -299,12 +300,12 @@ export default function AdminPage() {
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} aria-hidden="true" />
                             <div className="fixed z-20 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 w-48"
-                              style={{ top: 'auto', left: 'auto' }}
                               ref={(el) => {
-                                if (el && openMenu === u.id) {
-                                  const rect = el.parentElement?.getBoundingClientRect();
-                                  if (rect) {
-                                    const menuHeight = 200
+                                if (el) {
+                                  const btn = document.querySelector(`[data-user-id="${u.id}"]`)
+                                  if (btn) {
+                                    const rect = btn.getBoundingClientRect()
+                                    const menuHeight = 220
                                     const spaceBelow = window.innerHeight - rect.bottom
                                     if (spaceBelow < menuHeight) {
                                       el.style.top = `${rect.top - menuHeight - 4}px`
