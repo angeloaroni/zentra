@@ -28,7 +28,6 @@ const PRESETS = [
   { label: "Ultimos 3 meses", value: "last-3-months" },
   { label: "Ultimos 6 meses", value: "last-6-months" },
   { label: "Este ano", value: "current-year" },
-  { label: "Todo", value: "all" },
   { label: "Personalizado", value: "custom" },
 ]
 
@@ -62,11 +61,6 @@ function getPresetRange(preset: string): DateRange {
       return {
         startDate: new Date(year, 0, 1).toISOString().split("T")[0],
         endDate: new Date(year, 11, 31).toISOString().split("T")[0],
-      }
-    case "all":
-      return {
-        startDate: "2020-01-01",
-        endDate: new Date(year + 1, 0, 1).toISOString().split("T")[0],
       }
     default:
       return {

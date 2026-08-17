@@ -586,7 +586,7 @@ export default function TransactionsPage() {
                   onClick={() => setFilterType(t)}
                   className="h-10"
                 >
-                  {t === "all" ? "Todas" : t === "INCOME" ? "Ingresos" : "Gastos"}
+                  {t === "all" ? "Todos los tipos" : t === "INCOME" ? "Ingresos" : "Gastos"}
                 </Button>
               ))}
             </div>
