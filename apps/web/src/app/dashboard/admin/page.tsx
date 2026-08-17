@@ -304,8 +304,14 @@ export default function AdminPage() {
                                 if (el && openMenu === u.id) {
                                   const rect = el.parentElement?.getBoundingClientRect();
                                   if (rect) {
-                                    el.style.top = `${rect.bottom + 4}px`;
-                                    el.style.left = `${Math.min(rect.right - 192, window.innerWidth - 200)}px`;
+                                    const menuHeight = 200
+                                    const spaceBelow = window.innerHeight - rect.bottom
+                                    if (spaceBelow < menuHeight) {
+                                      el.style.top = `${rect.top - menuHeight - 4}px`
+                                    } else {
+                                      el.style.top = `${rect.bottom + 4}px`
+                                    }
+                                    el.style.left = `${Math.min(rect.right - 192, window.innerWidth - 200)}px`
                                   }
                                 }
                               }}
