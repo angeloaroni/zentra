@@ -555,7 +555,20 @@ export class SplitsService implements OnModuleInit {
 
     return this.prisma.sharedExpense.findMany({
       where: { groupId },
-      include: {
+      select: {
+        id: true,
+        groupId: true,
+        paidById: true,
+        title: true,
+        description: true,
+        amount: true,
+        currency: true,
+        date: true,
+        splitType: true,
+        receiptData: true,
+        receiptMime: true,
+        createdAt: true,
+        updatedAt: true,
         paidBy: { select: { id: true, name: true, avatar: true } },
         splits: {
           include: {
