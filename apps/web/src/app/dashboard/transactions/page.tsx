@@ -538,7 +538,7 @@ export default function TransactionsPage() {
             <p className="text-sm text-red-500">{formError}</p>
           )}
 
-          <div className="flex gap-2 pt-1 sticky bottom-0 bg-white dark:bg-gray-900 pb-4">
+          <div className="flex gap-2 pt-3 sticky bottom-0 bg-white dark:bg-gray-900 pb-[env(safe-area-inset-bottom)] border-t border-gray-200 dark:border-gray-700">
             <Button type="submit" disabled={isPending} className="flex-1">
               {isPending ? "Guardando..." : editingId ? "Actualizar" : "Guardar"}
             </Button>

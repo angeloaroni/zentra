@@ -243,7 +243,7 @@ export default function GoalsPage() {
             </p>
           )}
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2 pt-3 sticky bottom-0 bg-white dark:bg-gray-900 pb-[env(safe-area-inset-bottom)] border-t border-gray-200 dark:border-gray-700">
             <Button type="submit" disabled={createMutation.isPending}>
               {createMutation.isPending ? "Guardando..." : "Guardar"}
             </Button>

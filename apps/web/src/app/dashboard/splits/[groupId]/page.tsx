@@ -659,7 +659,7 @@ export default function GroupDetailPage() {
             <div className="space-y-2"><Label>Nombre</Label><Input value={editGroupForm.name} onChange={(e) => setEditGroupForm(prev => ({ ...prev, name: e.target.value }))} /></div>
             <div className="space-y-2"><Label>Descripcion</Label><Input value={editGroupForm.description} onChange={(e) => setEditGroupForm(prev => ({ ...prev, description: e.target.value }))} /></div>
             {formError && <p className="text-sm text-red-500">{formError}</p>}
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-3 sticky bottom-0 bg-white dark:bg-gray-900 pb-[env(safe-area-inset-bottom)] border-t border-gray-200 dark:border-gray-700">
               <Button type="submit" disabled={updateGroupMutation.isPending}>Guardar</Button>
               <Button type="button" variant="outline" onClick={() => setShowEditGroup(false)}>Cancelar</Button>
             </div>
@@ -814,7 +814,7 @@ export default function GroupDetailPage() {
                   </div>
                 </div>
                 {formError && <p className="text-sm text-red-500">{formError}</p>}
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-3 sticky bottom-0 bg-white dark:bg-gray-900 pb-[env(safe-area-inset-bottom)] border-t border-gray-200 dark:border-gray-700">
                   <Button type="submit" disabled={createExpenseMutation.isPending || updateExpenseMutation.isPending}>
                     {editingExpense ? (updateExpenseMutation.isPending ? "Guardando..." : "Guardar") : (createExpenseMutation.isPending ? "Creando..." : "Crear gasto")}
                   </Button>
@@ -1049,7 +1049,7 @@ export default function GroupDetailPage() {
                           <div className="space-y-2"><Label>Monto ({group.currency}) *</Label><Input type="number" step="0.01" min="0.01" placeholder="0.00" value={settlementForm.amount} onChange={(e) => setSettlementForm(prev => ({ ...prev, amount: e.target.value }))} required /></div>
                           <div className="space-y-2"><Label>Notas</Label><Input placeholder="Nota..." value={settlementForm.notes} onChange={(e) => setSettlementForm(prev => ({ ...prev, notes: e.target.value }))} /></div>
                           {formError && <p className="text-sm text-red-500">{formError}</p>}
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 pt-3 sticky bottom-0 bg-white dark:bg-gray-900 pb-[env(safe-area-inset-bottom)] border-t border-gray-200 dark:border-gray-700">
                             <Button type="submit" disabled={createSettlementMutation.isPending}>{createSettlementMutation.isPending ? "Registrando..." : "Registrar pago"}</Button>
                             <Button type="button" variant="outline" onClick={() => setShowSettlementForm(false)}>Cancelar</Button>
                           </div>
@@ -1250,7 +1250,7 @@ export default function GroupDetailPage() {
                   <div className="space-y-2"><Label>Email del usuario</Label><Input type="email" placeholder="email@ejemplo.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required /></div>
                   <p className="text-xs text-muted-foreground">Si el usuario no esta registrado en Zentra, recibira un email con un enlace para registrarse y unirse al grupo.</p>
                   {formError && <p className="text-sm text-red-500">{formError}</p>}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-3 sticky bottom-0 bg-white dark:bg-gray-900 pb-[env(safe-area-inset-bottom)] border-t border-gray-200 dark:border-gray-700">
                     <Button type="submit" disabled={inviteMutation.isPending}>{inviteMutation.isPending ? "Invitando..." : "Invitar"}</Button>
                     <Button type="button" variant="outline" onClick={() => setShowInviteForm(false)}>Cancelar</Button>
                   </div>
@@ -1321,7 +1321,7 @@ export default function GroupDetailPage() {
                   <div className="space-y-2"><Label>Proxima fecha</Label><Input type="date" value={recurringForm.nextDueDate} onChange={(e) => setRecurringForm(prev => ({ ...prev, nextDueDate: e.target.value }))} /></div>
                 </div>
                 {formError && <p className="text-sm text-red-500">{formError}</p>}
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-3 sticky bottom-0 bg-white dark:bg-gray-900 pb-[env(safe-area-inset-bottom)] border-t border-gray-200 dark:border-gray-700">
                   <Button type="submit" disabled={createRecurringMutation.isPending}>{createRecurringMutation.isPending ? "Creando..." : "Crear"}</Button>
                   <Button type="button" variant="outline" onClick={() => setShowRecurringForm(false)}>Cancelar</Button>
                 </div>
