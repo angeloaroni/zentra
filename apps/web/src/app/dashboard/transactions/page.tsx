@@ -152,7 +152,10 @@ export default function TransactionsPage() {
     paymentMethod: "",
     tagId: "",
   })
-  const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" })
+  const now = new Date()
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]
+  const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0]
+  const [dateRange, setDateRange] = useState({ startDate: currentMonthStart, endDate: currentMonthEnd })
   const [accountFilter, setAccountFilter] = useState("")
 
   useEffect(() => {
