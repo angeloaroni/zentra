@@ -114,12 +114,12 @@ interface PendingInvitation {
 
 interface DirectConsumption {
   user: User
-  total: number
+  iOwe: number
   theyOweMe: number
-  netAmount: number
+  netDebt: number
   settled: number
   pending: number
-  breakdown: Array<{ title: string; amount: number }>
+  iOweBreakdown: Array<{ title: string; amount: number }>
   theyOweBreakdown: Array<{ title: string; amount: number }>
 }
 
@@ -129,17 +129,17 @@ function getDirectConsumption(
   members: Array<{ user: User; role: string }>,
   settlements: Settlement[]
 ): DirectConsumption[] {
-  const consumptionMap = new Map<string, { total: number; breakdown: Array<{ title: string; amount: number }> }>()
+  const iOweMap = new Map<string, { total: number; breakdown: Array<{ title: string; amount: number }> }>()
   const theyOweMap = new Map<string, { total: number; breakdown: Array<{ title: string; amount: number }> }>()
 
   for (const expense of expenses) {
     const userSplit = expense.splits.find((s) => s.userId === userId)
 
     if (expense.paidBy.id !== userId && userSplit) {
-      const existing = consumptionMap.get(expense.paidBy.id) || { total: 0, breakdown: [] }
+      const existing = iOweMap.get(expense.paidBy.id) || { total: 0, breakdown: [] }
       existing.total += userSplit.amount
       existing.breakdown.push({ title: expense.title, amount: userSplit.amount })
-      consumptionMap.set(expense.paidBy.id, existing)
+      iOweMap.set(expense.paidBy.id, existing)
     }
 
     if (expense.paidBy.id === userId) {
@@ -160,32 +160,32 @@ function getDirectConsumption(
     }
   }
 
-  const allUserIds = Array.from(new Set([...Array.from(consumptionMap.keys()), ...Array.from(theyOweMap.keys())]))
+  const allUserIds = Array.from(new Set([...Array.from(iOweMap.keys()), ...Array.from(theyOweMap.keys())]))
 
   return Array.from(allUserIds)
     .map((otherUserId) => {
-      const consumed = consumptionMap.get(otherUserId) || { total: 0, breakdown: [] }
-      const theyOwe = theyOweMap.get(otherUserId) || { total: 0, breakdown: [] }
+      const iOweData = iOweMap.get(otherUserId) || { total: 0, breakdown: [] }
+      const theyOweData = theyOweMap.get(otherUserId) || { total: 0, breakdown: [] }
       const settled = settledMap.get(otherUserId) || 0
 
-      const total = Math.round(consumed.total * 100) / 100
-      const theyOweMe = Math.round(theyOwe.total * 100) / 100
-      const netAmount = Math.round((total - theyOweMe) * 100) / 100
+      const iOwe = Math.round(iOweData.total * 100) / 100
+      const theyOweMe = Math.round(theyOweData.total * 100) / 100
+      const netDebt = Math.round((iOwe - theyOweMe) * 100) / 100
       const settledRounded = Math.round(settled * 100) / 100
-      const pending = Math.round((netAmount - settledRounded) * 100) / 100
+      const pending = Math.round((netDebt - settledRounded) * 100) / 100
 
       return {
         user: members.find((m) => m.user.id === otherUserId)?.user || { id: otherUserId, name: "Unknown" },
-        total,
+        iOwe,
         theyOweMe,
-        netAmount: Math.max(0, netAmount),
+        netDebt,
         settled: settledRounded,
-        pending: Math.max(0, pending),
-        breakdown: consumed.breakdown,
-        theyOweBreakdown: theyOwe.breakdown,
+        pending,
+        iOweBreakdown: iOweData.breakdown,
+        theyOweBreakdown: theyOweData.breakdown,
       }
     })
-    .filter((c) => c.total > 0.01 || c.theyOweMe > 0.01)
+    .filter((c) => c.iOwe > 0.01 || c.theyOweMe > 0.01)
     .sort((a, b) => b.pending - a.pending)
 }
 
@@ -1067,8 +1067,8 @@ export default function GroupDetailPage() {
                                       <div>
                                         <p className="font-medium">{c.user.name}</p>
                                         <p className="text-xs text-muted-foreground">
-                                          {c.breakdown.map((b, i) => (
-                                            <span key={i}>{b.title} {formatAmount(b.amount, group.currency)}{i < c.breakdown.length - 1 ? " + " : ""}</span>
+                                          {c.iOweBreakdown.map((b, i) => (
+                                            <span key={i}>{b.title} {formatAmount(b.amount, group.currency)}{i < c.iOweBreakdown.length - 1 ? " + " : ""}</span>
                                           ))}
                                           {c.theyOweMe > 0 && (
                                             <span className="text-emerald-600 dark:text-emerald-400"> | {c.user.name} te debe {formatAmount(c.theyOweMe, group.currency)}</span>
@@ -1087,7 +1087,7 @@ export default function GroupDetailPage() {
                                       <div className="text-right">
                                         <span className="text-xl font-bold text-red-600">{formatAmount(c.pending, group.currency)}</span>
                                         {c.theyOweMe > 0 && (
-                                          <p className="text-xs text-muted-foreground">Neto: {formatAmount(c.netAmount, group.currency)}</p>
+                                          <p className="text-xs text-muted-foreground">Neto: {formatAmount(c.netDebt, group.currency)}</p>
                                         )}
                                       </div>
                                       <Button size="sm" variant="outline" onClick={() => {
@@ -1106,10 +1106,10 @@ export default function GroupDetailPage() {
                             </>
                           )}
 
-                          {myConsumption.filter(c => c.pending <= 0.01 && (c.total > 0.01 || c.theyOweMe > 0.01)).length > 0 && (
+                          {myConsumption.filter(c => Math.abs(c.pending) <= 0.01 && (c.iOwe > 0.01 || c.theyOweMe > 0.01)).length > 0 && (
                             <div className="space-y-3 pt-2">
                               <p className="text-sm font-medium text-muted-foreground">Saldados</p>
-                              {myConsumption.filter(c => c.pending <= 0.01 && (c.total > 0.01 || c.theyOweMe > 0.01)).map((c) => (
+                              {myConsumption.filter(c => Math.abs(c.pending) <= 0.01 && (c.iOwe > 0.01 || c.theyOweMe > 0.01)).map((c) => (
                                 <Card key={c.user.id} className="opacity-60"><CardContent className="p-4">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -1117,10 +1117,9 @@ export default function GroupDetailPage() {
                                       <div>
                                         <p className="font-medium">{c.user.name} ✓</p>
                                         <p className="text-xs text-muted-foreground">
-                                          Consumo: {formatAmount(c.total, group.currency)}
-                                          {c.theyOweMe > 0 && ` | ${c.user.name} te debe: ${formatAmount(c.theyOweMe, group.currency)}`}
-                                          {c.netAmount > 0 && ` | Neto: ${formatAmount(c.netAmount, group.currency)}`}
-                                          {c.settled > 0 && ` | Pagado: ${formatAmount(c.settled, group.currency)}`}
+                                          {c.iOwe > 0.01 && `Debes: ${formatAmount(c.iOwe, group.currency)}`}
+                                          {c.theyOweMe > 0.01 && ` | Te debe: ${formatAmount(c.theyOweMe, group.currency)}`}
+                                          {c.settled > 0.01 && ` | Pagado: ${formatAmount(c.settled, group.currency)}`}
                                         </p>
                                       </div>
                                     </div>
