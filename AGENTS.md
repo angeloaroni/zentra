@@ -16,7 +16,7 @@ npm run db:studio      # Abrir Prisma Studio
 - **Monorepo**: TurboRepo con npm workspaces
 - **apps/api**: Backend NestJS, prefijo global `/api`
 - **apps/web**: Frontend Next.js 14
-- **Base de datos**: PostgreSQL via Prisma ORM (Neon)
+- **Base de datos**: PostgreSQL via Prisma ORM (Railway)
 - **Email**: API Resend para emails transaccionales
 - **Auth**: JWT (`@nestjs/jwt`, `bcrypt`)
 
@@ -25,17 +25,17 @@ npm run db:studio      # Abrir Prisma Studio
 | Servicio | Proveedor | URL |
 |----------|-----------|-----|
 | Frontend | Vercel | `https://zentra-web-one.vercel.app` |
-| Backend | Render | `https://zentra-api-c20o.onrender.com/api` |
-| Base de datos | Neon | PostgreSQL via `DATABASE_URL` |
+| Backend | Railway | `https://zentra-api-production-dee5.up.railway.app` |
+| Base de datos | Railway | PostgreSQL via `DATABASE_URL` |
 
 ### Proceso de Despliegue
-1. Push a GitHub → Vercel y Render despliegan automaticamente
-2. Render usa el Dockerfile en la raiz del repo
-3. Migraciones Neon: `npx prisma db push --skip-generate` al iniciar Render
+1. Push a GitHub → Vercel y Railway despliegan automaticamente
+2. Railway usa el Dockerfile en la raiz del repo
+3. Migraciones: `npx prisma db push --skip-generate` al iniciar Railway
 
 ### Variables de Entorno
 
-**Backend (Render)**: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `RESEND_API_KEY`, `SMTP_FROM`, `NEXT_PUBLIC_APP_URL`, `NODE_ENV`, `PORT`
+**Backend (Railway)**: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `RESEND_API_KEY`, `SMTP_FROM`, `FRONTEND_URL`, `NODE_ENV`, `PORT`
 
 **Frontend (Vercel)**: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`, `NEXT_PUBLIC_STRIPE_FAMILY_PRICE_ID`
 
@@ -245,7 +245,7 @@ npm run db:studio      # Abrir Prisma Studio
 - Frontend: Next.js 14, TypeScript, TailwindCSS, Recharts (dynamic import), Zustand, React Query (staleTime), Radix UI, Lucide, next-themes, framer-motion
 - Backend: NestJS, Prisma, class-validator, Swagger, Resend, helmet, throttler, Joi (validacion de env), compression (gzip)
 - DB: PostgreSQL (Neon) + indexes optimizados
-- Deploy: Vercel (frontend), Render (backend), Neon (database)
+- Deploy: Vercel (frontend), Railway (backend), Railway (database)
 
 ## Reglas de Accesibilidad (WCAG 2.2 AA)
 
