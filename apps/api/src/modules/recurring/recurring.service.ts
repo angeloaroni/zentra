@@ -24,41 +24,53 @@ export class RecurringService implements OnModuleInit {
     let created = 0;
 
     for (const tx of recurring) {
-      const nextDate = this.calculateNextDate(tx.date, tx.recurringFreq || 'MONTHLY');
-      if (!nextDate || nextDate > new Date()) continue;
+      let currentDate = new Date(tx.date);
+      const freq = tx.recurringFreq || 'MONTHLY';
 
-      const exists = await this.prisma.transaction.findFirst({
-        where: {
-          userId: tx.userId,
-          title: tx.title,
-          categoryId: tx.categoryId,
-          date: {
-            gte: this.startOfMonth(nextDate),
-            lt: this.endOfMonth(nextDate),
+      let nextDate = this.calculateNextDate(currentDate, freq);
+
+      while (nextDate && nextDate <= new Date()) {
+        const exists = await this.prisma.transaction.findFirst({
+          where: {
+            userId: tx.userId,
+            title: tx.title,
+            categoryId: tx.categoryId,
+            date: {
+              gte: this.startOfMonth(nextDate),
+              lt: this.endOfMonth(nextDate),
+            },
           },
-        },
-      });
+        });
 
-      if (exists) continue;
+        if (!exists) {
+          await this.prisma.transaction.create({
+            data: {
+              type: tx.type,
+              title: tx.title,
+              description: tx.description,
+              amount: tx.amount,
+              currency: tx.currency,
+              date: nextDate,
+              categoryId: tx.categoryId,
+              subcategory: tx.subcategory,
+              paymentMethod: tx.paymentMethod,
+              isRecurring: false,
+              userId: tx.userId,
+              familyId: tx.familyId,
+              accountId: tx.accountId,
+            },
+          });
+          created++;
+        }
 
-      await this.prisma.transaction.create({
-        data: {
-          type: tx.type,
-          title: tx.title,
-          description: tx.description,
-          amount: tx.amount,
-          currency: tx.currency,
-          date: nextDate,
-          categoryId: tx.categoryId,
-          subcategory: tx.subcategory,
-          paymentMethod: tx.paymentMethod,
-          isRecurring: false,
-          userId: tx.userId,
-          familyId: tx.familyId,
-        },
-      });
+        await this.prisma.transaction.update({
+          where: { id: tx.id },
+          data: { date: nextDate },
+        });
 
-      created++;
+        currentDate = nextDate;
+        nextDate = this.calculateNextDate(currentDate, freq);
+      }
     }
 
     if (created > 0) {
