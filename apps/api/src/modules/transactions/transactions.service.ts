@@ -163,8 +163,12 @@ export class TransactionsService {
       // In family mode: only family transactions (familyId set)
       // In personal mode: only personal transactions (familyId = null)
       ...(options.familyId ? { familyId: options.familyId } : { familyId: null }),
-      ...(options.startDate && { date: { gte: options.startDate } }),
-      ...(options.endDate && { date: { lte: options.endDate } }),
+      ...((options.startDate || options.endDate) && {
+        date: {
+          ...(options.startDate && { gte: options.startDate }),
+          ...(options.endDate && { lte: options.endDate }),
+        },
+      }),
       ...(options.type && { type: options.type }),
       ...(options.categoryId && { categoryId: options.categoryId }),
       ...(options.isRecurring !== undefined && { isRecurring: options.isRecurring }),
@@ -366,8 +370,12 @@ export class TransactionsService {
     const where: any = {
       userId: { in: userIds },
       ...(options.familyId ? { familyId: options.familyId } : { familyId: null }),
-      ...(options.startDate && { date: { gte: options.startDate } }),
-      ...(options.endDate && { date: { lte: options.endDate } }),
+      ...((options.startDate || options.endDate) && {
+        date: {
+          ...(options.startDate && { gte: options.startDate }),
+          ...(options.endDate && { lte: options.endDate }),
+        },
+      }),
       ...(options.accountId && { accountId: options.accountId }),
     };
 
@@ -510,8 +518,12 @@ export class TransactionsService {
       userId: { in: userIds },
       type: 'EXPENSE',
       ...(options.familyId ? { familyId: options.familyId } : { familyId: null }),
-      ...(options.startDate && { date: { gte: options.startDate } }),
-      ...(options.endDate && { date: { lte: options.endDate } }),
+      ...((options.startDate || options.endDate) && {
+        date: {
+          ...(options.startDate && { gte: options.startDate }),
+          ...(options.endDate && { lte: options.endDate }),
+        },
+      }),
     };
 
     return this.prisma.transaction.groupBy({
