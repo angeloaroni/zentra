@@ -225,27 +225,98 @@ export default function AdminPage() {
 
       {/* Users table */}
       <Card className="border-0 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <CardTitle className="text-lg">Usuarios</CardTitle>
-          <div className="relative">
+        <CardHeader className="flex flex-row items-center justify-between pb-4 gap-3">
+          <CardTitle className="text-lg shrink-0">Usuarios</CardTitle>
+          <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nombre o email..."
+              placeholder="Buscar..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 w-64"
+              className="pl-9 w-full"
             />
           </div>
         </CardHeader>
-        <CardContent className="p-0 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px]">
+        <CardContent className="p-0">
+          {/* Mobile: card layout */}
+          <div className="sm:hidden">
+            {usersLoading ? (
+              <div className="p-6 text-center text-muted-foreground">Cargando...</div>
+            ) : !users?.length ? (
+              <div className="p-6 text-center text-muted-foreground">No se encontraron usuarios</div>
+            ) : (
+              users.map((u) => (
+                <div key={u.id} className="flex items-center justify-between p-4 border-b border-gray-50 dark:border-gray-800/50">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-medium shrink-0">
+                      {u.name?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm truncate">{u.name}</p>
+                        {u.role === "ADMIN" && (
+                          <span className="text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded shrink-0">ADMIN</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${planColors[u.plan] || planColors.free}`}>
+                          {planLabels[u.plan] || "Gratis"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative shrink-0 ml-2">
+                    <button
+                      onClick={() => setOpenMenu(openMenu === u.id ? null : u.id)}
+                      className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      data-user-id={u.id}
+                    >
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    {openMenu === u.id && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} aria-hidden="true" />
+                        <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 w-48">
+                          <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Cambiar plan</p>
+                          {["free", "pro", "family"].map((plan) => (
+                            <button
+                              key={plan}
+                              onClick={() => updatePlan.mutate({ userId: u.id, plan })}
+                              disabled={u.plan === plan}
+                              className={`w-full text-left px-3 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                                u.plan === plan ? "text-muted-foreground cursor-default" : ""
+                              }`}
+                            >
+                              {planLabels[plan]}
+                              {u.plan === plan && " ✓"}
+                            </button>
+                          ))}
+                          <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
+                          <button
+                            onClick={() => handleDelete(u.id, u.name)}
+                            className="w-full text-left px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          >
+                            Eliminar cuenta
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-800">
                   <th className="text-left text-xs font-medium text-muted-foreground p-4">Nombre</th>
-                  <th className="text-left text-xs font-medium text-muted-foreground p-4 hidden sm:table-cell">Email</th>
+                  <th className="text-left text-xs font-medium text-muted-foreground p-4 hidden md:table-cell">Email</th>
                   <th className="text-left text-xs font-medium text-muted-foreground p-4">Plan</th>
-                  <th className="text-left text-xs font-medium text-muted-foreground p-4 hidden md:table-cell">Familia</th>
+                  <th className="text-left text-xs font-medium text-muted-foreground p-4 hidden lg:table-cell">Familia</th>
                   <th className="text-left text-xs font-medium text-muted-foreground p-4 hidden lg:table-cell">Registros</th>
                   <th className="text-left text-xs font-medium text-muted-foreground p-4 hidden md:table-cell">Fecha</th>
                   <th className="text-right text-xs font-medium text-muted-foreground p-4">Acciones</th>
@@ -266,22 +337,20 @@ export default function AdminPage() {
                           </div>
                           <div>
                             <p className="font-medium text-sm">{u.name}</p>
-                            <p className="text-xs text-muted-foreground sm:hidden">{u.email}</p>
+                            <p className="text-xs text-muted-foreground md:hidden">{u.email}</p>
                           </div>
                           {u.role === "ADMIN" && (
-                            <span className="text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">
-                              ADMIN
-                            </span>
+                            <span className="text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">ADMIN</span>
                           )}
                         </div>
                       </td>
-                      <td className="p-4 text-sm text-muted-foreground hidden sm:table-cell">{u.email}</td>
+                      <td className="p-4 text-sm text-muted-foreground hidden md:table-cell">{u.email}</td>
                       <td className="p-4">
                         <span className={`text-xs font-medium px-2 py-1 rounded-full ${planColors[u.plan] || planColors.free}`}>
                           {planLabels[u.plan] || "Gratis"}
                         </span>
                       </td>
-                      <td className="p-4 text-sm text-muted-foreground hidden md:table-cell">
+                      <td className="p-4 text-sm text-muted-foreground hidden lg:table-cell">
                         {u.familyName || <span className="text-gray-400">-</span>}
                       </td>
                       <td className="p-4 text-sm text-muted-foreground hidden lg:table-cell">{u.transactionCount}</td>
@@ -299,46 +368,29 @@ export default function AdminPage() {
                         {openMenu === u.id && (
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} aria-hidden="true" />
-                            <div className="fixed z-20 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 w-48"
-                              ref={(el) => {
-                                if (el) {
-                                  const btn = document.querySelector(`[data-user-id="${u.id}"]`)
-                                  if (btn) {
-                                    const rect = btn.getBoundingClientRect()
-                                    const menuHeight = 220
-                                    const spaceBelow = window.innerHeight - rect.bottom
-                                    if (spaceBelow < menuHeight) {
-                                      el.style.top = `${rect.top - menuHeight - 4}px`
-                                    } else {
-                                      el.style.top = `${rect.bottom + 4}px`
-                                    }
-                                    el.style.left = `${Math.min(rect.right - 192, window.innerWidth - 200)}px`
-                                  }
-                                }
-                              }}
-                            >
-                                <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Cambiar plan</p>
-                                {["free", "pro", "family"].map((plan) => (
-                                  <button
-                                    key={plan}
-                                    onClick={() => updatePlan.mutate({ userId: u.id, plan })}
-                                    disabled={u.plan === plan}
-                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                                      u.plan === plan ? "text-muted-foreground cursor-default" : ""
-                                    }`}
-                                  >
-                                    {planLabels[plan]}
-                                    {u.plan === plan && " ✓"}
-                                  </button>
-                                ))}
-                                <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
+                            <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 w-48">
+                              <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Cambiar plan</p>
+                              {["free", "pro", "family"].map((plan) => (
                                 <button
-                                  onClick={() => handleDelete(u.id, u.name)}
-                                  className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                  key={plan}
+                                  onClick={() => updatePlan.mutate({ userId: u.id, plan })}
+                                  disabled={u.plan === plan}
+                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                                    u.plan === plan ? "text-muted-foreground cursor-default" : ""
+                                  }`}
                                 >
-                                  Eliminar cuenta
+                                  {planLabels[plan]}
+                                  {u.plan === plan && " ✓"}
                                 </button>
-</div>
+                              ))}
+                              <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
+                              <button
+                                onClick={() => handleDelete(u.id, u.name)}
+                                className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              >
+                                Eliminar cuenta
+                              </button>
+                            </div>
                           </>
                         )}
                       </td>
