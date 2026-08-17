@@ -4,6 +4,17 @@ Zentra es una aplicación web de finanzas personales que permite gestionar tus f
 
 **Producción:** [zentra-web-one.vercel.app](https://zentra-web-one.vercel.app)
 
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
+![NestJS](https://img.shields.io/badge/NestJS-10-red?logo=nestjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)
+![Prisma](https://img.shields.io/badge/Prisma-5.10-2D3748?logo=prisma)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Railway-336791?logo=postgresql)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-06B6D4?logo=tailwindcss)
+![Jest](https://img.shields.io/badge/Jest-30-C21325?logo=jest)
+![Stripe](https://img.shields.io/badge/Stripe-Integration-635BFF?logo=stripe)
+![Deploy](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)
+![Deploy](https://img.shields.io/badge/Deploy-Railway-0B0D0E?logo=railway)
+
 ---
 
 ## Stack tecnológico
@@ -262,9 +273,3 @@ El proyecto cumple con WCAG 2.2 AA:
 - Touch targets de 44px mínimo
 - Navegación por teclado
 - Skip links y landmarks `<main>`
-
----
-
-## Licencia
-
-Privado - Todos los derechos reservados.
