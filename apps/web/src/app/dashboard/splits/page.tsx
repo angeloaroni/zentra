@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Users, Lock, UserPlus } from "lucide-react"
+import { Plus, Users, Lock, UserPlus, Trash2 } from "lucide-react"
 import Link from "next/link"
+import { ConfirmAction } from "@/components/ui/confirm-dialog"
 
 interface SplitGroupMember {
   user: { id: string; name: string; avatar?: string }
@@ -48,10 +49,17 @@ export default function SplitsPage() {
     description: "",
     color: GROUP_COLORS[0],
   })
+  const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null)
 
   const { data: groups, isLoading, isError } = useQuery<SplitGroup[]>({
     queryKey: ["split-groups"],
     queryFn: () => api("/splits/groups"),
+    select: (data) => [...data].sort((a, b) => {
+      // Sort by most recent first (if createdAt exists, otherwise keep order)
+      const dateA = (a as any).createdAt ? new Date((a as any).createdAt).getTime() : 0
+      const dateB = (b as any).createdAt ? new Date((b as any).createdAt).getTime() : 0
+      return dateB - dateA
+    }),
   })
 
   const { data: overallBalance } = useQuery<OverallBalance>({
@@ -69,6 +77,15 @@ export default function SplitsPage() {
       setForm({ name: "", description: "", color: GROUP_COLORS[0] })
     },
     onError: (err: Error) => setFormError(err.message),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (groupId: string) => api(`/splits/groups/${groupId}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["split-groups"] })
+      queryClient.invalidateQueries({ queryKey: ["split-overall-balance"] })
+      setDeleteGroupId(null)
+    },
   })
 
   function handleCreate(e: React.FormEvent) {
@@ -245,29 +262,36 @@ export default function SplitsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {groups.map((group) => (
-            <Link key={group.id} href={`/dashboard/splits/${group.id}`}>
-              <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
-                <div className="h-2" style={{ backgroundColor: group.color }} />
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                        style={{ backgroundColor: group.color }}
-                      >
-                        {group.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-semibold">{group.name}</p>
-                        {group.description && (
-                          <p className="text-xs text-muted-foreground line-clamp-1">
-                            {group.description}
-                          </p>
-                        )}
-                      </div>
+            <Card key={group.id} className="overflow-hidden hover:shadow-md transition-shadow">
+              <div className="h-2" style={{ backgroundColor: group.color }} />
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <Link href={`/dashboard/splits/${group.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                    <div
+                      className="h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0"
+                      style={{ backgroundColor: group.color }}
+                    >
+                      {group.name.charAt(0).toUpperCase()}
                     </div>
-                  </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold truncate">{group.name}</p>
+                      {group.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {group.description}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                  <button
+                    onClick={(e) => { e.preventDefault(); setDeleteGroupId(group.id) }}
+                    className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors shrink-0"
+                    aria-label={`Eliminar grupo ${group.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
 
+                <Link href={`/dashboard/splits/${group.id}`}>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <UserPlus className="h-4 w-4" />
@@ -292,12 +316,23 @@ export default function SplitsPage() {
                       </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
+                </Link>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
+
+      <ConfirmAction
+        open={!!deleteGroupId}
+        onOpenChange={(open) => !open && setDeleteGroupId(null)}
+        title="Eliminar grupo"
+        description="Todos los gastos y balances se perderan permanentemente. Esta accion no se puede deshacer."
+        confirmLabel="Eliminar grupo"
+        variant="danger"
+        onConfirm={() => deleteGroupId && deleteMutation.mutate(deleteGroupId)}
+        loading={deleteMutation.isPending}
+      />
     </div>
   )
 }

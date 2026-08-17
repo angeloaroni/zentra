@@ -189,6 +189,22 @@ function getDirectConsumption(
     .sort((a, b) => b.pending - a.pending)
 }
 
+const MEMBER_COLORS = [
+  { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400' },
+  { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-600 dark:text-purple-400' },
+  { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400' },
+  { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400' },
+  { bg: 'bg-rose-100 dark:bg-rose-900/30', text: 'text-rose-600 dark:text-rose-400' },
+  { bg: 'bg-cyan-100 dark:bg-cyan-900/30', text: 'text-cyan-600 dark:text-cyan-400' },
+  { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-600 dark:text-orange-400' },
+  { bg: 'bg-teal-100 dark:bg-teal-900/30', text: 'text-teal-600 dark:text-teal-400' },
+]
+
+function getMemberColor(userId: string, members: Array<{ user: User; role: string }>): { bg: string; text: string } {
+  const index = members.findIndex((m) => m.user.id === userId)
+  return MEMBER_COLORS[index % MEMBER_COLORS.length] || MEMBER_COLORS[0]
+}
+
 interface RecurringExpense {
   id: string
   title: string
@@ -776,10 +792,11 @@ export default function GroupDetailPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {group.members.map((m) => {
                       const isSelected = expenseForm.selectedMembers.includes(m.user.id) || expenseForm.selectedMembers.length === 0
+                      const memberColor = getMemberColor(m.user.id, group.members)
                       return (
                         <div key={m.user.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? "border-primary bg-primary/5" : "border-gray-200 dark:border-gray-700"}`}
                           onClick={() => toggleMemberSelection(m.user.id)}>
-                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
+                          <div className={`h-8 w-8 rounded-full ${memberColor.bg} flex items-center justify-center ${memberColor.text} text-sm font-medium shrink-0`}>
                             {m.user.name?.charAt(0)?.toUpperCase() || "U"}
                           </div>
                           <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{m.user.name}</p></div>
@@ -857,7 +874,7 @@ export default function GroupDetailPage() {
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
                               <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
+                                <div className={`h-10 w-10 rounded-full ${getMemberColor(expense.paidBy.id, group.members).bg} flex items-center justify-center ${getMemberColor(expense.paidBy.id, group.members).text} text-sm font-medium shrink-0`}>
                                   {expense.paidBy.name?.charAt(0)?.toUpperCase() || "U"}
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -1149,33 +1166,32 @@ export default function GroupDetailPage() {
                         <div className="pt-2">
                           <button
                             onClick={() => setShowOptimalTransfers(!showOptimalTransfers)}
-                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+                            className="flex items-center gap-2 text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors w-full"
                           >
-                            {showOptimalTransfers ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                            <span>Ver transferencias optimas</span>
+                            {showOptimalTransfers ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                            <span>Ver transferencias optimas (modo informativo)</span>
                           </button>
                           {showOptimalTransfers && (
-                            <>
-                              <div className="mt-2 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-                                <p className="font-medium text-foreground mb-1">¿Qué son las transferencias óptimas?</p>
-                                <p>Es el número mínimo de pagos necesarios para saldar todas las deudas del grupo. Los montos pueden diferir del consumo directo porque se basan en cuánto prestó realmente cada persona al grupo (lo que pagó menos lo que consumió).</p>
-                                <p className="mt-1">Si solo hay una persona que debe, las transferencias óptimas y el consumo directo suman lo mismo pero se distribuyen diferente.</p>
-                              </div>
-                              <div className="space-y-3 mt-3 pl-4 border-l-2 border-muted">
+                            <div className="mt-2 p-3 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/20">
+                              <p className="text-[11px] text-muted-foreground/70 mb-3 leading-relaxed">
+                                Esta sección muestra el número mínimo de pagos necesarios para saldar todas las deudas.
+                                Los montos pueden diferir del consumo directo porque se basan en cuánto prestó realmente cada persona al grupo (lo que pagó menos lo que consumió).
+                              </p>
+                              <div className="space-y-2">
                               {balances.simplifiedDebts.map((debt, i) => (
-                                <Card key={i}><CardContent className="p-4 flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-sm">{debt.fromName?.charAt(0)?.toUpperCase()}</div>
-                                    <div><p className="font-medium">{debt.fromName}</p><p className="text-xs text-muted-foreground">debe</p></div>
+                                <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded bg-muted/20">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-6 w-6 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-400 dark:text-red-500 text-[10px] font-medium">{debt.fromName?.charAt(0)?.toUpperCase()}</div>
+                                    <span className="text-xs text-muted-foreground/70">{debt.fromName}</span>
+                                    <span className="text-[10px] text-muted-foreground/50">→</span>
+                                    <span className="text-xs text-muted-foreground/70">{debt.toName}</span>
+                                    <div className="h-6 w-6 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-400 dark:text-emerald-500 text-[10px] font-medium">{debt.toName?.charAt(0)?.toUpperCase()}</div>
                                   </div>
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-xl font-bold text-red-600">{formatAmount(debt.amount, group.currency)}</span>
-                                    <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm">{debt.toName?.charAt(0)?.toUpperCase()}</div>
-                                  </div>
-                                </CardContent></Card>
+                                  <span className="text-xs font-medium text-muted-foreground/60">{formatAmount(debt.amount, group.currency)}</span>
+                                </div>
                               ))}
+                              </div>
                             </div>
-                            </>
                           )}
                         </div>
                       )}
@@ -1246,7 +1262,7 @@ export default function GroupDetailPage() {
             {group.members.map((m) => (
               <Card key={m.user.id}><CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-medium">{m.user.name?.charAt(0)?.toUpperCase()}</div>
+                  <div className={`h-10 w-10 rounded-full ${getMemberColor(m.user.id, group.members).bg} flex items-center justify-center ${getMemberColor(m.user.id, group.members).text} text-sm font-medium`}>{m.user.name?.charAt(0)?.toUpperCase()}</div>
                   <div><p className="font-medium">{m.user.name}</p><p className="text-xs text-muted-foreground capitalize">{m.role === "ADMIN" ? "Creador" : "Miembro"}</p></div>
                 </div>
                 {m.user.id !== user?.id && user?.id === group.createdBy.id && (
@@ -1356,7 +1372,7 @@ export default function GroupDetailPage() {
               {detailExpense?.splits.map((split) => (
                 <div key={split.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
                   <div className="flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-medium">{split.user.name?.charAt(0)?.toUpperCase()}</div>
+                    <div className={`h-7 w-7 rounded-full ${getMemberColor(split.userId, group.members).bg} flex items-center justify-center ${getMemberColor(split.userId, group.members).text} text-xs font-medium`}>{split.user.name?.charAt(0)?.toUpperCase()}</div>
                     <span className="text-sm">{split.user.name}</span>
                   </div>
                   <div className="flex items-center gap-2">

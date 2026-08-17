@@ -827,7 +827,38 @@ export class SplitsService implements OnModuleInit {
     }))
     const overall = this.debtSimplifier.getOverallBalances(mappedGroupData, userId)
 
-    return overall
+    // Get per-person breakdown across all groups
+    const personBalances = new Map<string, number>()
+    for (const group of mappedGroupData) {
+      const balances = this.debtSimplifier.calculateNetBalances(group.expenses, group.settlements)
+      for (const b of balances) {
+        if (b.userId === userId) continue
+        // Check if this user is in a debt relationship with the current user
+        const userBalance = balances.find(bb => bb.userId === userId)
+        if (!userBalance) continue
+        // Simplified: track net balance per person across all groups
+        const current = personBalances.get(b.userId) || 0
+        personBalances.set(b.userId, current + b.amount)
+      }
+    }
+
+    // Get user details for people with balances
+    const personDetails: Array<{ id: string; name: string; amount: number }> = []
+    for (const [personId, amount] of personBalances) {
+      if (Math.abs(amount) < 0.01) continue
+      const user = await this.prisma.user.findUnique({
+        where: { id: personId },
+        select: { id: true, name: true },
+      })
+      if (user) {
+        personDetails.push({ id: user.id, name: user.name, amount: Math.round(amount * 100) / 100 })
+      }
+    }
+
+    return {
+      ...overall,
+      people: personDetails.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount)),
+    }
   }
 
   async createSettlement(userId: string, dto: CreateSettlementDto) {

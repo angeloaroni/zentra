@@ -171,7 +171,7 @@ export default function DashboardPage() {
     staleTime: 300_000,
   })
 
-  const { data: overallBalance } = useQuery<{ owedToUser: number; userOwes: number }>({
+  const { data: overallBalance } = useQuery<{ owedToUser: number; userOwes: number; people?: Array<{ id: string; name: string; amount: number }> }>({
     queryKey: ["overall-balance"],
     queryFn: () => api("/splits/groups/balances/overall"),
     staleTime: 300_000,
@@ -490,24 +490,60 @@ export default function DashboardPage() {
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-500">Division de gastos</p>
-                  <div className="flex items-center gap-4 mt-1">
-                    {overallBalance.owedToUser > 0 && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-emerald-600">Te deben</span>
-                        <span className="font-bold text-emerald-600">{formatMoney(overallBalance.owedToUser, currency)}</span>
+                  <div className="mt-2 space-y-1.5">
+                    {overallBalance.people && overallBalance.people.filter((p: any) => p.amount > 0).length > 0 && (
+                      <div>
+                        <span className="text-[11px] text-emerald-600/70 uppercase tracking-wide">Te deben</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {overallBalance.people.filter((p: any) => p.amount > 0).map((p: any) => (
+                            <div key={p.id} className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20">
+                              <div className="h-5 w-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-[10px] font-medium">
+                                {p.name?.charAt(0)?.toUpperCase()}
+                              </div>
+                              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">{p.name}</span>
+                              <span className="text-xs font-bold text-emerald-600">{formatMoney(p.amount, currency)}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    {overallBalance.userOwes > 0 && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-red-600">Debes</span>
-                        <span className="font-bold text-red-600">{formatMoney(overallBalance.userOwes, currency)}</span>
+                    {overallBalance.people && overallBalance.people.filter((p: any) => p.amount < 0).length > 0 && (
+                      <div>
+                        <span className="text-[11px] text-red-600/70 uppercase tracking-wide">Debes</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {overallBalance.people.filter((p: any) => p.amount < 0).map((p: any) => (
+                            <div key={p.id} className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-red-50 dark:bg-red-900/20">
+                              <div className="h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 text-[10px] font-medium">
+                                {p.name?.charAt(0)?.toUpperCase()}
+                              </div>
+                              <span className="text-xs font-medium text-red-700 dark:text-red-300">{p.name}</span>
+                              <span className="text-xs font-bold text-red-600">{formatMoney(Math.abs(p.amount), currency)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {(!overallBalance.people || overallBalance.people.length === 0) && (
+                      <div className="flex items-center gap-4">
+                        {overallBalance.owedToUser > 0 && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-emerald-600">Te deben</span>
+                            <span className="font-bold text-emerald-600">{formatMoney(overallBalance.owedToUser, currency)}</span>
+                          </div>
+                        )}
+                        {overallBalance.userOwes > 0 && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-red-600">Debes</span>
+                            <span className="font-bold text-red-600">{formatMoney(overallBalance.userOwes, currency)}</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 </div>
-                <Link href="/dashboard/splits" className="text-sm text-blue-600 hover:text-blue-700">
+                <Link href="/dashboard/splits" className="text-sm text-blue-600 hover:text-blue-700 shrink-0 ml-3">
                   Ver grupos
                 </Link>
               </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Bell, Check, Trash2, X } from "lucide-react"
 import { api } from "@/lib/api"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 interface Notification {
   id: string
@@ -15,7 +16,22 @@ interface Notification {
   createdAt: string
 }
 
+function getNotificationUrl(notification: Notification): string | null {
+  if (!notification.data) return null
+  try {
+    const data = JSON.parse(notification.data)
+    if (notification.type === "SPLIT_INVITE" || notification.type === "SPLIT_EXPENSE" || notification.type === "SPLIT_SETTLEMENT") {
+      if (data.groupId) return `/dashboard/splits/${data.groupId}`
+    }
+    if (notification.type.startsWith("TAG_BUDGET")) {
+      if (data.tagId) return `/dashboard/events/${data.tagId}`
+    }
+  } catch {}
+  return null
+}
+
 export function NotificationBell() {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -66,8 +82,22 @@ export function NotificationBell() {
     } catch {}
   }
 
+  async function handleNotificationClick(notification: Notification) {
+    if (!notification.read) {
+      await markAsRead(notification.id)
+    }
+    const url = getNotificationUrl(notification)
+    if (url) {
+      setOpen(false)
+      router.push(url)
+    }
+  }
+
   function getIcon(type: string) {
     if (type.startsWith("TAG_BUDGET")) return "📊"
+    if (type === "SPLIT_INVITE") return "👥"
+    if (type === "SPLIT_EXPENSE") return "💰"
+    if (type === "SPLIT_SETTLEMENT") return "✅"
     return "🔔"
   }
 
@@ -117,47 +147,52 @@ export function NotificationBell() {
               </div>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
-                      !n.read ? "bg-blue-50/50 dark:bg-blue-900/10" : ""
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="text-lg shrink-0 mt-0.5">{getIcon(n.type)}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm ${!n.read ? "font-semibold text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"}`}>
-                          {n.title}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
-                          {n.message}
-                        </p>
-                        <p className="text-[11px] text-gray-500 mt-1">
-                          {new Date(n.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {!n.read && (
+                {notifications.map((n) => {
+                  const url = getNotificationUrl(n)
+                  const Wrapper = url ? "button" : "div"
+                  return (
+                    <Wrapper
+                      key={n.id}
+                      onClick={() => handleNotificationClick(n)}
+                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
+                        !n.read ? "bg-blue-50/50 dark:bg-blue-900/10" : ""
+                      } ${url ? "cursor-pointer" : ""}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-lg shrink-0 mt-0.5">{getIcon(n.type)}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm ${!n.read ? "font-semibold text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"}`}>
+                            {n.title}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                            {n.message}
+                          </p>
+                          <p className="text-[11px] text-gray-500 mt-1">
+                            {new Date(n.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {!n.read && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); markAsRead(n.id) }}
+                              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                              aria-label="Marcar como leido"
+                            >
+                              <Check className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                            </button>
+                          )}
                           <button
-                            onClick={() => markAsRead(n.id)}
+                            onClick={(e) => { e.stopPropagation(); deleteNotification(n.id) }}
                             className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-                            aria-label="Marcar como leido"
+                            aria-label="Eliminar notificacion"
                           >
-                            <Check className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                            <X className="h-4 w-4 text-gray-400" aria-hidden="true" />
                           </button>
-                        )}
-                        <button
-                          onClick={() => deleteNotification(n.id)}
-                          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-                          aria-label="Eliminar notificacion"
-                        >
-                          <X className="h-4 w-4 text-gray-400" aria-hidden="true" />
-                        </button>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    </Wrapper>
+                  )
+                })}
               </div>
             )}
           </div>
