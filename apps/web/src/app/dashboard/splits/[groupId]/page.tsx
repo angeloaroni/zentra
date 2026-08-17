@@ -1044,7 +1044,7 @@ export default function GroupDetailPage() {
                 {(() => {
                   const myConsumption = user ? getDirectConsumption(user.id, group.expenses, group.members, group.settlements) : []
                   const hasConsumption = myConsumption.length > 0
-                  const totalConsumption = myConsumption.reduce((sum, c) => sum + c.pending, 0)
+                  const totalConsumption = myConsumption.filter(c => c.pending > 0).reduce((sum, c) => sum + c.pending, 0)
 
                   if (!hasConsumption && (!balances?.simplifiedDebts || balances.simplifiedDebts.length === 0)) {
                     return (
@@ -1070,26 +1070,11 @@ export default function GroupDetailPage() {
                                           {c.iOweBreakdown.map((b, i) => (
                                             <span key={i}>{b.title} {formatAmount(b.amount, group.currency)}{i < c.iOweBreakdown.length - 1 ? " + " : ""}</span>
                                           ))}
-                                          {c.theyOweMe > 0 && (
-                                            <span className="text-emerald-600 dark:text-emerald-400"> | {c.user.name} te debe {formatAmount(c.theyOweMe, group.currency)}</span>
-                                          )}
                                         </p>
-                                        {c.theyOweBreakdown.length > 0 && (
-                                          <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                                            {c.theyOweBreakdown.map((b, i) => (
-                                              <span key={i}>{b.title} {formatAmount(b.amount, group.currency)}{i < c.theyOweBreakdown.length - 1 ? " + " : ""}</span>
-                                            ))}
-                                          </p>
-                                        )}
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                      <div className="text-right">
-                                        <span className="text-xl font-bold text-red-600">{formatAmount(c.pending, group.currency)}</span>
-                                        {c.theyOweMe > 0 && (
-                                          <p className="text-xs text-muted-foreground">Neto: {formatAmount(c.netDebt, group.currency)}</p>
-                                        )}
-                                      </div>
+                                      <span className="text-xl font-bold text-red-600">{formatAmount(c.pending, group.currency)}</span>
                                       <Button size="sm" variant="outline" onClick={() => {
                                         setShowSettlementForm(true)
                                         setSettlementForm({ toUserId: c.user.id, amount: String(c.pending), notes: "" })
@@ -1104,6 +1089,32 @@ export default function GroupDetailPage() {
                                 <p className="text-sm font-medium text-muted-foreground">Total pendiente: <span className="text-red-600">{formatAmount(totalConsumption, group.currency)}</span></p>
                               </div>
                             </>
+                          )}
+
+                          {myConsumption.filter(c => c.pending < -0.01).length > 0 && (
+                            <div className="space-y-3">
+                              <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Te deben</p>
+                              {myConsumption.filter(c => c.pending < -0.01).map((c) => (
+                                <Card key={c.user.id}><CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm">{c.user.name?.charAt(0)?.toUpperCase()}</div>
+                                      <div>
+                                        <p className="font-medium">{c.user.name}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {c.theyOweBreakdown.map((b, i) => (
+                                            <span key={i}>{b.title} {formatAmount(b.amount, group.currency)}{i < c.theyOweBreakdown.length - 1 ? " + " : ""}</span>
+                                          ))}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-xl font-bold text-emerald-600">{formatAmount(Math.abs(c.pending), group.currency)}</span>
+                                    </div>
+                                  </div>
+                                </CardContent></Card>
+                              ))}
+                            </div>
                           )}
 
                           {myConsumption.filter(c => Math.abs(c.pending) <= 0.01 && (c.iOwe > 0.01 || c.theyOweMe > 0.01)).length > 0 && (
