@@ -164,57 +164,126 @@ Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requi
 | Dividir | **Pro** | — |
 | Familia | **Familia** | 6 miembros |
 
-### Panel (Gratis)
-- **Para qué sirve:** centro de control con toda tu situación financiera en una vista.
-- Balance del periodo con ingresos, gastos y tasa de ahorro; selector de rango de fechas.
-- Métricas rápidas con comparación vs. periodo anterior, flujo de caja (6 meses) y gastos por categoría.
-- Score de salud financiera (0-100), insights de anomalías y patrimonio neto histórico.
-- Resumen de metas, de "te deben/debes" en dividir gastos y últimos registros.
-- Exportar resumen a CSV.
+### 1. Panel (Gratis)
+- **Para qué sirve:** es tu centro de control financiero. Reúne en una sola vista un resumen completo de tu situación sin necesidad de entrar a cada sección.
+- **Qué puedes hacer:**
+  - Balance del periodo: tarjeta con ingresos, gastos y tasa de ahorro (%) del mes o del rango de fechas seleccionado (DateRangePicker).
+  - 4 métricas rápidas con comparación vs. periodo anterior: ingresos, gastos, balance y metas activas (flechas ▲/▼ de mejora o empeoramiento).
+  - Flujo de caja de los últimos 6 meses: gráfico de barras ingresos vs gastos.
+  - Gastos por categoría: gráfico circular + ranking "Dónde va tu dinero" (top 3 categorías con % del total).
+  - Metas de ahorro: mini-progreso de las metas en curso.
+  - Salud financiera: score 0-100 con etiqueta (Excelente/Bueno/Regular/Mejorable).
+  - División de gastos: resumen de "te deben / debes" entre grupos.
+  - Insights: alertas inteligentes de anomalías (p. ej. gasto en una categoría +30%).
+  - Patrimonio neto: gráfico histórico de evolución (12 meses).
+  - Últimos registros: transacciones recientes con acceso rápido a "Ver todo" / "Agregar primera transacción".
+  - Exportar resumen a CSV (métricas + categorías).
+- **Valor:** visibilidad inmediata de tu situación financiera y tendencias; te dice dónde está tu dinero y si estás mejor o peor que el mes pasado, todo en una sola pantalla.
+- **Costo:** Gratis.
 
-### Cuentas (Gratis · 2 cuentas)
-- **Para qué sirve:** reflejar tus cuentas reales (efectivo, tarjeta, ahorro, inversión) y saber tu dinero disponible.
-- Tipos: checking, savings, credit, cash, investment, con color e icono.
-- Balance auto-actualizado por las transacciones + total consolidado.
-- Ilimitadas en Pro/Familia.
+### 2. Cuentas (Gratis · 2 cuentas)
+- **Para qué sirve:** representa tus cuentas del mundo real (efectivo, tarjeta, ahorro, inversión) para saber cuánto dinero tienes realmente y en qué.
+- **Qué puedes hacer:**
+  - Crear cuentas con tipo (cuenta corriente, ahorro, tarjeta de crédito, efectivo, inversiones), color e icono.
+  - Editar/eliminar cuentas.
+  - Ver balance de cada cuenta, actualizado automáticamente: cada transacción vinculada suma (ingreso) o resta (gasto) su saldo.
+  - Total balance agregado de todas tus cuentas (`/accounts/total-balance`).
+- **Valor:** sabes tu dinero real disponible en cada lugar y de forma agregada. El balance se mantiene solo gracias a los registros, sin matemática manual.
+- **Costo:** Gratis, con límite de 2 cuentas en plan Gratis. Ilimitadas en Pro/Familia.
 
-### Registros (Gratis · 50 transacciones/mes)
-- **Para qué sirve:** capturar cada ingreso y gasto; alimenta todos los análisis.
-- CRUD con búsqueda, filtros avanzados (tipo, fecha, categoría, cuenta, método de pago, tag, monto), transacciones recurrentes automáticas y export a CSV.
-- Funciones Pro: cashflow, comparación de periodos y listado por tag.
+### 3. Registros (Gratis · 50 transacciones/mes)
+- **Para qué sirve:** es el corazón de la app — registrar cada ingreso y gasto. Todo lo demás (presupuestos, categorías, gráficos, metas) se alimenta de aquí.
+- **Qué puedes hacer:**
+  - CRUD completo: crear, editar, eliminar transacciones con tipo (ingreso/gasto), título, monto, fecha, categoría, cuenta, descripción y método de pago.
+  - Transacciones recurrentes: marcar como recurrente (diaria, semanal, mensual, anual) → el backend la auto-genera.
+  - Búsqueda por texto (con debounce) y filtros avanzados: tipo, rango de fechas, categoría, cuenta, método de pago, tag/evento, monto mínimo/máximo, solo recurrentes.
+  - Paginación (50 por página) y exportar a CSV.
+  - Selector de cuenta para filtrar el saldo de una cuenta concreta.
+  - Vista personal vs familiar (si estás en plan Familia).
+- **Valor:** es donde capturas tu vida financiera. Con buenos registros obtienes análisis precisos en el Panel, presupuestos reales y control del gasto.
+- **Costo:** Gratis, con límite de 50 transacciones/mes en Gratis. Pro/Familia: ilimitadas. Funciones avanzadas solo Pro: cashflow, comparison (comparar periodos) y filtro/lista por tag.
 
-### Categorías (Gratis)
-- **Para qué sirve:** organizar tus transacciones para que los análisis tengan sentido.
-- CRUD con icono y color, tipos INCOME/EXPENSE/BOTH y categorías por defecto al registrarse.
+### 4. Categorías (Gratis)
+- **Para qué sirve:** organiza tus transacciones en grupos (Alimentación, Transporte, Ocio, Sueldo...) con color e icono, para que los análisis tengan sentido.
+- **Qué puedes hacer:**
+  - CRUD completo: crear categorías con nombre, tipo (INGRESO/GASTO/AMBOS), icono y color.
+  - Categorías por defecto pre-cargadas al registrarse (comodidad inicial).
+  - Las categorías alimentan el gráfico circular del Panel, presupuestos y filtros.
+- **Valor:** estructura tus datos. Sin categorías, no hay análisis "dónde va tu dinero" ni presupuestos por categoría.
+- **Costo:** Gratis, sin límites de cantidad ni restricción de plan.
 
-### Moneda global (Gratis)
-- **Para qué sirve:** usar tu moneda en toda la app, con soporte latinoamericano.
-- 10 divisas: USD, EUR, GBP, MXN, COP, ARS, CLP, PEN, BRL, VES.
-- Se aplica a transacciones, presupuestos, metas y gráficos; los grupos de división tienen su propia moneda y conversión automática (Pro).
+### 5. Presupuestos (Pro)
+- **Para qué sirve:** poner un límite de gasto mensual a una categoría y controlar cuánto te queda antes de excederte.
+- **Qué puedes hacer:**
+  - Crear presupuestos por mes/año y categoría, con monto máximo.
+  - Ver progreso en tiempo real: barras de gastado vs monto, % consumido, restante y si estás por encima del límite (over budget).
+  - Editar/eliminar presupuestos.
+  - Alertas automáticas cuando superas el 80% y el 100%.
+- **Valor:** evita que el dinero se "filtre" sin darte cuenta. Te avisa antes de llegar al límite para que ajustes el gasto a tiempo.
+- **Costo:** Pro (4,99€/mes) — todo el módulo requiere plan Pro.
 
-### Presupuestos (Pro)
-- **Para qué sirve:** poner un límite mensual de gasto por categoría y controlarlo.
-- Progreso en tiempo real (gastado vs monto) con alertas al 80% y 100%.
+### 6. Metas (Pro)
+- **Para qué sirve:** ahorrar para objetivos concretos (viaje, coche, emergencias) con seguimiento visual del progreso.
+- **Qué puedes hacer:**
+  - Crear metas con nombre, monto objetivo, fecha límite (opcional), descripción y color.
+  - Contribuir dinero: `POST /goals/:id/contribute` para sumar fondos a una meta y ver el % alcanzado.
+  - Ver progreso: barra de avance, monto acumulado vs objetivo, días restantes hasta la fecha límite, marcado de meta completada.
+  - Editar/eliminar metas.
+- **Valor:** convierte el ahorro en algo tangible y motivador: ves el progreso hacia cada objetivo y cuánto te falta.
+- **Costo:** Pro (4,99€/mes) — todo el módulo requiere plan Pro. En Gratis la página muestra "Plan Pro requerido".
 
-### Metas (Pro)
-- **Para qué sirve:** ahorrar hacia objetivos concretos con seguimiento visual.
-- Monto objetivo, fecha límite, contribuciones y % alcanzado.
+### 7. Eventos (Pro)
+- **Para qué sirve:** etiquetar transacciones de un "evento" (cumpleaños, boda, viaje, navidad) para agrupar gastos que no encajan en una categoría y controlar su presupuesto específico.
+- **Qué puedes hacer:**
+  - CRUD de eventos/tags con nombre, color, icono y presupuesto asignado.
+  - Asignar tags a transacciones (componente TagInput con autocompletado) y ver las transacciones de cada evento.
+  - Estadísticas por evento: gastado, nº de transacciones, primera/última fecha, promedio por transacción.
+  - Alertas de presupuesto al 80% y 100% → crean notificaciones automáticas (campana).
+  - Detalle del evento (`/events/[id]`) con su desglose.
+- **Valor:** útil para gastos "temáticos" o temporales con su propio techo de gasto, manteniendo la categoría limpia. P. ej.: "Fiesta de cumpleaños" puede tener gastos en varias categorías pero un solo presupuesto global.
+- **Costo:** Pro (4,99€/mes) — todo el módulo requiere plan Pro.
 
-### Eventos (Pro)
-- **Para qué sirve:** agrupar gastos de un evento/cumpleaños/viaje bajo un mismo presupuesto.
-- Tags con presupuesto propio, alertas al 80%/100% y estadísticas por evento (gastado, promedio, fechas).
+### 8. Dividir (Pro)
+- **Para qué sirve:** gestionar gastos compartidos con otras personas (viajes, cenas, piso compartido) sin cálculos manuales ni conflictos.
+- **Qué puedes hacer:**
+  - **Lista de grupos:**
+    - Crear grupos (viaje, cena, piso) con nombre, descripción y color.
+    - Resumen global: tarjetas "te deben" / "debes" sumando todos los grupos.
+  - **Dentro de un grupo:**
+    - Invitar miembros por email (envía email a no registrados + enlace de invitación, compartible por WhatsApp con 7 días de validez).
+    - Registrar gastos compartidos con 3 modos de división: EQUAL (a partes iguales), PERCENTAGE (% por persona) y EXACT (monto exacto por persona).
+    - Quién pagó: campo `paidBy` para registrar gastos en nombre de otro miembro.
+    - Items: itemizar un gasto en productos y asignar quién consume cada uno (`POST/DELETE /splits/expenses/:id/items`).
+    - Tickets/fotos: subir recibo del gasto (base64 en DB).
+    - Balances: consumo directo (lo que debes a cada persona con desglose) + transferencias óptimas (algoritmo que simplifica las deudas al mínimo de movimientos).
+    - Settlements: registrar pagos entre miembros → auto-crea una transacción con el nombre del pagador.
+    - Marcar como pagado: toggle `isPaid` en los gastos.
+    - Gastos recurrentes compartidos: auto-generación programada (mensual/semanal).
+    - Plantillas: guardar configuraciones de división para reutilizarlas.
+    - Conversión de divisas: tasas de cambio y conversión de montos (`/splits/currencies/convert`).
+    - Notificaciones con redirección al grupo (invitación, gasto, settlement).
+    - Cada miembro tiene color único en sus avatares para identificarlos rápido.
+- **Valor:** elimina las deudas mal recordadas y los "¿quién debe qué?". Todo queda registrado, saldado y con el mínimo de transferencias posibles. Es la feature más completa de la app.
+- **Costo:** Pro (4,99€/mes) — todo el módulo requiere plan Pro.
 
-### Dividir (Pro)
-- **Para qué sirve:** gestionar gastos compartidos (viajes, cenas, piso) sin cálculos manuales.
-- Grupos con invitaciones por email/WhatsApp, 3 modos de división (Igual, Porcentaje, Monto exacto) y quién pagó.
-- Items por persona, tickets (base64), balances con desglose y transferencias óptimas.
-- Settlements con auto-creación de transacciones, gastos recurrentes compartidos, plantillas y conversión de monedas.
+### Monedas / Divisas (Gratis · conversión Pro)
+- **Para qué sirve:** poder registrar y ver tu dinero en la moneda que uses, con soporte latinoamericano y conversión cuando participas en grupos de gasto en otra moneda.
+- **Qué puedes hacer:**
+  - Moneda global (Gratis, sin límites): elegir entre 10 monedas desde Configuración → Moneda global — USD, EUR, GBP, MXN, COP, ARS, CLP, PEN, BRL y VES. Se aplica a transacciones, presupuestos, metas y todos los gráficos (el formato pone el símbolo de la moneda, p. ej. `1.250,00 €`).
+  - Conversión en Dividir (Pro): cada grupo tiene su propia moneda, y el detalle del grupo muestra la opción "Mostrar en [tu moneda]", convirtiendo automáticamente los montos (`/splits/currencies/convert`). Las tasas son fijas y mantenidas en el backend (EUR=1, USD=1.08, GBP=0.86, MXN=19.5, COP=4200, ARS=950, CLP=950, PEN=3.8, BRL=5.4, VES=36).
+  - Las cuentas y transacciones también pueden guardar su propia moneda (el grupo usa la del grupo, no la tuya global).
+- **Costo:** moneda global Gratis; conversión en grupos requiere Pro.
 
-### Familia (Familia · 7,99€/mes)
-- **Para qué sirve:** finanzas compartidas para hogares.
-- Hasta 6 miembros, roles (Admin/Miembro), invitar por email o enlace.
-- Vista personal ↔ familiar con datos compartidos en todas las secciones.
-- Incluye todo lo de Pro.
+### Plan Familia (Familia · 7,99€/mes)
+- **Para qué sirve:** gestionar las finanzas de forma compartida con tu pareja o familia: datos, cuentas, gastos y objetivos en un solo lugar, con vista personal y familiar.
+- **Qué puedes hacer** (Configuración → Familia):
+  - Crear familia con nombre y unirse por código (`POST /users/join-family`).
+  - Invitar miembros por email (búsqueda case-insensitive) y eliminar/abandonar la familia.
+  - Roles: Admin / Miembro, con gestión de miembros.
+  - Hasta 6 miembros en una misma familia.
+  - Vista personal ↔ familiar: el conmutador `family-switcher` alterna entre "Mi cuenta" y la familia activa; cada sección (Panel, Cuentas, Registros, Categorías, Presupuestos, Metas, Eventos) filtra sus datos por `familyId` y permite crear datos compartidos.
+  - Incluye todo lo del plan Pro (presupuestos, metas, eventos, splits, conversión, alertas, export CSV ilimitado).
+- **Valor:** es el plan para hogares: en lugar de multiplicar cuentas con registros duplicados, toda la casa ve los mismos números en tiempo real, con permisos claros (admin/miembro) y la posibilidad de seguir usando tu vista personal cuando quieras.
 
 ### Autenticación
 - Login y registro con JWT, reset de contraseña por email (Resend), categorías por defecto al registrarse.
