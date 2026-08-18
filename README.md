@@ -147,72 +147,88 @@ zentra/
 
 ## Funcionalidades principales
 
-### 1. Autenticación
-- Login y registro con JWT
-- Reset de contraseña por email (Resend)
-- Categorías por defecto al registrarse
+### Secciones de la aplicación y planes
 
-### 2. Transacciones
-- CRUD completo con búsqueda y filtros
-- Filtros por fecha, categoría, tag, cuenta, tipo
-- Export a CSV
-- Transacciones recurrentes automáticas
+Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requiere.
 
-### 3. Cuentas
-- Gestión de cuentas bancarias (checking, savings, credit, cash, investment)
-- Balance auto-actualizado por transacciones
-- Balance total consolidado
+| Sección | Plan | Límites |
+|---------|------|---------|
+| Panel | Gratis | — |
+| Cuentas | Gratis | 2 cuentas |
+| Registros | Gratis | 50 transacciones/mes |
+| Categorías | Gratis | — |
+| Moneda global | Gratis | 10 divisas |
+| Presupuestos | **Pro** | — |
+| Metas | **Pro** | — |
+| Eventos | **Pro** | — |
+| Dividir | **Pro** | — |
+| Familia | **Familia** | 6 miembros |
 
-### 4. Categorías
-- CRUD con iconos y colores
-- Tipos: INCOME, EXPENSE, BOTH
-- Categorías por defecto al registrarse
+### Panel (Gratis)
+- **Para qué sirve:** centro de control con toda tu situación financiera en una vista.
+- Balance del periodo con ingresos, gastos y tasa de ahorro; selector de rango de fechas.
+- Métricas rápidas con comparación vs. periodo anterior, flujo de caja (6 meses) y gastos por categoría.
+- Score de salud financiera (0-100), insights de anomalías y patrimonio neto histórico.
+- Resumen de metas, de "te deben/debes" en dividir gastos y últimos registros.
+- Exportar resumen a CSV.
 
-### 5. Presupuestos (Pro)
-- Seguimiento de progreso (gastado vs monto)
-- Alertas al 80% y 100% del presupuesto
+### Cuentas (Gratis · 2 cuentas)
+- **Para qué sirve:** reflejar tus cuentas reales (efectivo, tarjeta, ahorro, inversión) y saber tu dinero disponible.
+- Tipos: checking, savings, credit, cash, investment, con color e icono.
+- Balance auto-actualizado por las transacciones + total consolidado.
+- Ilimitadas en Pro/Familia.
 
-### 6. Metas (Pro)
-- Metas con monto objetivo y fecha límite
-- Contribuciones a metas
+### Registros (Gratis · 50 transacciones/mes)
+- **Para qué sirve:** capturar cada ingreso y gasto; alimenta todos los análisis.
+- CRUD con búsqueda, filtros avanzados (tipo, fecha, categoría, cuenta, método de pago, tag, monto), transacciones recurrentes automáticas y export a CSV.
+- Funciones Pro: cashflow, comparación de periodos y listado por tag.
 
-### 7. Tags/Eventos (Pro)
-- Etiquetas para transacciones con presupuesto
-- Alertas de presupuesto por evento
+### Categorías (Gratis)
+- **Para qué sirve:** organizar tus transacciones para que los análisis tengan sentido.
+- CRUD con icono y color, tipos INCOME/EXPENSE/BOTH y categorías por defecto al registrarse.
 
-### 8. Dividir gastos (Splits)
-- Grupos con miembros y colores únicos por persona
-- 3 tipos de división: Igual, Porcentaje, Monto exacto
-- **Seleccionar quién pagó** al crear un gasto (para añadir gastos en nombre de otro)
-- Balances con **consumos directos** (lo que debes a cada persona con desglose)
-- **Transferencias óptimas** (algoritmo de simplificación de deudas)
-- Pagos (settlements) con auto-creación de transacciones
-- Gastos recurrentes compartidos
-- Tickets/facturas (base64 en DB)
-- **Invitaciones por email** a usuarios no registrados
-- **Compartir por WhatsApp** con enlace de registro directo
-- Invitaciones pendientes visibles en la pestaña Miembros
-- Eliminación de grupos con confirmación
-- Orden de grupos por más recientes
+### Moneda global (Gratis)
+- **Para qué sirve:** usar tu moneda en toda la app, con soporte latinoamericano.
+- 10 divisas: USD, EUR, GBP, MXN, COP, ARS, CLP, PEN, BRL, VES.
+- Se aplica a transacciones, presupuestos, metas y gráficos; los grupos de división tienen su propia moneda y conversión automática (Pro).
 
-### 9. Dashboard
-- Score de salud financiera (0-100)
-- Insights y anomalías de gasto
-- Patrimonio neto histórico
-- Cashflow mensual
-- Resumen de cuentas y metas
+### Presupuestos (Pro)
+- **Para qué sirve:** poner un límite mensual de gasto por categoría y controlarlo.
+- Progreso en tiempo real (gastado vs monto) con alertas al 80% y 100%.
 
-### 10. Notificaciones
-- Notificaciones in-app con redirección
-- Tipos: invitaciones, gastos, settlements, presupuestos
+### Metas (Pro)
+- **Para qué sirve:** ahorrar hacia objetivos concretos con seguimiento visual.
+- Monto objetivo, fecha límite, contribuciones y % alcanzado.
 
-### 11. Logros
-- Sistema de gamificación con puntos
-- 10 logros desbloqueables
+### Eventos (Pro)
+- **Para qué sirve:** agrupar gastos de un evento/cumpleaños/viaje bajo un mismo presupuesto.
+- Tags con presupuesto propio, alertas al 80%/100% y estadísticas por evento (gastado, promedio, fechas).
 
-### 12. Admin
-- Panel de administración
-- Gestión de usuarios y planes
+### Dividir (Pro)
+- **Para qué sirve:** gestionar gastos compartidos (viajes, cenas, piso) sin cálculos manuales.
+- Grupos con invitaciones por email/WhatsApp, 3 modos de división (Igual, Porcentaje, Monto exacto) y quién pagó.
+- Items por persona, tickets (base64), balances con desglose y transferencias óptimas.
+- Settlements con auto-creación de transacciones, gastos recurrentes compartidos, plantillas y conversión de monedas.
+
+### Familia (Familia · 7,99€/mes)
+- **Para qué sirve:** finanzas compartidas para hogares.
+- Hasta 6 miembros, roles (Admin/Miembro), invitar por email o enlace.
+- Vista personal ↔ familiar con datos compartidos en todas las secciones.
+- Incluye todo lo de Pro.
+
+### Autenticación
+- Login y registro con JWT, reset de contraseña por email (Resend), categorías por defecto al registrarse.
+
+### Notificaciones
+- In-app con redirección: invitaciones, gastos, settlements y alertas de presupuesto.
+
+### Logros
+- Gamificación con puntos y 10 logros desbloqueables.
+
+### Admin
+- Panel de administración con gestión de usuarios y planes.
+
+> Los planes se gestionan en **Configuración → Plan y facturación** (pagos vía Stripe). Jerarquía: `free (0€) < pro (4,99€/mes) < family (7,99€/mes)`; `family` incluye todo lo de `pro`.
 
 ---
 

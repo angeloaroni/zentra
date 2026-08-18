@@ -18,6 +18,6 @@ export class CreateGroupDto {
 
   @IsString()
   @IsOptional()
-  @IsIn(['USD', 'EUR', 'GBP', 'MXN', 'COP', 'ARS', 'CLP', 'PEN', 'BRL', 'UYU'])
+  @IsIn(['USD', 'EUR', 'GBP', 'MXN', 'COP', 'ARS', 'CLP', 'PEN', 'BRL', 'VES'])
   currency?: string
 }
