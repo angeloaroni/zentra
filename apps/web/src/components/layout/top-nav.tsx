@@ -25,6 +25,8 @@ import {
 import { ThemeToggle } from "./theme-toggle"
 import { FamilySwitcher } from "./family-switcher"
 import { NotificationBell } from "./notification-bell"
+import { HelpButton } from "./help-button"
+import { getHelpSection } from "@/lib/help-content"
 
 const navItems = [
   { href: "/dashboard", label: "Panel", icon: LayoutDashboard },
@@ -129,6 +131,7 @@ export function TopNav() {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
+          <HelpButton section={getHelpSection(pathname)} />
           <ThemeToggle />
           <NotificationBell />
           <FamilySwitcher />
