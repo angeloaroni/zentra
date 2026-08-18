@@ -218,6 +218,12 @@ export default function TransactionsPage() {
     },
   })
 
+  const visibleTransactions = (txData?.transactions || []).filter((tx) => {
+    const transactionDate = tx.date.slice(0, 10)
+    return (!dateRange.startDate || transactionDate >= dateRange.startDate) &&
+      (!dateRange.endDate || transactionDate <= dateRange.endDate)
+  })
+
   const createMutation = useMutation({
     mutationFn: (data: any) =>
       api("/transactions", { method: "POST", body: JSON.stringify(data) }),
@@ -628,7 +634,7 @@ export default function TransactionsPage() {
               variant="outline"
               size="sm"
               onClick={() => {
-                const txs = txData?.transactions || []
+                 const txs = visibleTransactions
                 if (!txs.length) return
                 const header = "Fecha,Tipo,Titulo,Categoria,Monto,Moneda,Descripcion\n"
                 const rows = txs.map((tx) =>
@@ -750,7 +756,7 @@ export default function TransactionsPage() {
                 <SkeletonTransactionRow key={i} />
               ))}
             </div>
-          ) : !txData?.transactions?.length ? (
+          ) : !visibleTransactions.length ? (
             <div className="py-12 text-center">
               <ArrowLeftRight className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">
@@ -762,7 +768,7 @@ export default function TransactionsPage() {
             </div>
           ) : (
             <div className="divide-y">
-              {txData.transactions.map((tx) => (
+              {visibleTransactions.map((tx) => (
 <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-accent/50 gap-2">
                    <div className="flex items-center gap-3 min-w-0 flex-1">
                      <div
