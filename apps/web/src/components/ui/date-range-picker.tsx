@@ -31,6 +31,13 @@ const PRESETS = [
   { label: "Personalizado", value: "custom" },
 ]
 
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
 function getPresetRange(preset: string): DateRange {
   const now = new Date()
   const year = now.getFullYear()
@@ -39,33 +46,33 @@ function getPresetRange(preset: string): DateRange {
   switch (preset) {
     case "current-month":
       return {
-        startDate: new Date(year, month, 1).toISOString().split("T")[0],
-        endDate: new Date(year, month + 1, 0).toISOString().split("T")[0],
+        startDate: formatLocalDate(new Date(year, month, 1)),
+        endDate: formatLocalDate(new Date(year, month + 1, 0)),
       }
     case "last-month":
       return {
-        startDate: new Date(year, month - 1, 1).toISOString().split("T")[0],
-        endDate: new Date(year, month, 0).toISOString().split("T")[0],
+        startDate: formatLocalDate(new Date(year, month - 1, 1)),
+        endDate: formatLocalDate(new Date(year, month, 0)),
       }
     case "last-3-months":
       return {
-        startDate: new Date(year, month - 2, 1).toISOString().split("T")[0],
-        endDate: new Date(year, month + 1, 0).toISOString().split("T")[0],
+        startDate: formatLocalDate(new Date(year, month - 2, 1)),
+        endDate: formatLocalDate(new Date(year, month + 1, 0)),
       }
     case "last-6-months":
       return {
-        startDate: new Date(year, month - 5, 1).toISOString().split("T")[0],
-        endDate: new Date(year, month + 1, 0).toISOString().split("T")[0],
+        startDate: formatLocalDate(new Date(year, month - 5, 1)),
+        endDate: formatLocalDate(new Date(year, month + 1, 0)),
       }
     case "current-year":
       return {
-        startDate: new Date(year, 0, 1).toISOString().split("T")[0],
-        endDate: new Date(year, 11, 31).toISOString().split("T")[0],
+        startDate: formatLocalDate(new Date(year, 0, 1)),
+        endDate: formatLocalDate(new Date(year, 11, 31)),
       }
     default:
       return {
-        startDate: new Date(year, month, 1).toISOString().split("T")[0],
-        endDate: new Date(year, month + 1, 0).toISOString().split("T")[0],
+        startDate: formatLocalDate(new Date(year, month, 1)),
+        endDate: formatLocalDate(new Date(year, month + 1, 0)),
       }
   }
 }

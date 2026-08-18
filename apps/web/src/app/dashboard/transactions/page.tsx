@@ -153,8 +153,9 @@ export default function TransactionsPage() {
     tagId: "",
   })
   const now = new Date()
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]
-  const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0]
+  const formatLocalDate = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+  const currentMonthStart = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1))
+  const currentMonthEnd = formatLocalDate(new Date(now.getFullYear(), now.getMonth() + 1, 0))
   const [dateRange, setDateRange] = useState({ startDate: currentMonthStart, endDate: currentMonthEnd })
   const [accountFilter, setAccountFilter] = useState("")
 
@@ -173,7 +174,7 @@ export default function TransactionsPage() {
     transactions: Transaction[]
     total: number
   }>({
-    queryKey: ["transactions", filterType, viewMode, debouncedSearch, filters, activeFamilyId, skip, dateRange, accountFilter],
+    queryKey: ["transactions", filterType, viewMode, debouncedSearch, filters, activeFamilyId, skip, dateRange.startDate, dateRange.endDate, accountFilter],
     queryFn: () => {
       const params = new URLSearchParams({ take: "50", skip: String(skip) })
       if (filterType !== "all") params.set("type", filterType)
@@ -188,7 +189,7 @@ export default function TransactionsPage() {
       if (dateRange.endDate) params.set("endDate", dateRange.endDate)
       if (accountFilter) params.set("accountId", accountFilter)
       if (activeFamilyId) params.set("familyId", activeFamilyId)
-      return api(`/transactions?${params}`)
+      return api(`/transactions?${params.toString()}`)
     },
   })
 
