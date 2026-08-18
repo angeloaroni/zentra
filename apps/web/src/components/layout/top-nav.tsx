@@ -14,7 +14,6 @@ import {
   Target,
   Settings,
   LogOut,
-  Plus,
   ChevronDown,
   Menu,
   X,
@@ -135,13 +134,6 @@ export function TopNav() {
           <ThemeToggle />
           <NotificationBell />
           <FamilySwitcher />
-          <Link
-            href="/dashboard/transactions"
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-all"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Registro</span>
-          </Link>
 
           <div className="relative">
             <button

@@ -31,6 +31,7 @@ export class TransactionsController {
     @Query('maxAmount') maxAmount?: string,
     @Query('paymentMethod') paymentMethod?: string,
     @Query('tagId') tagId?: string,
+    @Query('accountId') accountId?: string,
   ) {
     return this.transactionsService.findMany(req.user.id, {
       skip: skip ? parseInt(skip) : undefined,
@@ -46,6 +47,7 @@ export class TransactionsController {
       maxAmount: maxAmount ? parseFloat(maxAmount) : undefined,
       paymentMethod,
       tagId,
+      accountId,
     });
   }
 
@@ -55,11 +57,13 @@ export class TransactionsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('familyId') familyId?: string,
+    @Query('accountId') accountId?: string,
   ) {
     return this.transactionsService.getSummary(req.user.id, {
       startDate: startDate ? new Date(startDate + 'T00:00:00') : undefined,
       endDate: endDate ? new Date(endDate + 'T23:59:59') : undefined,
       familyId,
+      accountId,
     });
   }
 
@@ -88,11 +92,13 @@ export class TransactionsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('familyId') familyId?: string,
+    @Query('accountId') accountId?: string,
   ) {
     return this.transactionsService.getByCategory(req.user.id, {
       startDate: startDate ? new Date(startDate + 'T00:00:00') : undefined,
       endDate: endDate ? new Date(endDate + 'T23:59:59') : undefined,
       familyId,
+      accountId,
     });
   }
 
@@ -104,8 +110,8 @@ export class TransactionsController {
 
   @Get('overview')
   @UseGuards(JwtAuthGuard)
-  getOverview(@Req() req: any, @Query('familyId') familyId?: string, @Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
-    return this.transactionsService.getOverview(req.user.id, familyId, startDate, endDate);
+  getOverview(@Req() req: any, @Query('familyId') familyId?: string, @Query('startDate') startDate?: string, @Query('endDate') endDate?: string, @Query('accountId') accountId?: string) {
+    return this.transactionsService.getOverview(req.user.id, familyId, startDate, endDate, accountId);
   }
 
   @Get(':id')

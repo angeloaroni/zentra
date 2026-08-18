@@ -511,6 +511,7 @@ export class TransactionsService {
     startDate?: Date;
     endDate?: Date;
     familyId?: string;
+    accountId?: string;
   } = {}) {
     const userIds = await getScopeUserIds(this.prisma, userId, options.familyId);
 
@@ -518,6 +519,7 @@ export class TransactionsService {
       userId: { in: userIds },
       type: 'EXPENSE',
       ...(options.familyId ? { familyId: options.familyId } : { familyId: null }),
+      ...(options.accountId && { accountId: options.accountId }),
       ...((options.startDate || options.endDate) && {
         date: {
           ...(options.startDate && { gte: options.startDate }),
@@ -557,7 +559,7 @@ export class TransactionsService {
     });
   }
 
-  async getOverview(userId: string, familyId?: string, startDate?: string, endDate?: string) {
+  async getOverview(userId: string, familyId?: string, startDate?: string, endDate?: string, accountId?: string) {
     const userIds = await getScopeUserIds(this.prisma, userId, familyId)
     const now = new Date()
     const start = startDate ? new Date(startDate) : new Date(now.getFullYear(), now.getMonth(), 1)
@@ -569,6 +571,7 @@ export class TransactionsService {
     const baseWhere = {
       userId: { in: userIds },
       ...(familyId ? { familyId } : { familyId: null }),
+      ...(accountId && { accountId }),
     }
 
     const [
