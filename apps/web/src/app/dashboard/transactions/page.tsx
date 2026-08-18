@@ -559,20 +559,22 @@ export default function TransactionsPage() {
       </Modal>
 
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+        <div className="flex flex-col gap-2">
           <Input
             placeholder="Buscar transacciones..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:flex-1 h-10"
           />
-          <div className="flex items-end gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(180px,auto)] items-end gap-2">
             <DateRangePicker value={dateRange} onChange={setDateRange} />
             {accounts && accounts.length > 0 && (
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground invisible">Cuenta</Label>
                 <select
-                  className="h-10 min-w-[180px] rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-ring appearance-none cursor-pointer"
+                   id="transaction-account-filter"
+                   aria-label="Filtrar por cuenta"
+                   className="h-10 w-full min-w-0 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-ring appearance-none cursor-pointer"
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}
                   value={accountFilter}
                   onChange={(e) => setAccountFilter(e.target.value)}
@@ -583,7 +585,7 @@ export default function TransactionsPage() {
               </div>
             )}
           </div>
-          <div className="flex flex-wrap items-end gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             <div className="flex gap-1">
               {(["all", "INCOME", "EXPENSE"] as const).map((t) => (
                 <Button

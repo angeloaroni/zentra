@@ -88,11 +88,11 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="space-y-1">
+    <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-end gap-2 sm:gap-3 w-full">
+      <div className="space-y-1 w-full sm:w-auto">
         <Label className="text-xs text-muted-foreground">Periodo</Label>
         <Select value={preset} onValueChange={handlePresetChange}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -107,20 +107,22 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 
       {preset === "custom" && (
         <>
-          <div className="space-y-1">
+          <div className="space-y-1 w-full sm:w-auto">
             <Label className="text-xs text-muted-foreground">Desde</Label>
             <Input
               type="date"
+              className="w-full sm:w-auto"
               value={value.startDate}
               onChange={(e) =>
                 onChange({ ...value, startDate: e.target.value })
               }
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 w-full sm:w-auto">
             <Label className="text-xs text-muted-foreground">Hasta</Label>
             <Input
               type="date"
+              className="w-full sm:w-auto"
               value={value.endDate}
               onChange={(e) =>
                 onChange({ ...value, endDate: e.target.value })
