@@ -308,6 +308,14 @@ Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requi
 | **Email** | `test@test123.com` |
 | **Contraseña** | `123456` |
 
+## Despliegue y recursos
+
+| Recurso | URL |
+|---------|-----|
+| **Despliegue / Publicación** | [zentra-web-one.vercel.app](https://zentra-web-one.vercel.app/) |
+| **Slides** | [Presentación](https://docs.google.com/presentation/d/1ceTxErscCZlB9lCqbs0HT2dTPPVJVfjJEGB3LUjfJsc/edit?slide=id.g3f3e6583876_1_42#slide=id.g3f3e6583876_1_42) |
+| **Vídeo** | [Ver vídeo](https://www.youtube.com/watch?v=xvWIU6jXMDI) |
+
 ---
 
 ## Despliegue
