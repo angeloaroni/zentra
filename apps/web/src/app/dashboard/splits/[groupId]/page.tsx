@@ -331,7 +331,8 @@ export default function GroupDetailPage() {
     mutationFn: (data: any) => api("/splits/expenses", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: async (result: any) => {
       if (receiptFile && result?.id) {
-        try { await uploadReceiptBase64(result.id, receiptFile) } catch {}
+        try { await uploadReceiptBase64(result.id, receiptFile) }
+        catch { addToast({ title: "No se pudo subir el ticket", description: "El gasto se guardo sin ticket.", variant: "error" }) }
       }
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
       queryClient.invalidateQueries({ queryKey: ["split-balances", groupId] })
@@ -346,16 +347,11 @@ export default function GroupDetailPage() {
     onSuccess: async (result: any) => {
       const expenseId = editingExpense?.id
       if (receiptFile && expenseId) {
-        try { await uploadReceiptBase64(expenseId, receiptFile) } catch {}
+        try { await uploadReceiptBase64(expenseId, receiptFile) }
+        catch { addToast({ title: "No se pudo subir el ticket", description: "El gasto se guardo sin ticket.", variant: "error" }) }
       }
       queryClient.invalidateQueries({ queryKey: ["split-group", groupId] })
       queryClient.invalidateQueries({ queryKey: ["split-balances", groupId] })
-      if (expenseId) {
-        try {
-          const updated = await api<SharedExpense>(`/splits/expenses/${expenseId}`)
-          setDetailExpense(updated)
-        } catch {}
-      }
       resetExpenseForm()
       addToast({ title: "Gasto actualizado", variant: "success" })
     },
@@ -571,11 +567,43 @@ export default function GroupDetailPage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { addToast({ title: "Archivo muy grande", description: "Maximo 5MB", variant: "error" }); return }
-    setReceiptFile(file)
-    const reader = new FileReader()
-    reader.onload = (ev) => setReceiptPreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
+    if (file.size > 10 * 1024 * 1024) { addToast({ title: "Archivo muy grande", description: "Maximo 10MB", variant: "error" }); return }
+    ;(async () => {
+      let processed = file
+      try {
+        if (file.type.startsWith("image/")) processed = await compressImage(file)
+      } catch {}
+      setReceiptFile(processed)
+      const reader = new FileReader()
+      reader.onload = (ev) => setReceiptPreview(ev.target?.result as string)
+      reader.readAsDataURL(processed)
+    })()
+  }
+
+  function compressImage(file: File, maxSize = 1280, quality = 0.8): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const img = new Image()
+        img.onload = () => {
+          const scale = Math.min(1, maxSize / Math.max(img.width, img.height))
+          const canvas = document.createElement("canvas")
+          canvas.width = Math.round(img.width * scale)
+          canvas.height = Math.round(img.height * scale)
+          const ctx = canvas.getContext("2d")
+          if (!ctx) { resolve(file); return }
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+          canvas.toBlob((blob) => {
+            if (blob) resolve(new File([blob], file.name, { type: "image/jpeg" }))
+            else resolve(file)
+          }, "image/jpeg", quality)
+        }
+        img.onerror = () => resolve(file)
+        img.src = reader.result as string
+      }
+      reader.onerror = () => reject(reader.error)
+      reader.readAsDataURL(file)
+    })
   }
 
   function toggleMemberSelection(userId: string) {
@@ -898,14 +926,15 @@ export default function GroupDetailPage() {
                                   </button>
                                   {menuExpenseId === expense.id && (
                                     <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
-                                      <button onClick={() => { setMenuExpenseId(null); setDetailExpense(expense) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">Ver detalle</button>
+                                      <button onClick={(e) => { e.stopPropagation(); setMenuExpenseId(null); setDetailExpense(expense) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">Ver detalle</button>
                                       {(user?.id === expense.paidBy.id || user?.id === group.createdBy.id) && (
                                         <>
-                                          <button onClick={() => { setMenuExpenseId(null); startEditExpense(expense) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">Editar</button>
-                                          <button onClick={() => { setMenuExpenseId(null); setDeleteExpenseId(expense.id) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 text-red-600">Eliminar</button>
+                                          <button onClick={(e) => { e.stopPropagation(); setMenuExpenseId(null); startEditExpense(expense) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">Editar</button>
+                                          <button onClick={(e) => { e.stopPropagation(); setMenuExpenseId(null); setDeleteExpenseId(expense.id) }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 text-red-600">Eliminar</button>
                                         </>
                                       )}
-                                      <button onClick={() => {
+                                      <button onClick={(e) => {
+                                        e.stopPropagation()
                                         setMenuExpenseId(null)
                                         setEditingExpense(null)
                                         setShowExpenseForm(true)
@@ -921,7 +950,8 @@ export default function GroupDetailPage() {
                                           paidBy: expense.paidBy.id,
                                         })
                                       }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">Duplicar</button>
-                                      <button onClick={() => {
+                                      <button onClick={(e) => {
+                                        e.stopPropagation()
                                         setMenuExpenseId(null)
                                         const text = `${expense.title}: ${formatMoney(expense.amount, expense.currency)} pagado por ${expense.paidBy.name}. Divisiones: ${expense.splits.map(s => `${s.user.name} ${formatMoney(s.amount, expense.currency)}`).join(', ')}`
                                         navigator.clipboard.writeText(text)

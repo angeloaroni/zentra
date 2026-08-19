@@ -89,8 +89,8 @@ async function bootstrap() {
     }
   };
 
-  app.use(json({ verify: rawBodySaver, limit: '2mb' }));
-  app.use(urlencoded({ extended: true, limit: '2mb' }));
+  app.use(json({ verify: rawBodySaver, limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
 
   app.getHttpAdapter().getInstance().get('/api/health', (_req: any, res: any) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
