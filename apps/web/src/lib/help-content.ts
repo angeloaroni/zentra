@@ -1,4 +1,4 @@
-export type HelpSection = "dashboard" | "transactions" | "splits" | "accounts" | "budgets" | "goals" | "events" | "settings"
+export type HelpSection = "dashboard" | "transactions" | "splits" | "accounts" | "categories" | "budgets" | "goals" | "events" | "settings"
 
 export interface HelpContent {
   title: string
@@ -31,6 +31,12 @@ export const HELP_CONTENT: Record<HelpSection, HelpContent> = {
     intro: "Organiza tu dinero por cuenta, efectivo, ahorro o inversión.",
     steps: ["Crea una cuenta con su saldo inicial.", "Vincula cada registro a la cuenta correspondiente.", "Consulta el saldo individual y el total consolidado."],
   },
+  categories: {
+    title: "Cómo usar categorías",
+    intro: "Clasifica tus ingresos y gastos para entender a dónde va tu dinero.",
+    steps: ["Crea categorías para ingresos y gastos.", "Elige un icono y un color para identificarlas rápido.", "Usa las mismas categorías en presupuestos y gráficos para ver tu gasto por tipo."],
+    tip: "Las categorías que aparecen al registrarte son por defecto; puedes editarlas o crear las tuyas.",
+  },
   budgets: {
     title: "Cómo usar presupuestos",
     intro: "Define límites para evitar sorpresas a final de mes.",
@@ -57,6 +63,7 @@ export function getHelpSection(pathname: string): HelpSection {
   if (pathname.startsWith("/dashboard/transactions")) return "transactions"
   if (pathname.startsWith("/dashboard/splits")) return "splits"
   if (pathname.startsWith("/dashboard/accounts")) return "accounts"
+  if (pathname.startsWith("/dashboard/categories")) return "categories"
   if (pathname.startsWith("/dashboard/budgets")) return "budgets"
   if (pathname.startsWith("/dashboard/goals")) return "goals"
   if (pathname.startsWith("/dashboard/events")) return "events"
