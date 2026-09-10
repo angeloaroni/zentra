@@ -439,28 +439,18 @@ export default function TransactionsPage() {
 
             <div className="space-y-1.5">
               <Label className="text-xs">Categoria</Label>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+              <select
+                className={selectClass}
+                value={form.categoryId}
+                onChange={(e) => setForm(prev => ({ ...prev, categoryId: e.target.value }))}
+              >
+                <option value="">Seleccionar categoria</option>
                 {filteredCategories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setForm(prev => ({ ...prev, categoryId: cat.id }))}
-                    className={`flex items-center gap-2 p-2 rounded-lg border text-left text-sm transition-all ${
-                      form.categoryId === cat.id
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:bg-muted"
-                    }`}
-                  >
-                    <div
-                      className="h-5 w-5 rounded-full flex items-center justify-center text-white text-[10px] shrink-0"
-                      style={{ backgroundColor: cat.color }}
-                    >
-                      {cat.icon?.charAt(0)?.toUpperCase() || "?"}
-                    </div>
-                    <span className="truncate">{cat.name}</span>
-                  </button>
+                  <option key={cat.id} value={cat.id}>
+                    {renderTxIcon(cat.icon)} {cat.name}
+                  </option>
                 ))}
-              </div>
+              </select>
               {catLoading && <p className="text-xs text-muted-foreground">Cargando categorias...</p>}
             </div>
           </div>
