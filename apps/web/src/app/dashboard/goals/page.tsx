@@ -272,6 +272,10 @@ export default function GoalsPage() {
             <p className="text-sm text-muted-foreground mt-1">
               Crea una meta para empezar a ahorrar
             </p>
+            <Button className="mt-4" onClick={() => { setShowForm(true); setFormError("") }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Crear meta
+            </Button>
           </CardContent>
         </Card>
       ) : (

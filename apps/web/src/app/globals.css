@@ -83,12 +83,16 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground tabular-nums;
   }
   .focus-visible-ring {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {

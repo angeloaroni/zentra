@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getUser } from "@/lib/api"
 import { TopNav } from "@/components/layout/top-nav"
+import { BottomNav } from "@/components/layout/bottom-nav"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 
 export default function DashboardLayout({
@@ -26,9 +27,10 @@ export default function DashboardLayout({
         Saltar al contenido
       </a>
       <TopNav />
-      <main id="main-content" className="max-w-[1400px] mx-auto p-4 sm:p-6">
+      <main id="main-content" className="max-w-[1400px] mx-auto p-4 sm:p-6 pb-20 sm:pb-0">
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>
+      <BottomNav />
     </div>
   )
 }

@@ -237,7 +237,7 @@ function BillingContent() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+           <span className="text-lg font-bold text-gray-900 dark:text-white">
                     {PLAN_LABELS[currentPlan]}
                   </span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PLAN_COLORS[currentPlan]}`}>
@@ -245,7 +245,7 @@ function BillingContent() {
                   </span>
                 </div>
                 {subscription?.currentPeriodEnd && (
-                  <p className="text-xs text-gray-500">
+                   <p className="text-xs text-muted-foreground">
                     {currentPlan !== "free"
                       ? `Proximo cobro: ${new Date(subscription.currentPeriodEnd).toLocaleDateString("es-ES")}`
                       : "Sin cobro"}
@@ -342,12 +342,12 @@ function BillingContent() {
                 <h3 className="font-bold text-gray-900 dark:text-white">{plan.name}</h3>
                 <div className="mt-1 mb-1">
                   <span className="text-2xl font-bold text-gray-900 dark:text-white">{plan.price}</span>
-                  <span className="text-sm text-gray-500">{plan.period}</span>
+                   <span className="text-sm text-muted-foreground">{plan.period}</span>
                 </div>
 
                 <ul className="space-y-1.5 mb-4 flex-1">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                     <li key={f} className="flex items-start gap-1.5 text-xs text-gray-600 dark:text-muted-foreground">
                       <Check className="h-3 w-3 text-emerald-500 mt-0.5 shrink-0" />
                       {f}
                     </li>

@@ -325,6 +325,10 @@ export default function BudgetsPage() {
             <PiggyBank className="h-12 w-12 mx-auto mb-3 opacity-40" />
             <p className="font-medium">Sin presupuestos</p>
             <p className="text-sm mt-1">Crea tu primer presupuesto para controlar tus gastos</p>
+            <Button className="mt-4" onClick={() => { setShowForm(!showForm); setFormError("") }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Crear presupuesto
+            </Button>
           </CardContent>
         </Card>
       ) : (

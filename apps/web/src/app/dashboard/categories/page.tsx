@@ -325,6 +325,10 @@ export default function CategoriesPage() {
             <div className="col-span-full text-center py-8 text-muted-foreground flex flex-col items-center gap-2">
               <Tag className="h-8 w-8" />
               <p>Sin categorias</p>
+              <Button className="mt-2" onClick={() => { setShowForm(true); setEditingId(null); setForm(defaultForm); setFormError("") }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Crear categoria
+              </Button>
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import * as React from 'react'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ToastProvider } from '@/components/ui/toast'
+import { AppProgressBar } from 'next-nprogress-bar'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +24,7 @@ export function Providers({
       <NextThemesProvider {...props}>
         <ToastProvider>{children}</ToastProvider>
       </NextThemesProvider>
+      <AppProgressBar height="3px" color="#3B82F6" shallowRouting />
     </QueryClientProvider>
   )
 }

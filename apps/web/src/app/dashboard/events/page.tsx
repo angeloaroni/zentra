@@ -249,6 +249,10 @@ export default function EventsPage() {
             <p className="text-sm text-muted-foreground mt-1">
               Crea un evento para empezar a rastrear tus gastos
             </p>
+            <Button className="mt-4" onClick={() => { setShowForm(true); setFormError("") }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Crear evento
+            </Button>
           </CardContent>
         </Card>
       ) : (

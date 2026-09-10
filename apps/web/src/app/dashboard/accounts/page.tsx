@@ -287,6 +287,10 @@ export default function AccountsPage() {
             <Wallet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">Sin cuentas</p>
             <p className="text-sm text-muted-foreground mt-1">Crea tu primera cuenta para empezar</p>
+            <Button className="mt-4" onClick={() => { setShowForm(true); setForm(defaultForm); setEditingId(null); setFormError("") }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Crear cuenta
+            </Button>
           </CardContent>
         </Card>
       ) : (

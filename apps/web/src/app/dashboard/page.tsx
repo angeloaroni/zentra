@@ -1,7 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { api, getUser } from "@/lib/api"
 import { useSettings, formatMoney, formatDateShort, formatMonthYear, useHasHydrated } from "@/lib/settings"
@@ -116,6 +116,7 @@ export default function DashboardPage() {
   const { activeFamilyId } = useFamilyStore()
   const [user, setUser] = useState<{ id: string; name: string; email: string; role?: string } | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [animatedScore, setAnimatedScore] = useState(0)
 
   const [dateRange, setDateRange] = useState({
     startDate: "",
@@ -172,6 +173,25 @@ export default function DashboardPage() {
     queryFn: () => api("/health-score"),
     staleTime: 300_000,
   })
+
+  useEffect(() => {
+    if (healthScore?.score) {
+      let start = 0
+      const end = healthScore.score
+      const duration = 1000
+      const increment = end / (duration / 16)
+      const timer = setInterval(() => {
+        start += increment
+        if (start >= end) {
+          setAnimatedScore(end)
+          clearInterval(timer)
+        } else {
+          setAnimatedScore(Math.floor(start))
+        }
+      }, 16)
+      return () => clearInterval(timer)
+    }
+  }, [healthScore?.score])
 
   const { data: accounts } = useQuery<Account[]>({
     queryKey: ["accounts", activeFamilyId],
@@ -251,7 +271,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
             Hola, {mounted ? (user?.name || "Usuario") : "..."}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
+          <p className="text-muted-foreground text-sm mt-0.5">
             {activeFamilyId
               ? `Vista familiar · ${formatMonthYear(new Date(dateRange.startDate))}`
               : formatMonthYear(new Date(dateRange.startDate))
@@ -330,11 +350,11 @@ export default function DashboardPage() {
       {accounts && accounts.length > 0 && (
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Balance total cuentas</p>
+            <p className="text-xs text-muted-foreground mb-1">Balance total cuentas</p>
             <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
               {formatMoney(accounts.reduce((s, a) => s + a.balance, 0), currency)}
             </p>
-            <p className="text-xs text-gray-400 mt-1">{accounts.length} cuenta(s)</p>
+            <p className="text-xs text-muted-foreground mt-1">{accounts.length} cuenta(s)</p>
           </CardContent>
         </Card>
       )}
@@ -343,7 +363,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ingresos</p>
+            <p className="text-xs text-muted-foreground mb-1">Ingresos</p>
             <p className="text-lg sm:text-xl font-bold text-emerald-600 truncate">
               {formatMoney(totalIncome, currency)}
             </p>
@@ -354,7 +374,7 @@ export default function DashboardPage() {
         </Card>
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Gastos</p>
+            <p className="text-xs text-muted-foreground mb-1">Gastos</p>
             <p className="text-lg sm:text-xl font-bold text-rose-600 truncate">
               {formatMoney(totalExpense, currency)}
             </p>
@@ -365,7 +385,7 @@ export default function DashboardPage() {
         </Card>
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Balance</p>
+            <p className="text-xs text-muted-foreground mb-1">Balance</p>
             <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
               {formatMoney(totalIncome - totalExpense, currency)}
             </p>
@@ -376,9 +396,12 @@ export default function DashboardPage() {
         </Card>
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Metas activas</p>
+            <p className="text-xs text-muted-foreground mb-1">Metas activas</p>
             <p className="text-xl font-bold text-gray-900 dark:text-white">
               {activeGoals.length}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              {formatMoney(activeGoals.reduce((s, g) => s + g.currentAmount, 0), currency)} ahorrado
             </p>
           </CardContent>
         </Card>
@@ -389,7 +412,7 @@ export default function DashboardPage() {
         <CardContent className="p-6">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Flujo de caja - Ultimos 6 meses</h3>
           {!cashflow?.length ? (
-            <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-8">Sin datos</p>
+              <p className="text-muted-foreground text-sm text-center py-8">Sin datos</p>
           ) : (
             <CashflowChart data={cashflow} formatMoney={formatMoney} currency={currency} />
           )}
@@ -411,7 +434,7 @@ export default function DashboardPage() {
           <CardContent className="p-6">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Donde va tu dinero</h3>
             {pieData.length === 0 ? (
-              <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-8">Sin datos</p>
+            <p className="text-muted-foreground text-sm text-center py-8">Sin datos</p>
             ) : (
               <div className="space-y-4">
                 {pieData.slice(0, 3).map((item, i) => {
@@ -420,7 +443,7 @@ export default function DashboardPage() {
                     <div key={item.name}>
                       <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-gray-400 w-4">{i + 1}</span>
+                           <span className="text-xs font-bold text-muted-foreground w-4">{i + 1}</span>
                           <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.name}</span>
                         </div>
@@ -434,7 +457,7 @@ export default function DashboardPage() {
                           style={{ width: `${pct}%`, backgroundColor: item.color }}
                         />
                       </div>
-                      <p className="text-xs text-gray-400 ml-6 mt-1">{pct.toFixed(1)}% del total</p>
+                      <p className="text-xs text-muted-foreground ml-6 mt-1">{pct.toFixed(1)}% del total</p>
                     </div>
                   )
                 })}
@@ -455,7 +478,7 @@ export default function DashboardPage() {
             {activeGoals.length === 0 ? (
               <div className="text-center py-6">
                 <Target className="h-10 w-10 mx-auto text-gray-300 mb-2" />
-                <p className="text-gray-400 dark:text-gray-500 text-sm">Sin metas activas</p>
+                <p className="text-muted-foreground text-sm">Sin metas activas</p>
                 <Link href="/dashboard/goals" className="text-xs text-indigo-600 hover:underline mt-1 inline-block">
                   Crear meta
                 </Link>
@@ -474,17 +497,17 @@ export default function DashboardPage() {
                           />
                           <span className="text-sm font-medium text-gray-700">{goal.name}</span>
                         </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{pct.toFixed(0)}%</span>
+                         <span className="text-xs text-muted-foreground">{pct.toFixed(0)}%</span>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div
-                          className="h-2 rounded-full bg-blue-600 transition-all"
-                          style={{ width: `${Math.min(pct, 100)}%` }}
-                        />
-                      </div>
+                       <div className="w-full bg-gray-100 rounded-full h-2">
+                         <div
+                           className="h-2 rounded-full transition-all"
+                           style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: goal.color || "#3B82F6" }}
+                         />
+                       </div>
                       <div className="flex justify-between mt-1">
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{formatMoney(goal.currentAmount, currency)}</span>
-                        <span className="text-xs text-gray-400 dark:text-gray-500">{formatMoney(goal.targetAmount, currency)}</span>
+                        <span className="text-xs text-muted-foreground">{formatMoney(goal.currentAmount, currency)}</span>
+                         <span className="text-xs text-muted-foreground">{formatMoney(goal.targetAmount, currency)}</span>
                       </div>
                     </div>
                   )
@@ -502,13 +525,13 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Salud financiera</p>
+                   <p className="text-sm text-muted-foreground">Salud financiera</p>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className={`text-3xl font-bold ${
                       healthScore.score >= 80 ? "text-emerald-600" :
                       healthScore.score >= 60 ? "text-blue-600" :
                       healthScore.score >= 40 ? "text-amber-600" : "text-red-600"
-                    }`}>{healthScore.score}</span>
+                    }`}>{animatedScore}</span>
                     <span className="text-sm text-gray-400">/100</span>
                     <span className={`text-sm font-medium ${
                       healthScore.score >= 80 ? "text-emerald-600" :
@@ -524,7 +547,7 @@ export default function DashboardPage() {
                       healthScore.score >= 80 ? "text-emerald-500" :
                       healthScore.score >= 60 ? "text-blue-500" :
                       healthScore.score >= 40 ? "text-amber-500" : "text-red-500"
-                    } stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray={`${healthScore.score}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    } stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray={`${animatedScore}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                   </svg>
                 </div>
               </div>
@@ -539,7 +562,7 @@ export default function DashboardPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-500">Division de gastos</p>
+                   <p className="text-sm text-muted-foreground">Division de gastos</p>
                   <div className="mt-2 space-y-1.5">
                     {overallBalance.people && overallBalance.people.filter((p: any) => p.amount > 0).length > 0 && (
                       <div>
@@ -604,16 +627,30 @@ export default function DashboardPage() {
       {insights && insights.length > 0 && (
         <FadeIn>
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-3">Insights</h3>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Insights</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {insights.slice(0, 4).map((insight, i) => (
-                <Card key={i} className="border-0 shadow-sm">
-                  <CardContent className="p-4">
-                    <p className="font-medium text-sm">{insight.title}</p>
-                    <p className="text-xs text-gray-500 mt-1">{insight.message}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              {insights.slice(0, 4).map((insight, i) => {
+                const iconMap: Record<string, string> = {
+                  "trending-up": "📈",
+                  "trending-down": "📉",
+                  "alert": "⚠️",
+                  "info": "ℹ️",
+                }
+                const emoji = iconMap[insight.icon] || "💡"
+                return (
+                  <Card key={i} className="border-0 shadow-sm">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-2">
+                        <span className="text-lg">{emoji}</span>
+                        <div>
+                          <p className="font-medium text-sm">{insight.title}</p>
+                          <p className="text-xs text-gray-500 mt-1">{insight.message}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           </div>
         </FadeIn>
@@ -624,7 +661,7 @@ export default function DashboardPage() {
         <FadeIn>
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-4">Patrimonio neto</h3>
+               <h3 className="text-sm font-medium text-muted-foreground mb-4">Patrimonio neto</h3>
               <NetWorthChart data={netWorth} formatMoney={formatMoney} currency={currency} />
             </CardContent>
           </Card>
@@ -643,7 +680,7 @@ export default function DashboardPage() {
           <div className="mt-3">
             {!txData?.transactions?.length ? (
               <div className="text-center py-8">
-                <p className="text-gray-400 dark:text-gray-500 text-sm mb-3">Sin transacciones</p>
+                <p className="text-muted-foreground text-sm mb-3">Sin transacciones</p>
                 <Link
                   href="/dashboard/transactions"
                   className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-all"
@@ -665,9 +702,9 @@ export default function DashboardPage() {
                        </div>
                        <div className="min-w-0">
                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{tx.title}</p>
-                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                           {tx.category?.name} · {formatDate(tx.date)}
-                         </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                            {tx.category?.name} · {formatDate(tx.date)}
+                          </p>
                        </div>
                      </div>
                       <span

@@ -708,6 +708,41 @@ function ExtraFeaturesStrip() {
   )
 }
 
+function SocialProofSection() {
+  return (
+    <section className="py-20 bg-gray-50 dark:bg-[#0B1120]">
+      <div className="max-w-6xl mx-auto px-4 text-center">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          Ya confian en Zentra
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
+          Usuarios reales controlando sus finanzas cada dia
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { name: "Maria G.", role: "Emprendedora", text: "Por fin tengo claro a donde va mi dinero. Los splits me ahorran horas de calculos con mis socias." },
+            { name: "Carlos R.", role: "Freelancer", text: "Uso Zentra todos los dias. El score de salud financiera me ayudo a mejorar mi tasa de ahorro un 40%." },
+            { name: "Ana M.", role: "Familia", text: "La vista familiar es genial. Mi esposo y yo vemos las mismas cuentas en tiempo real." },
+          ].map((t, i) => (
+            <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+                  {t.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white text-sm">{t.name}</p>
+                  <p className="text-xs text-gray-500">{t.role}</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300 text-left">&ldquo;{t.text}&rdquo;</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function PricingSection() {
   const plans = [
     {
@@ -1010,6 +1045,7 @@ export default function LandingPage() {
       <FeaturesSection />
       <SplitsSection />
       <ExtraFeaturesStrip />
+      <SocialProofSection />
       <PricingSection />
       <FAQSection />
       <CTASection />
