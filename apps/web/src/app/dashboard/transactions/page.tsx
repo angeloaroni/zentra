@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { useSettings, getCurrencySymbol, formatMoney, formatDateShort, useHasHydrated, useMounted } from "@/lib/settings"
 import { useFamilyStore } from "@/lib/family"
+import { escapeCSV } from "@/lib/format"
 import { useToast } from "@/components/ui/toast"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -72,13 +73,6 @@ function formatDate(d: string) {
 
 function getFreqLabel(freq?: string) {
   return FREQUENCIES.find((f) => f.value === freq)?.label || freq
-}
-
-function escapeCSV(value: string) {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`
-  }
-  return value
 }
 
 function renderTxIcon(iconName: string, className = "h-3 w-3") {
@@ -163,11 +157,6 @@ export default function TransactionsPage() {
     setSkip(0)
   }, [filterType, viewMode, debouncedSearch, filters, activeFamilyId])
 
-  useEffect(() => {
-    setSkip(0)
-    setAccountFilter("")
-  }, [filterType, viewMode, debouncedSearch, activeFamilyId])
-
   const [form, setForm] = useState<FormState>(defaultForm())
 
   const { data: txData, isLoading: txLoading, error: txError } = useQuery<{
@@ -233,6 +222,9 @@ export default function TransactionsPage() {
       queryClient.invalidateQueries({ queryKey: ["by-category"] })
       queryClient.invalidateQueries({ queryKey: ["budgets-summary"] })
       queryClient.invalidateQueries({ queryKey: ["tags"] })
+      queryClient.invalidateQueries({ queryKey: ["dashboard-overview"] })
+      queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      queryClient.invalidateQueries({ queryKey: ["net-worth"] })
       setShowForm(false)
       setFormError("")
       setForm(defaultForm())
@@ -253,6 +245,9 @@ export default function TransactionsPage() {
       queryClient.invalidateQueries({ queryKey: ["by-category"] })
       queryClient.invalidateQueries({ queryKey: ["budgets-summary"] })
       queryClient.invalidateQueries({ queryKey: ["tags"] })
+      queryClient.invalidateQueries({ queryKey: ["dashboard-overview"] })
+      queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      queryClient.invalidateQueries({ queryKey: ["net-worth"] })
       setEditingId(null)
       setFormError("")
       setForm(defaultForm())
@@ -272,6 +267,9 @@ export default function TransactionsPage() {
       queryClient.invalidateQueries({ queryKey: ["by-category"] })
       queryClient.invalidateQueries({ queryKey: ["budgets-summary"] })
       queryClient.invalidateQueries({ queryKey: ["tags"] })
+      queryClient.invalidateQueries({ queryKey: ["dashboard-overview"] })
+      queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      queryClient.invalidateQueries({ queryKey: ["net-worth"] })
       setDeleteId(null)
       addToast({ title: "Transaccion eliminada", variant: "success" })
     },
@@ -819,16 +817,16 @@ export default function TransactionsPage() {
                       <button
                         onClick={() => startEdit(tx)}
                         className="text-muted-foreground hover:text-blue-500 transition-colors shrink-0 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                        title="Editar"
+                        aria-label="Editar transaccion"
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" aria-hidden="true" />
                       </button>
                       <button
                         onClick={() => setDeleteId(tx.id)}
                         className="text-muted-foreground hover:text-red-500 transition-colors shrink-0 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                        title="Eliminar"
+                        aria-label="Eliminar transaccion"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </button>
                     </div>
                  </div>

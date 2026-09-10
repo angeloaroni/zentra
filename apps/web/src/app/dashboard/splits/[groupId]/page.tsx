@@ -921,8 +921,8 @@ export default function GroupDetailPage() {
                                 </span>
                                 {expense.splitType !== "EQUAL" && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">{expense.splitType}</span>}
                                 <div className="relative">
-                                  <button onClick={(e) => { e.stopPropagation(); setMenuExpenseId(menuExpenseId === expense.id ? null : expense.id) }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                  <button onClick={(e) => { e.stopPropagation(); setMenuExpenseId(menuExpenseId === expense.id ? null : expense.id) }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" aria-label="Opciones" aria-expanded={menuExpenseId === expense.id} aria-haspopup="true">
+                                    <MoreVertical className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                                   </button>
                                   {menuExpenseId === expense.id && (
                                     <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { api, getUser } from "@/lib/api"
 import { useToast } from "@/components/ui/toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,7 +24,7 @@ const PLANS = [
   {
     id: "free",
     name: "Gratis",
-    price: "$0",
+    price: "0 €",
     period: "/mes",
     icon: Zap,
     description: "Para empezar a controlar tus finanzas",
@@ -43,7 +43,7 @@ const PLANS = [
   {
     id: "pro",
     name: "Pro",
-    price: "$4.99",
+    price: "4,99 €",
     period: "/mes",
     icon: Crown,
     description: "Para personas que quieren control total",
@@ -68,7 +68,7 @@ const PLANS = [
   {
     id: "family",
     name: "Familia",
-    price: "$7.99",
+    price: "7,99 €",
     period: "/mes",
     icon: Users,
     description: "Para familias que gestionan juntos",
@@ -111,18 +111,19 @@ export default function BillingPage() {
 }
 
 function BillingContent() {
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState("")
   const { addToast } = useToast()
   const searchParams = useSearchParams()
   const user = getUser()
+  const queryClient = useQueryClient()
+
+  const { data: subscription, refetch: refetchSubscription } = useQuery<{ plan: string; stripeCustomerId?: string; cancelAtPeriodEnd?: boolean; currentPeriodEnd?: string }>({
+    queryKey: ["subscription"],
+    queryFn: () => api("/subscriptions/current"),
+  })
 
   useEffect(() => {
-    api<Subscription>("/subscriptions")
-      .then(setSubscription)
-      .catch(() => {})
-
     const billingStatus = searchParams.get("billing")
     if (billingStatus === "success") {
       addToast({ title: "Suscripcion activada", description: "Tu plan ha sido actualizado exitosamente.", variant: "success" })
@@ -148,7 +149,7 @@ function BillingContent() {
           method: "PATCH",
           body: JSON.stringify({ plan: "free" }),
         })
-        setSubscription(result)
+        refetchSubscription()
         addToast({ title: "Plan actualizado", description: "Has cambiado al plan Gratis.", variant: "success" })
       } catch (err: any) {
         addToast({ title: "Error", description: err.message, variant: "error" })
@@ -199,7 +200,7 @@ function BillingContent() {
       const result = await api<Subscription>("/subscriptions/cancel", {
         method: "POST",
       })
-      setSubscription(result)
+      refetchSubscription()
       addToast({ title: "Suscripcion cancelada", description: "Tu plan se cancelara al final del periodo actual.", variant: "success" })
     } catch (err: any) {
       addToast({ title: "Error", description: err.message, variant: "error" })
@@ -356,6 +357,7 @@ function BillingContent() {
                 <button
                   onClick={() => handleSelect(plan.id)}
                   disabled={loading === plan.id || isCurrent}
+                  aria-label={`Seleccionar plan ${plan.name}`}
                   className={`w-full py-2.5 px-3 rounded-xl font-medium text-sm transition-all ${
                     isCurrent
                       ? "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-default"

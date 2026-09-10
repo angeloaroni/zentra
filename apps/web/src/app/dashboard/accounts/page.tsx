@@ -314,8 +314,9 @@ export default function AccountsPage() {
                     <button
                       onClick={() => startEdit(acc)}
                       className="text-muted-foreground hover:text-blue-500 transition-colors"
+                      aria-label="Editar cuenta"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => setDeleteId(acc.id)}

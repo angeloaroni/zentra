@@ -767,33 +767,22 @@ export class SplitsService implements OnModuleInit {
     const netBalances = this.debtSimplifier.calculateNetBalances(mappedExpenses, settlements)
     const simplifiedDebts = this.debtSimplifier.simplifyDebts(netBalances)
 
-    const enrichedDebts: (DebtTransfer & { fromName: string; toName: string })[] = []
-    for (const debt of simplifiedDebts) {
-      const [fromUser, toUser] = await Promise.all([
-        this.prisma.user.findUnique({
-          where: { id: debt.from },
-          select: { id: true, name: true, avatar: true },
-        }),
-        this.prisma.user.findUnique({
-          where: { id: debt.to },
-          select: { id: true, name: true, avatar: true },
-        }),
-      ])
+    const allUserIds = [...new Set(simplifiedDebts.flatMap((d) => [d.from, d.to]))]
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: allUserIds } },
+      select: { id: true, name: true },
+    })
+    const userMap = new Map(users.map((u) => [u.id, u.name]))
 
-      enrichedDebts.push({
+    const enrichedDebts: (DebtTransfer & { fromName: string; toName: string })[] =
+      simplifiedDebts.map((debt) => ({
         ...debt,
-        fromName: fromUser?.name || 'Unknown',
-        toName: toUser?.name || 'Unknown',
-      })
-    }
+        fromName: userMap.get(debt.from) || 'Unknown',
+        toName: userMap.get(debt.to) || 'Unknown',
+      }))
 
     return {
-      netBalances: netBalances.map((nb) => ({
-        ...nb,
-        user: expenses[0]?.splits.find(() => true)
-          ? undefined
-          : undefined,
-      })),
+      netBalances,
       simplifiedDebts: enrichedDebts,
     }
   }
@@ -813,23 +802,37 @@ export class SplitsService implements OnModuleInit {
       ...new Set([...memberships.map((m) => m.groupId), ...createdGroups.map((g) => g.id)]),
     ]
 
-    const groupData = await Promise.all(
-      allGroupIds.map(async (groupId) => {
-        const [expenses, settlements] = await Promise.all([
-          this.prisma.sharedExpense.findMany({
-            where: { groupId },
-            include: {
-              splits: { select: { userId: true, amount: true, isPaid: true } },
-            },
-          }),
-          this.prisma.settlement.findMany({
-            where: { groupId },
-            select: { fromUserId: true, toUserId: true, amount: true },
-          }),
-        ])
-        return { groupId, expenses, settlements }
+    const [allExpenses, allSettlements] = await Promise.all([
+      this.prisma.sharedExpense.findMany({
+        where: { groupId: { in: allGroupIds } },
+        include: {
+          splits: { select: { userId: true, amount: true, isPaid: true } },
+        },
       }),
-    )
+      this.prisma.settlement.findMany({
+        where: { groupId: { in: allGroupIds } },
+        select: { groupId: true, fromUserId: true, toUserId: true, amount: true },
+      }),
+    ])
+
+    const groupExpensesMap = new Map<string, typeof allExpenses>()
+    const groupSettlementsMap = new Map<string, typeof allSettlements>()
+    for (const e of allExpenses) {
+      const list = groupExpensesMap.get(e.groupId) || []
+      list.push(e)
+      groupExpensesMap.set(e.groupId, list)
+    }
+    for (const s of allSettlements) {
+      const list = groupSettlementsMap.get(s.groupId) || []
+      list.push(s)
+      groupSettlementsMap.set(s.groupId, list)
+    }
+
+    const groupData = allGroupIds.map((groupId) => ({
+      groupId,
+      expenses: groupExpensesMap.get(groupId) || [],
+      settlements: groupSettlementsMap.get(groupId) || [],
+    }))
 
     const mappedGroupData = groupData.map((g) => ({
       ...g,
@@ -855,14 +858,20 @@ export class SplitsService implements OnModuleInit {
       }
     }
 
-    // Get user details for people with balances
+    const personIds = [...personBalances.entries()]
+      .filter(([id, amount]) => Math.abs(amount) >= 0.01)
+      .map(([id]) => id)
+
+    const personUsers = await this.prisma.user.findMany({
+      where: { id: { in: personIds } },
+      select: { id: true, name: true },
+    })
+    const personUserMap = new Map(personUsers.map((u) => [u.id, u]))
+
     const personDetails: Array<{ id: string; name: string; amount: number }> = []
     for (const [personId, amount] of personBalances) {
       if (Math.abs(amount) < 0.01) continue
-      const user = await this.prisma.user.findUnique({
-        where: { id: personId },
-        select: { id: true, name: true },
-      })
+      const user = personUserMap.get(personId)
       if (user) {
         personDetails.push({ id: user.id, name: user.name, amount: Math.round(amount * 100) / 100 })
       }

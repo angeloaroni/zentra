@@ -31,7 +31,10 @@ export function formatMoney(n: number, currency: string) {
     }).format(n)
   } catch {
     const sym = getCurrencySymbol(currency)
-    const formatted = Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+    const abs = Math.abs(n)
+    const intPart = Math.floor(abs)
+    const decPart = Math.round((abs - intPart) * 100)
+    const formatted = intPart.toLocaleString('es-ES') + ',' + String(decPart).padStart(2, '0')
     return `${n < 0 ? "-" : ""}${formatted} ${sym}`
   }
 }

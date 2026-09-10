@@ -310,8 +310,9 @@ export default function GoalsPage() {
                     <button
                       onClick={() => setDeleteId(goal.id)}
                       className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors"
+                      aria-label="Eliminar meta"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </div>
 

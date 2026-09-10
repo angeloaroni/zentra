@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 import { api, getUser } from "@/lib/api"
 import { useSettings, formatMoney, formatDateShort, formatMonthYear, useHasHydrated } from "@/lib/settings"
 import { useFamilyStore } from "@/lib/family"
+import { escapeCSV } from "@/lib/format"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -93,13 +94,6 @@ interface Account {
 
 function formatDate(d: string) {
   return formatDateShort(d)
-}
-
-function escapeCSV(value: string) {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`
-  }
-  return value
 }
 
 const COLORS = ["#3B82F6", "#6366F1", "#10B981", "#EF4444", "#F59E0B", "#8B5CF6", "#EC4899", "#14B8A6"]
