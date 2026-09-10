@@ -83,6 +83,14 @@ interface CashflowItem {
   balance: number
 }
 
+interface Account {
+  id: string
+  name: string
+  type: string
+  balance: number
+  currency: string
+}
+
 function formatDate(d: string) {
   return formatDateShort(d)
 }
@@ -130,7 +138,7 @@ export default function DashboardPage() {
     })
   }, [])
 
-  const familyParam = activeFamilyId ? `?familyId=${activeFamilyId}` : ""
+  const familyParam = activeFamilyId ? `&familyId=${activeFamilyId}` : ""
 
   const { data: overview, isLoading: overviewLoading } = useQuery<{
     summary: { totalIncome: number; totalExpense: number; balance: number; savingsRate: number }
@@ -171,6 +179,15 @@ export default function DashboardPage() {
     staleTime: 300_000,
   })
 
+  const { data: accounts } = useQuery<Account[]>({
+    queryKey: ["accounts", activeFamilyId],
+    queryFn: () => {
+      const params = activeFamilyId ? `?familyId=${activeFamilyId}` : ""
+      return api(`/accounts${params}`)
+    },
+    staleTime: 300_000,
+  })
+
   const { data: overallBalance } = useQuery<{ owedToUser: number; userOwes: number; people?: Array<{ id: string; name: string; amount: number }> }>({
     queryKey: ["overall-balance"],
     queryFn: () => api("/splits/groups/balances/overall"),
@@ -201,6 +218,30 @@ export default function DashboardPage() {
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+        </div>
+      </div>
+    )
+  }
+
+  if (overviewLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <Skeleton className="h-10 w-40" />
+        </div>
+        <Skeleton className="h-[140px] w-full rounded-2xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
+        </div>
+        <Skeleton className="h-[300px] w-full rounded-xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-[300px] w-full rounded-xl" />
           <Skeleton className="h-[300px] w-full rounded-xl" />
           <Skeleton className="h-[300px] w-full rounded-xl" />
         </div>
@@ -290,6 +331,19 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Balance de cuentas */}
+      {accounts && accounts.length > 0 && (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Balance total cuentas</p>
+            <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+              {formatMoney(accounts.reduce((s, a) => s + a.balance, 0), currency)}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">{accounts.length} cuenta(s)</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Stats with Comparison */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
