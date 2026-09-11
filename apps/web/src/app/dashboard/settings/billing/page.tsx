@@ -137,7 +137,8 @@ function BillingContent() {
     queryFn: () => api("/subscriptions/usage"),
   })
 
-  const currentPlan = subscription?.plan || "free"
+  const isTrialActive = !!(subscription?.trialEndsAt && new Date(subscription.trialEndsAt) > new Date())
+  const currentPlan = isTrialActive ? "pro" : (subscription?.plan || "free")
 
   async function handleSelect(planId: string) {
     if (planId === currentPlan) return
@@ -238,7 +239,7 @@ function BillingContent() {
               <div>
                 <div className="flex items-center gap-2">
            <span className="text-lg font-bold text-gray-900 dark:text-white">
-                    {PLAN_LABELS[currentPlan]}
+                    {isTrialActive ? "Pro (trial)" : PLAN_LABELS[currentPlan]}
                   </span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PLAN_COLORS[currentPlan]}`}>
                     Activo
@@ -279,7 +280,7 @@ function BillingContent() {
             </div>
           </div>
 
-          {currentPlanData.limits.transactions > 0 && (
+          {currentPlanData.limits.transactions > 0 && currentPlan === "free" && !isTrialActive && (
             <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
               <p className="text-xs text-amber-700 dark:text-amber-300">
                 <strong>Limites del plan Gratis:</strong> {currentPlanData.limits.transactions} transacciones/mes, {currentPlanData.limits.accounts} cuentas, {currentPlanData.limits.budgets} presupuestos, {currentPlanData.limits.goals} metas.
@@ -289,7 +290,7 @@ function BillingContent() {
         </CardContent>
       </Card>
 
-      {usage && currentPlan === "free" && (
+      {usage && (
         <Card className="border-0 shadow-sm">
           <CardHeader><CardTitle className="text-sm">Uso del plan</CardTitle></CardHeader>
           <CardContent className="space-y-4">
