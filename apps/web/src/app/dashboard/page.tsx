@@ -21,6 +21,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Download,
+  Crown,
 } from "lucide-react"
 import Link from "next/link"
 const CashflowChart = dynamic(() => import("./components/CashflowChart"), {
@@ -208,6 +209,15 @@ export default function DashboardPage() {
     staleTime: 300_000,
   })
 
+  const { data: subscription } = useQuery<{ plan: string; trialEndsAt?: string }>({
+    queryKey: ["subscription"],
+    queryFn: () => api("/subscriptions"),
+  })
+  const isTrialActive = !!(subscription?.trialEndsAt && new Date(subscription.trialEndsAt) > new Date())
+  const trialDaysLeft = isTrialActive
+    ? Math.ceil((new Date(subscription!.trialEndsAt!).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : 0
+
   const pieData = (byCategory || []).map((item, i) => ({
     name: item.name || "Otro",
     value: item.amount,
@@ -305,6 +315,23 @@ export default function DashboardPage() {
           <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
       </div>
+
+      {isTrialActive && (
+        <div className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Crown className="h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-semibold">Pro (trial) — {trialDaysLeft} dias restantes</p>
+              <p className="text-sm text-blue-100">Disfruta de todas las funciones Pro gratis.</p>
+            </div>
+          </div>
+          <Link href="/dashboard/settings/billing">
+            <Button variant="secondary" size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0 shrink-0">
+              Upgrade ahora
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Balance Card */}
       <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-6 text-white shadow-xl shadow-blue-500/20">
