@@ -37,7 +37,12 @@ export class AuthService {
     await this.createDefaultCategories(user.id);
 
     await this.prisma.subscription.create({
-      data: { userId: user.id, plan: 'free', status: 'active' },
+      data: {
+        userId: user.id,
+        plan: 'free',
+        status: 'active',
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      },
     });
 
     const token = this.generateToken(user.id, user.email);

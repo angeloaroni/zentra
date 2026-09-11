@@ -299,6 +299,14 @@ Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requi
 
 > Los planes se gestionan en **Configuración → Plan y facturación** (pagos vía Stripe). Jerarquía: `free (0€) < pro (4,99€/mes) < family (7,99€/mes)`; `family` incluye todo lo de `pro`.
 
+### Trial gratuito
+- Al registrarse, el usuario recibe **14 días de prueba gratuita de Pro** automáticamente.
+- Durante el trial, tiene acceso a todas las features de Pro (transacciones ilimitadas, cashflow, comparison, presupuestos, metas, eventos, splits avanzados).
+- El PlanGuard y PlanLimitsService verifican `trialEndsAl` en el modelo Subscription: si `plan === 'free'` y `trialEndsAt > now()`, se trata como Pro.
+- Si el usuario upgrade a Pro/Familia antes de que termine el trial, `trialEndsAt` se limpia.
+- Si pasan 14 días sin upgrade, vuelve a free automáticamente.
+- La página de billing muestra "Prueba gratuita: X días restantes".
+
 ---
 
 ## Usuario de prueba

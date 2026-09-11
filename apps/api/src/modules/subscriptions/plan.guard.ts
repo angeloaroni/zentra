@@ -41,7 +41,13 @@ export class PlanGuard implements CanActivate {
       where: { userId },
     })
 
-    const plan = subscription?.plan || 'free'
+    let plan = subscription?.plan || 'free'
+
+    // If user is on free plan but has an active trial, treat as pro
+    if (plan === 'free' && subscription?.trialEndsAt && subscription.trialEndsAt > new Date()) {
+      plan = 'pro'
+    }
+
     const planLevel: Record<string, number> = { free: 0, pro: 1, family: 2 }
 
     const userLevel = planLevel[plan] ?? 0

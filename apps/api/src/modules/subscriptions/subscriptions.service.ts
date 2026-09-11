@@ -32,7 +32,12 @@ export class SubscriptionsService {
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) throw new NotFoundException('User not found');
       return this.prisma.subscription.create({
-        data: { userId, plan: 'free', status: 'active' },
+        data: {
+          userId,
+          plan: 'free',
+          status: 'active',
+          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        },
       });
     }
     return subscription;
@@ -93,7 +98,11 @@ export class SubscriptionsService {
     await this.findByUserId(userId);
     return this.prisma.subscription.update({
       where: { userId },
-      data: { plan },
+      data: {
+        plan,
+        // Clear trial when upgrading to a paid plan
+        ...(plan !== 'free' ? { trialEndsAt: null } : {}),
+      },
     });
   }
 

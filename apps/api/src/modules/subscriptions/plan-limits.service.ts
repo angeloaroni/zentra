@@ -28,7 +28,15 @@ export class PlanLimitsService {
     const subscription = await this.prisma.subscription.findUnique({
       where: { userId },
     })
-    return subscription?.plan || 'free'
+
+    let plan = subscription?.plan || 'free'
+
+    // If user is on free plan but has an active trial, treat as pro
+    if (plan === 'free' && subscription?.trialEndsAt && subscription.trialEndsAt > new Date()) {
+      plan = 'pro'
+    }
+
+    return plan
   }
 
   private getLimits(plan: string): PlanLimits {

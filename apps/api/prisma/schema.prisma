@@ -229,6 +229,7 @@ model Subscription {
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan                  String   @default("free")
   status                String   @default("active")
+  trialEndsAt           DateTime?
   stripeCustomerId      String?  @unique
   stripePriceId         String?
   stripeSubscriptionId  String?  @unique

@@ -118,7 +118,7 @@ function BillingContent() {
   const user = getUser()
   const queryClient = useQueryClient()
 
-  const { data: subscription, refetch: refetchSubscription } = useQuery<{ plan: string; stripeCustomerId?: string; cancelAtPeriodEnd?: boolean; currentPeriodEnd?: string }>({
+  const { data: subscription, refetch: refetchSubscription } = useQuery<{ plan: string; trialEndsAt?: string; stripeCustomerId?: string; cancelAtPeriodEnd?: boolean; currentPeriodEnd?: string }>({
     queryKey: ["subscription"],
     queryFn: () => api("/subscriptions/current"),
   })
@@ -244,6 +244,11 @@ function BillingContent() {
                     Activo
                   </span>
                 </div>
+                {subscription?.trialEndsAt && new Date(subscription.trialEndsAt) > new Date() && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-1">
+                    Prueba gratuita: {Math.ceil((new Date(subscription.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} dias restantes
+                  </p>
+                )}
                 {subscription?.currentPeriodEnd && (
                    <p className="text-xs text-muted-foreground">
                     {currentPlan !== "free"
