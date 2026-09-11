@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -52,8 +52,14 @@ export default function OnboardingPage() {
   const [txTitle, setTxTitle] = useState("")
   const [txAmount, setTxAmount] = useState("")
   const [txType, setTxType] = useState("INCOME")
+  const [txCategoryId, setTxCategoryId] = useState("")
   const [error, setError] = useState("")
   const router = useRouter()
+
+  const { data: categories } = useQuery<{ id: string; name: string; type: string; icon: string; color: string }[]>({
+    queryKey: ["categories-onboarding"],
+    queryFn: () => api("/categories?includeDefault=true"),
+  })
 
   const createAccount = useMutation({
     mutationFn: (data: { name: string; type: string; balance: number }) =>
@@ -89,17 +95,16 @@ export default function OnboardingPage() {
       setError("Completa los campos")
       return
     }
+    if (!txCategoryId) {
+      setError("Selecciona una categoria")
+      return
+    }
     try {
-      const categories = await api<{ id: string; name: string }[]>("/categories")
-      const category = categories.find((c: any) =>
-        txType === "INCOME" ? c.name.toLowerCase().includes("salario") || c.name.toLowerCase().includes("income") : c.name.toLowerCase().includes("aliment") || c.name.toLowerCase().includes("food")
-      ) || categories[0]
-
       await createTransaction.mutateAsync({
         title: txTitle.trim(),
         amount: parseFloat(txAmount),
         type: txType,
-        categoryId: category.id,
+        categoryId: txCategoryId,
         date: new Date().toISOString().split("T")[0],
         familyId: null,
       })
@@ -267,6 +272,23 @@ export default function OnboardingPage() {
                   placeholder="0.00"
                   className="mt-1"
                 />
+              </div>
+              <div>
+                <Label>Categoria</Label>
+                <select
+                  value={txCategoryId}
+                  onChange={(e) => setTxCategoryId(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 mt-1"
+                >
+                  <option value="">Seleccionar categoria</option>
+                  {(categories || [])
+                    .filter((c) => txType === "INCOME" ? c.type === "INCOME" || c.type === "BOTH" : c.type === "EXPENSE" || c.type === "BOTH")
+                    .map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.icon === "cake" ? "🎂" : cat.icon === "gift" ? "🎁" : cat.icon === "heart" ? "❤️" : cat.icon === "star" ? "⭐" : cat.icon === "home" ? "🏠" : cat.icon === "car" ? "🚗" : cat.icon === "plane" ? "✈️" : cat.icon === "shopping-bag" ? "🛍️" : cat.icon === "utensils" ? "🍴" : cat.icon === "coffee" ? "☕" : cat.icon === "beer" ? "🍺" : cat.icon === "film" ? "🎬" : cat.icon === "music" ? "🎵" : cat.icon === "book" ? "📖" : cat.icon === "briefcase" ? "💼" : cat.icon === "graduation-cap" ? "🎓" : "🏷️"} {cat.name}
+                      </option>
+                    ))}
+                </select>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">

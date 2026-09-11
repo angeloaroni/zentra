@@ -120,7 +120,7 @@ function BillingContent() {
 
   const { data: subscription, refetch: refetchSubscription } = useQuery<{ plan: string; trialEndsAt?: string; stripeCustomerId?: string; cancelAtPeriodEnd?: boolean; currentPeriodEnd?: string }>({
     queryKey: ["subscription"],
-    queryFn: () => api("/subscriptions/current"),
+    queryFn: () => api("/subscriptions"),
   })
 
   useEffect(() => {
