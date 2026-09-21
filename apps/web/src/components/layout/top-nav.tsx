@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { getUser, clearToken } from "@/lib/api"
+import { getUser, clearUser } from "@/lib/api"
 import { useState, useEffect } from "react"
 import {
   LayoutDashboard,
@@ -54,8 +54,16 @@ export function TopNav() {
     setMobileOpen(false)
   }, [pathname])
 
-  function logout() {
-    clearToken()
+  async function logout() {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"}/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ refreshToken: "cookie" }),
+      })
+    } catch {}
+    clearUser()
     window.location.href = "/login"
   }
 

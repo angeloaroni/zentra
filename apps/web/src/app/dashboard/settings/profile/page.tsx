@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { api, getUser, clearToken } from "@/lib/api"
+import { api, getUser, clearUser, setUser } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,7 +36,6 @@ export default function ProfilePage() {
     mutationFn: (data: { name: string }) =>
       api("/users/profile", { method: "PATCH", body: JSON.stringify(data) }),
     onSuccess: (updated: any) => {
-      localStorage.setItem("zentra-user:v1", JSON.stringify(updated))
       setUser(updated)
       setSuccess("Nombre actualizado")
       setError("")
@@ -69,7 +68,7 @@ export default function ProfilePage() {
     mutationFn: (data: { password: string }) =>
       api("/users/account", { method: "DELETE", body: JSON.stringify(data) }),
     onSuccess: () => {
-      clearToken()
+      clearUser()
       window.location.href = "/login"
     },
     onError: (err: Error) => {

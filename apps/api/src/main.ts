@@ -5,6 +5,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { json, urlencoded, Request, Response, NextFunction } from 'express';
 import * as helmet from 'helmet';
 import * as compression from 'compression';
+import * as cookieParser from 'cookie-parser';
 import * as express from 'express';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
@@ -88,6 +89,7 @@ async function bootstrap() {
   }));
 
   app.use(compression());
+  app.use(cookieParser());
 
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 

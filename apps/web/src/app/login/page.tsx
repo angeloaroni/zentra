@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { setToken } from "@/lib/api"
+import { setUser } from "@/lib/api"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -71,8 +71,7 @@ function LoginForm() {
         return
       }
 
-      setToken(data.token)
-      localStorage.setItem("zentra-user:v1", JSON.stringify(data.user))
+      setUser(data.user)
 
       if (inviteToken && !isLogin) {
         try {
@@ -80,8 +79,8 @@ function LoginForm() {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${data.token}`,
             },
+            credentials: "include",
           })
           const inviteData = await inviteRes.json()
           if (inviteData.groupId) {

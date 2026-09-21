@@ -7,6 +7,8 @@ import { PrismaService } from '../../database/prisma.service';
 import { EmailService } from '../../common/services/email.service';
 import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 
+const REFRESH_TOKEN_EXPIRY_DAYS = 7;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -46,11 +48,13 @@ export class AuthService {
       },
     });
 
-    const token = this.generateToken(user.id, user.email);
+    const accessToken = this.generateAccessToken(user.id, user.email);
+    const refreshToken = await this.createRefreshToken(user.id);
 
     return {
       user: this.sanitizeUser(user),
-      token,
+      token: accessToken,
+      refreshToken: refreshToken.token,
     };
   }
 
@@ -69,11 +73,13 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const token = this.generateToken(user.id, user.email);
+    const accessToken = this.generateAccessToken(user.id, user.email);
+    const refreshToken = await this.createRefreshToken(user.id);
 
     return {
       user: this.sanitizeUser(user),
-      token,
+      token: accessToken,
+      refreshToken: refreshToken.token,
     };
   }
 
@@ -141,8 +147,42 @@ export class AuthService {
     return { message: 'Password has been reset successfully' };
   }
 
-  private generateToken(userId: string, email: string) {
-    return this.jwt.sign({ sub: userId, email });
+  private generateAccessToken(userId: string, email: string) {
+    return this.jwt.sign({ sub: userId, email }, { expiresIn: '15m' });
+  }
+
+  private async createRefreshToken(userId: string) {
+    const token = crypto.randomBytes(40).toString('hex');
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+    return this.prisma.refreshToken.create({
+      data: { token, userId, expiresAt },
+    });
+  }
+
+  async refreshTokens(refreshToken: string) {
+    const tokenRecord = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+      include: { user: true },
+    });
+
+    if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    // Rotation: delete old token
+    await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
+
+    const accessToken = this.generateAccessToken(tokenRecord.user.id, tokenRecord.user.email);
+    const newRefresh = await this.createRefreshToken(tokenRecord.user.id);
+
+    return {
+      accessToken,
+      refreshToken: newRefresh.token,
+    };
+  }
+
+  async logout(refreshToken: string) {
+    await this.prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
   }
 
   private sanitizeUser(user: any) {
