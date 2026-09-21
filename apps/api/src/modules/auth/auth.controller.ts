@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Request, Res } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, UseGuards, Request, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -105,5 +105,18 @@ export class AuthController {
     res.clearCookie('access_token');
     res.clearCookie('refresh_token', { path: '/api/auth' });
     return { success: true };
+  }
+
+  @Get('verify-email')
+  @ApiOperation({ summary: 'Verify email with token' })
+  verifyEmail(@Query('token') token: string) {
+    return this.auth.verifyEmail(token);
+  }
+
+  @Post('resend-verification')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @ApiOperation({ summary: 'Resend verification email' })
+  resendVerification(@Body('email') email: string) {
+    return this.auth.resendVerificationEmail(email);
   }
 }

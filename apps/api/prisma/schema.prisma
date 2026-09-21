@@ -17,6 +17,8 @@ model User {
   role          String    @default("USER")
   resetToken    String?
   resetTokenExp DateTime?
+  emailVerified     Boolean  @default(false)
+  verificationToken String?
   familyId      String?
   family        Family?   @relation(fields: [familyId], references: [id], onDelete: SetNull)
   createdAt     DateTime  @default(now())

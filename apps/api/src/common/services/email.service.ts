@@ -60,6 +60,24 @@ export class EmailService {
     }
   }
 
+  async sendVerificationEmail(to: string, verificationUrl: string): Promise<void> {
+    if (this.resend) {
+      try {
+        await this.resend.emails.send({
+          from: this.fromEmail,
+          to,
+          subject: `${this.appName} - Verifica tu email`,
+          html: this.buildVerificationHtml(verificationUrl),
+        });
+        this.logger.log(`Verification email sent to ${to}`);
+      } catch (err) {
+        this.logger.error(`Failed to send verification email to ${to}: ${err.message}`);
+      }
+    } else {
+      this.logger.warn(`[DEV] Email verification for ${to}: ${verificationUrl}`);
+    }
+  }
+
   private buildResetHtml(resetUrl: string): string {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -116,6 +134,34 @@ export class EmailService {
           </p>
           <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
             Esta invitacion expira en 7 dias.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  private buildVerificationHtml(verificationUrl: string): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #3B82F6, #6366F1); padding: 32px; border-radius: 12px 12px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">${this.appName}</h1>
+          <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0;">Verifica tu email</p>
+        </div>
+        <div style="padding: 32px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+          <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+            Bienvenido a ${this.appName}! Para completar tu registro, haz clic en el boton de abajo para verificar tu email.
+          </p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${verificationUrl}" style="background: linear-gradient(135deg, #3B82F6, #6366F1); color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">
+              Verificar email
+            </a>
+          </div>
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
+            Si no creaste esta cuenta, puedes ignorar este email. El enlace expira en 24 horas.
+          </p>
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
+            Si el boton no funciona, copia y pega este enlace en tu navegador:<br/>
+            <a href="${verificationUrl}" style="color: #3B82F6; word-break: break-all;">${verificationUrl}</a>
           </p>
         </div>
       </div>

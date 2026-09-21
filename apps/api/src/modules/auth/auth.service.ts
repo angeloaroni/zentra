@@ -48,6 +48,18 @@ export class AuthService {
       },
     });
 
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { verificationToken },
+    });
+
+    // Send verification email
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+    await this.emailService.sendVerificationEmail(normalizedEmail, verificationUrl);
+
     const accessToken = this.generateAccessToken(user.id, user.email);
     const refreshToken = await this.createRefreshToken(user.id);
 
@@ -183,6 +195,52 @@ export class AuthService {
 
   async logout(refreshToken: string) {
     await this.prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { verificationToken: token },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Token de verificacion invalido');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        verificationToken: null,
+      },
+    });
+
+    return { message: 'Email verificado correctamente' };
+  }
+
+  async resendVerificationEmail(email: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+    });
+
+    if (!user) {
+      return { message: 'Si el email esta registrado, se ha enviado un enlace de verificacion.' };
+    }
+
+    if (user.emailVerified) {
+      return { message: 'El email ya esta verificado.' };
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { verificationToken },
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+    await this.emailService.sendVerificationEmail(user.email, verificationUrl);
+
+    return { message: 'Si el email esta registrado, se ha enviado un enlace de verificacion.' };
   }
 
   private sanitizeUser(user: any) {
