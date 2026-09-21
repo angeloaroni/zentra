@@ -23,6 +23,7 @@ export class AuthController {
       secure: isProduction,
       sameSite: isProduction ? 'none' : 'lax',
       maxAge: 15 * 60 * 1000,
+      path: '/',
     });
     res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
@@ -44,6 +45,7 @@ export class AuthController {
       secure: isProduction,
       sameSite: isProduction ? 'none' : 'lax',
       maxAge: 15 * 60 * 1000,
+      path: '/',
     });
     res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
@@ -91,6 +93,7 @@ export class AuthController {
       secure: isProduction,
       sameSite: isProduction ? 'none' : 'lax',
       maxAge: 15 * 60 * 1000,
+      path: '/',
     });
     res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
