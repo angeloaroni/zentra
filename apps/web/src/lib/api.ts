@@ -1,6 +1,27 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
 
+const TOKEN_KEY = "zentra-token:v1"
 const USER_KEY = "zentra-user:v1"
+const REFRESH_KEY = "zentra-refresh:v1"
+
+function getToken(): string | null {
+  if (typeof window === "undefined") return null
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+export function setToken(token: string) {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+export function setRefreshToken(token: string) {
+  localStorage.setItem(REFRESH_KEY, token)
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(REFRESH_KEY)
+  localStorage.removeItem(USER_KEY)
+}
 
 export function getUser() {
   if (typeof window === "undefined") return null
@@ -17,12 +38,23 @@ export function clearUser() {
 }
 
 async function tryRefresh(): Promise<boolean> {
+  const refreshToken = localStorage.getItem(REFRESH_KEY)
+  if (!refreshToken) return false
   try {
     const res = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
-      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
     })
-    return res.ok
+    if (res.ok) {
+      const data = await res.json()
+      if (data.accessToken) {
+        setToken(data.accessToken)
+        if (data.refreshToken) setRefreshToken(data.refreshToken)
+        return true
+      }
+    }
+    return false
   } catch {
     return false
   }
@@ -32,24 +64,32 @@ export async function api<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const token = getToken()
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
   }
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
-    credentials: "include",
   })
 
   if (res.status === 401) {
     const refreshed = await tryRefresh()
     if (refreshed) {
+      const newToken = getToken()
+      const retryHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(options.headers as Record<string, string>),
+      }
+      if (newToken) retryHeaders["Authorization"] = `Bearer ${newToken}`
       const retryRes = await fetch(`${API_URL}${path}`, {
         ...options,
-        headers,
-        credentials: "include",
+        headers: retryHeaders,
       })
       if (!retryRes.ok) {
         const text = await retryRes.text()
@@ -62,7 +102,7 @@ export async function api<T>(
       try { data = JSON.parse(text) } catch { throw new Error(`Server error (${retryRes.status})`) }
       return data as T
     } else {
-      clearUser()
+      clearToken()
       window.location.href = "/login"
       throw new Error("Session expired")
     }
@@ -80,28 +120,37 @@ export async function uploadFile<T>(
   file: File,
   fieldName: string = 'receipt',
 ): Promise<T> {
+  const token = getToken()
   const formData = new FormData()
   formData.append(fieldName, file)
 
+  const headers: Record<string, string> = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
-    credentials: 'include',
+    headers,
     body: formData,
   })
 
   if (res.status === 401) {
     const refreshed = await tryRefresh()
     if (refreshed) {
+      const newToken = getToken()
+      const retryHeaders: Record<string, string> = {}
+      if (newToken) retryHeaders['Authorization'] = `Bearer ${newToken}`
       const retryRes = await fetch(`${API_URL}${path}`, {
         method: 'POST',
-        credentials: 'include',
+        headers: retryHeaders,
         body: formData,
       })
       const data = await retryRes.json()
       if (!retryRes.ok) throw new Error(data.message || 'Upload error')
       return data as T
     }
-    clearUser()
+    clearToken()
     window.location.href = '/login'
     throw new Error('Session expired')
   }

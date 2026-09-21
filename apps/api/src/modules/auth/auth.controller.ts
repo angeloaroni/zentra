@@ -16,45 +16,17 @@ export class AuthController {
   @Post('register')
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @ApiOperation({ summary: 'Register new user' })
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+  async register(@Body() dto: RegisterDto) {
     const result = await this.auth.register(dto);
-    res.cookie('access_token', result.token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: 15 * 60 * 1000,
-      path: '/',
-    });
-    res.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/api/auth',
-    });
-    return { user: result.user };
+    return result;
   }
 
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'User login' })
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+  async login(@Body() dto: LoginDto) {
     const result = await this.auth.login(dto);
-    res.cookie('access_token', result.token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: 15 * 60 * 1000,
-      path: '/',
-    });
-    res.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/api/auth',
-    });
-    return { user: result.user };
+    return result;
   }
 
   @Get('me')
@@ -82,38 +54,15 @@ export class AuthController {
   @Post('refresh')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Refresh access token' })
-  async refresh(@Req() req: any, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies?.refresh_token;
-    if (!refreshToken) {
-      return res.status(401).json({ message: 'No refresh token found' });
-    }
+  async refresh(@Body('refreshToken') refreshToken: string) {
     const result = await this.auth.refreshTokens(refreshToken);
-    res.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: 15 * 60 * 1000,
-      path: '/',
-    });
-    res.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/api/auth',
-    });
-    return { success: true };
+    return result;
   }
 
   @Post('logout')
   @ApiOperation({ summary: 'Logout and revoke refresh token' })
-  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies?.refresh_token;
-    if (refreshToken) {
-      await this.auth.logout(refreshToken);
-    }
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token', { path: '/api/auth' });
+  async logout(@Body('refreshToken') refreshToken: string) {
+    await this.auth.logout(refreshToken);
     return { success: true };
   }
 

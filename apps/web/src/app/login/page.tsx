@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { setUser } from "@/lib/api"
+import { setUser, setToken, setRefreshToken } from "@/lib/api"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -62,7 +62,6 @@ function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        credentials: "include",
       })
 
       const data = await res.json()
@@ -72,6 +71,8 @@ function LoginForm() {
         return
       }
 
+      if (data.token) setToken(data.token)
+      if (data.refreshToken) setRefreshToken(data.refreshToken)
       setUser(data.user)
 
       if (inviteToken && !isLogin) {

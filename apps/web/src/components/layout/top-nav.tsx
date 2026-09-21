@@ -55,12 +55,6 @@ export function TopNav() {
   }, [pathname])
 
   async function logout() {
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      })
-    } catch {}
     clearUser()
     window.location.href = "/login"
   }
