@@ -58,9 +58,7 @@ export function TopNav() {
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"}/auth/logout`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ refreshToken: "cookie" }),
       })
     } catch {}
     clearUser()

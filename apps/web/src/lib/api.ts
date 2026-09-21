@@ -20,9 +20,7 @@ async function tryRefresh(): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ refreshToken: "cookie" }),
     })
     return res.ok
   } catch {

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards, Request, Res } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, UseGuards, Req, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -59,7 +59,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user' })
-  me(@Request() req: any) {
+  me(@Req() req: any) {
     return req.user;
   }
 
@@ -80,7 +80,11 @@ export class AuthController {
   @Post('refresh')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Refresh access token' })
-  async refresh(@Body('refreshToken') refreshToken: string, @Res({ passthrough: true }) res: Response) {
+  async refresh(@Req() req: any, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies?.refresh_token;
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'No refresh token found' });
+    }
     const result = await this.auth.refreshTokens(refreshToken);
     res.cookie('access_token', result.accessToken, {
       httpOnly: true,
@@ -100,8 +104,11 @@ export class AuthController {
 
   @Post('logout')
   @ApiOperation({ summary: 'Logout and revoke refresh token' })
-  async logout(@Body('refreshToken') refreshToken: string, @Res({ passthrough: true }) res: Response) {
-    await this.auth.logout(refreshToken);
+  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies?.refresh_token;
+    if (refreshToken) {
+      await this.auth.logout(refreshToken);
+    }
     res.clearCookie('access_token');
     res.clearCookie('refresh_token', { path: '/api/auth' });
     return { success: true };
