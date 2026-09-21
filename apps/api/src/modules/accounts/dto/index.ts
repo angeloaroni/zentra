@@ -25,7 +25,7 @@ export class CreateAccountDto {
   @IsOptional()
   balance?: number;
 
-  @ApiProperty({ required: false, example: 'USD' })
+  @ApiProperty({ required: false, example: 'EUR' })
   @IsString()
   @IsOptional()
   currency?: string;

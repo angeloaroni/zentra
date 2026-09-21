@@ -47,7 +47,7 @@ export class SplitsService implements OnModuleInit {
         description: dto.description,
         icon: dto.icon || 'users',
         color: dto.color || '#3B82F6',
-        currency: dto.currency || 'USD',
+        currency: dto.currency || 'EUR',
         createdById: userId,
       },
     })

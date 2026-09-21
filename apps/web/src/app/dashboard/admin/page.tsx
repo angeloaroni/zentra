@@ -211,7 +211,7 @@ export default function AdminPage() {
               <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
               <p className="text-xs text-muted-foreground">Ingresos</p>
             </div>
-            <p className="text-xl font-bold">{stats?.totalIncome?.toLocaleString("en-US", { style: "currency", currency: "USD" }) ?? "-"}</p>
+            <p className="text-xl font-bold">{stats?.totalIncome?.toLocaleString("es-ES", { style: "currency", currency: "EUR" }) ?? "-"}</p>
           </CardContent>
         </Card>
         <Card className="border-0 shadow-sm">
@@ -220,7 +220,7 @@ export default function AdminPage() {
               <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
               <p className="text-xs text-muted-foreground">Gastos</p>
             </div>
-            <p className="text-xl font-bold">{stats?.totalExpense?.toLocaleString("en-US", { style: "currency", currency: "USD" }) ?? "-"}</p>
+            <p className="text-xl font-bold">{stats?.totalExpense?.toLocaleString("es-ES", { style: "currency", currency: "EUR" }) ?? "-"}</p>
           </CardContent>
         </Card>
       </div>

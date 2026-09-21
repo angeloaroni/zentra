@@ -11,7 +11,7 @@ const PLANS = [
   {
     id: "free",
     name: "Gratis",
-    price: "$0",
+    price: "0 €",
     period: "/mes",
     description: "Para empezar a controlar tus finanzas",
     icon: Zap,
@@ -28,7 +28,7 @@ const PLANS = [
   {
     id: "pro",
     name: "Pro",
-    price: "$4.99",
+    price: "4,99 €",
     period: "/mes",
     description: "Para personas que quieren control total",
     icon: Crown,
@@ -48,7 +48,7 @@ const PLANS = [
   {
     id: "family",
     name: "Familia",
-    price: "$7.99",
+    price: "7,99 €",
     period: "/mes",
     description: "Para familias que gestionan juntos",
     icon: Users,
@@ -218,7 +218,7 @@ export default function PricingPage() {
                     ? "Plan actual"
                     : isDowngrade
                     ? "Cambiar a Gratis"
-                    : plan.price === "$0"
+                    : plan.price === "0 €"
                     ? "Comenzar gratis"
                     : "Suscribirse"}
                 </button>

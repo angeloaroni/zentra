@@ -22,7 +22,7 @@ export class CreateTransactionDto {
   @IsNotEmpty()
   amount: number;
 
-  @ApiProperty({ example: 'USD' })
+  @ApiProperty({ example: 'EUR' })
   @IsString()
   @IsOptional()
   currency?: string;

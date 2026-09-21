@@ -1,9 +1,11 @@
 import { Controller, Get, UseGuards, Req, Query } from '@nestjs/common'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { PlanGuard, Plan } from '../subscriptions/plan.guard'
 import { NetWorthService } from './net-worth.service'
 
 @Controller('net-worth')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PlanGuard)
+@Plan('pro')
 export class NetWorthController {
   constructor(private netWorthService: NetWorthService) {}
 

@@ -1,9 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common'
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException, SetMetadata } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { Reflector } from '@nestjs/core'
 import { IS_PUBLIC_KEY } from '../../common/guards/public.decorator'
 
 export const PLAN_KEY = 'plan'
+export const Plan = (...plans: string[]) => SetMetadata(PLAN_KEY, plans)
 
 @Injectable()
 export class PlanGuard implements CanActivate {

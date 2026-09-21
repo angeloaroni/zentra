@@ -1,9 +1,11 @@
 import { Controller, Get, UseGuards, Req } from '@nestjs/common'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { PlanGuard, Plan } from '../subscriptions/plan.guard'
 import { HealthScoreService } from './health-score.service'
 
 @Controller('health-score')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PlanGuard)
+@Plan('pro')
 export class HealthScoreController {
   constructor(private healthScoreService: HealthScoreService) {}
 

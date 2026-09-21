@@ -18,7 +18,7 @@ export const CURRENCIES = [
 ]
 
 export function getCurrencySymbol(code: string) {
-  return CURRENCIES.find((c) => c.code === code)?.symbol || "$"
+  return CURRENCIES.find((c) => c.code === code)?.symbol || "€"
 }
 
 export function formatMoney(n: number, currency: string) {

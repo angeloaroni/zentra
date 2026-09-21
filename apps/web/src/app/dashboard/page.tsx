@@ -22,6 +22,7 @@ import {
   ArrowDownRight,
   Download,
   Crown,
+  Lock,
 } from "lucide-react"
 import Link from "next/link"
 const CashflowChart = dynamic(() => import("./components/CashflowChart"), {
@@ -157,19 +158,19 @@ export default function DashboardPage() {
   const comparison = overview?.comparison
   const cashflow = overview?.cashflow
 
-  const { data: netWorth } = useQuery<{ date: string; balance: number }[]>({
+  const { data: netWorth, isError: netWorthError } = useQuery<{ date: string; balance: number }[]>({
     queryKey: ["net-worth"],
     queryFn: () => api("/net-worth?months=12"),
     staleTime: 300_000,
   })
 
-  const { data: insights } = useQuery<{ type: string; title: string; message: string; icon: string }[]>({
+  const { data: insights, isError: insightsError } = useQuery<{ type: string; title: string; message: string; icon: string }[]>({
     queryKey: ["insights"],
     queryFn: () => api("/insights"),
     staleTime: 300_000,
   })
 
-  const { data: healthScore } = useQuery<{ score: number; label: string; breakdown: Record<string, { score: number; max: number; description: string }> }>({
+  const { data: healthScore, isError: healthError } = useQuery<{ score: number; label: string; breakdown: Record<string, { score: number; max: number; description: string }> }>({
     queryKey: ["health-score"],
     queryFn: () => api("/health-score"),
     staleTime: 300_000,
@@ -546,6 +547,18 @@ export default function DashboardPage() {
       </div>
 
       {/* Health Score */}
+      {healthError && (
+  <Card className="border-0 shadow-sm">
+    <CardContent className="py-8 text-center">
+      <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+      <p className="font-semibold text-sm">Plan Pro requerido</p>
+      <p className="text-xs text-muted-foreground mt-1">Mejora a Pro para ver tu score de salud.</p>
+      <Link href="/dashboard/settings/billing">
+        <Button variant="outline" size="sm" className="mt-3">Ver planes</Button>
+      </Link>
+    </CardContent>
+  </Card>
+)}
       {healthScore && (
         <FadeIn>
           <Card className="border-0 shadow-sm">
@@ -651,6 +664,21 @@ export default function DashboardPage() {
       )}
 
       {/* Insights */}
+      {insightsError && (
+  <div>
+    <h3 className="text-sm font-medium text-muted-foreground mb-3">Insights</h3>
+    <Card className="border-0 shadow-sm">
+      <CardContent className="py-8 text-center">
+        <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+        <p className="font-semibold text-sm">Plan Pro requerido</p>
+        <p className="text-xs text-muted-foreground mt-1">Mejora a Pro para ver insights financieros.</p>
+        <Link href="/dashboard/settings/billing">
+          <Button variant="outline" size="sm" className="mt-3">Ver planes</Button>
+        </Link>
+      </CardContent>
+    </Card>
+  </div>
+)}
       {insights && insights.length > 0 && (
         <FadeIn>
           <div>
@@ -684,6 +712,18 @@ export default function DashboardPage() {
       )}
 
       {/* Net Worth Chart */}
+      {netWorthError && (
+  <Card className="border-0 shadow-sm">
+    <CardContent className="py-8 text-center">
+      <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+      <p className="font-semibold text-sm">Plan Pro requerido</p>
+      <p className="text-xs text-muted-foreground mt-1">Mejora a Pro para ver tu patrimonio neto.</p>
+      <Link href="/dashboard/settings/billing">
+        <Button variant="outline" size="sm" className="mt-3">Ver planes</Button>
+      </Link>
+    </CardContent>
+  </Card>
+)}
       {netWorth && netWorth.length > 1 && (
         <FadeIn>
           <Card className="border-0 shadow-sm">
