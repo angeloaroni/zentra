@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { Public } from '../../common/guards/public.decorator'
+import { Throttle } from '@nestjs/throttler'
 import { PlanGuard } from '../subscriptions/plan.guard'
 import { Plan } from '../subscriptions/plan.decorator'
 import { SplitsService } from './splits.service'
@@ -82,6 +83,7 @@ export class SplitsController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Get('invitations/:token')
   getInvitationByToken(@Param('token') token: string) {
     return this.splitsService.getInvitationByToken(token)

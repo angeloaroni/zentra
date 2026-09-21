@@ -29,7 +29,7 @@ export class FamiliesService {
     return family;
   }
 
-  async findById(id: string) {
+  async findById(id: string, userId?: string) {
     const family = await this.prisma.family.findUnique({
       where: { id },
       include: {
@@ -48,6 +48,14 @@ export class FamiliesService {
 
     if (!family) {
       throw new NotFoundException('Family not found');
+    }
+
+    if (userId) {
+      const isCreator = family.createdById === userId;
+      const isMember = family.members.some((m: any) => m.userId === userId);
+      if (!isCreator && !isMember) {
+        throw new NotFoundException('Family not found');
+      }
     }
 
     return family;

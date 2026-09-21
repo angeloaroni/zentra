@@ -32,7 +32,7 @@ export class UsersService {
     });
   }
 
-  updateAvatar(id: string, avatarUrl: string) {
+  updateAvatar(id: string, avatarUrl: string | null) {
     return this.prisma.user.update({
       where: { id },
       data: { avatar: avatarUrl },

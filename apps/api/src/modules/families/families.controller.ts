@@ -22,8 +22,8 @@ export class FamiliesController {
   }
 
   @Get(':id')
-  findById(@Param('id') id: string) {
-    return this.familiesService.findById(id);
+  findById(@Param('id') id: string, @Req() req: any) {
+    return this.familiesService.findById(id, req.user.id);
   }
 
   @Patch(':id')

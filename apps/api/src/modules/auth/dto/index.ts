@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RegisterDto {
@@ -6,9 +6,12 @@ export class RegisterDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: 'Password123' })
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, {
+    message: 'La contraseña debe tener al menos 8 caracteres, una mayuscula y un numero',
+  })
   password: string;
 
   @ApiProperty({ example: 'John Doe' })
@@ -22,7 +25,7 @@ export class LoginDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: 'Password123' })
   @IsString()
   password: string;
 }
@@ -38,6 +41,9 @@ export class ResetPasswordDto {
   token: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, {
+    message: 'La contraseña debe tener al menos 8 caracteres, una mayuscula y un numero',
+  })
   password: string;
 }

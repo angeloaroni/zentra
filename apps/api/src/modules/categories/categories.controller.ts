@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto';
 
@@ -8,6 +9,7 @@ import { CreateCategoryDto, UpdateCategoryDto } from './dto';
 export class CategoriesController {
   constructor(private categoriesService: CategoriesService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Get('default')
   getDefault() {
     return this.categoriesService.getDefaultCategories();

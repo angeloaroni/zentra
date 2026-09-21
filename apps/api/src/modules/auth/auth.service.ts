@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, ConflictException, NotFoundException
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { createHash } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { EmailService } from '../../common/services/email.service';
 import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
@@ -98,11 +99,12 @@ export class AuthService {
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = createHash('sha256').update(resetToken).digest('hex');
     const resetTokenExp = new Date(Date.now() + 3600000);
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { resetToken, resetTokenExp },
+      data: { resetToken: hashedToken, resetTokenExp },
     });
 
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
@@ -113,9 +115,10 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto) {
+    const hashedToken = createHash('sha256').update(dto.token).digest('hex');
     const user = await this.prisma.user.findFirst({
       where: {
-        resetToken: dto.token,
+        resetToken: hashedToken,
         resetTokenExp: { gte: new Date() },
       },
     });

@@ -7,6 +7,7 @@ import * as helmet from 'helmet';
 import * as compression from 'compression';
 import * as express from 'express';
 import { join } from 'path';
+import { mkdirSync } from 'fs';
 import * as Joi from 'joi';
 import { AppModule } from './app.module';
 
@@ -53,7 +54,7 @@ async function bootstrap() {
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     const origin = req.headers.origin;
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    if (!origin || allowedOrigins.includes(origin)) {
       res.header('Access-Control-Allow-Origin', origin || '*');
     }
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
@@ -67,13 +68,30 @@ async function bootstrap() {
   });
 
   app.use(helmet.default({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        connectSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+      },
+    },
     crossOriginEmbedderPolicy: false,
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+    },
   }));
 
   app.use(compression());
 
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+
+  try { mkdirSync(join(process.cwd(), 'uploads', 'avatars'), { recursive: true }); } catch {}
 
   app.useGlobalPipes(
     new ValidationPipe({
