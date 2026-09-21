@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { getUser, clearUser } from "@/lib/api"
+import { getUser, clearToken } from "@/lib/api"
 import { useState, useEffect } from "react"
 import {
   LayoutDashboard,
@@ -55,7 +55,7 @@ export function TopNav() {
   }, [pathname])
 
   async function logout() {
-    clearUser()
+    clearToken()
     window.location.href = "/login"
   }
 

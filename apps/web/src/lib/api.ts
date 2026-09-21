@@ -4,6 +4,9 @@ const TOKEN_KEY = "zentra-token:v1"
 const USER_KEY = "zentra-user:v1"
 const REFRESH_KEY = "zentra-refresh:v1"
 
+let refreshPromise: Promise<boolean> | null = null
+let isRedirectingToLogin = false
+
 function getToken(): string | null {
   if (typeof window === "undefined") return null
   return localStorage.getItem(TOKEN_KEY)
@@ -38,26 +41,42 @@ export function clearUser() {
 }
 
 async function tryRefresh(): Promise<boolean> {
-  const refreshToken = localStorage.getItem(REFRESH_KEY)
-  if (!refreshToken) return false
-  try {
-    const res = await fetch(`${API_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    })
-    if (res.ok) {
+  if (refreshPromise) return refreshPromise
+
+  refreshPromise = (async () => {
+    const refreshToken = localStorage.getItem(REFRESH_KEY)
+    if (!refreshToken) return false
+
+    try {
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      })
+
+      if (!res.ok) return false
+
       const data = await res.json()
-      if (data.accessToken) {
-        setToken(data.accessToken)
-        if (data.refreshToken) setRefreshToken(data.refreshToken)
-        return true
-      }
+      if (!data.accessToken) return false
+
+      setToken(data.accessToken)
+      if (data.refreshToken) setRefreshToken(data.refreshToken)
+      return true
+    } catch {
+      return false
+    } finally {
+      refreshPromise = null
     }
-    return false
-  } catch {
-    return false
-  }
+  })()
+
+  return refreshPromise
+}
+
+function redirectToLogin() {
+  if (isRedirectingToLogin) return
+  isRedirectingToLogin = true
+  clearToken()
+  window.location.href = "/login"
 }
 
 export async function api<T>(
@@ -102,8 +121,7 @@ export async function api<T>(
       try { data = JSON.parse(text) } catch { throw new Error(`Server error (${retryRes.status})`) }
       return data as T
     } else {
-      clearToken()
-      window.location.href = "/login"
+      redirectToLogin()
       throw new Error("Session expired")
     }
   }
@@ -150,8 +168,7 @@ export async function uploadFile<T>(
       if (!retryRes.ok) throw new Error(data.message || 'Upload error')
       return data as T
     }
-    clearToken()
-    window.location.href = '/login'
+    redirectToLogin()
     throw new Error('Session expired')
   }
 
