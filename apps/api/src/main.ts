@@ -91,7 +91,15 @@ async function bootstrap() {
   app.use(compression());
   app.use(cookieParser());
 
-  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+  // Serve uploads with filename validation (prevents directory traversal)
+  app.use('/uploads/avatars', (req: any, res: any, next: any) => {
+    // Validate filename format: {userId}-{timestamp}-{originalname}
+    const filename = req.url.split('/').pop();
+    if (!filename || !/^[a-zA-Z0-9_-]+\d+-\d+-[\w.-]+$/.test(filename)) {
+      return res.status(404).json({ message: 'Not found' });
+    }
+    next();
+  }, express.static(join(process.cwd(), 'uploads', 'avatars')));
 
   try { mkdirSync(join(process.cwd(), 'uploads', 'avatars'), { recursive: true }); } catch {}
 
