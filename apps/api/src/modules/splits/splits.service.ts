@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { randomUUID } from 'crypto'
 import { PrismaService } from '../../database/prisma.service'
 import { DebtSimplifierService, DebtTransfer } from './debt-simplifier.service'
 import { PlanLimitsService } from '../subscriptions/plan-limits.service'
 import { EmailService } from '../../common/services/email.service'
+import { getFrontendUrl } from '../../common/utils/frontend-url'
 import {
   CreateGroupDto,
   UpdateGroupDto,
@@ -18,17 +18,13 @@ import {
 @Injectable()
 export class SplitsService implements OnModuleInit {
   private readonly logger = new Logger(SplitsService.name)
-  private readonly frontendUrl: string
 
   constructor(
     private prisma: PrismaService,
     private debtSimplifier: DebtSimplifierService,
     private planLimits: PlanLimitsService,
     private emailService: EmailService,
-    private config: ConfigService,
-  ) {
-    this.frontendUrl = this.config.get('FRONTEND_URL', 'http://localhost:3000')
-  }
+  ) {}
 
   async onModuleInit() {
     this.logger.log('Starting recurring split expense processor')
@@ -249,7 +245,7 @@ export class SplitsService implements OnModuleInit {
         select: { name: true },
       })
 
-      const inviteUrl = `${this.frontendUrl}/login?invite=${token}`
+      const inviteUrl = `${getFrontendUrl()}/login?invite=${token}`
 
       await this.emailService.sendSplitInviteEmail(
         email,

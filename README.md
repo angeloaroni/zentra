@@ -344,8 +344,8 @@ Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requi
 - `JWT_SECRET` - Secret para JWT (mínimo 16 caracteres)
 - `JWT_EXPIRES_IN` - Duración por defecto del token (los access tokens usan 15m y los refresh tokens 7d)
 - `RESEND_API_KEY` - API key de Resend para emails
-- `SMTP_FROM` - Email remitente (ej: Zentra <noreply@tu-dominio.com>)
-- `FRONTEND_URL` - URL del frontend (ej: https://zentra-web-one.vercel.app)
+- `SMTP_FROM` - Email remitente. **Debe usar un dominio verificado en Resend** (con registros SPF/DKIM/DMARC); si se usa `onboarding@resend.dev` los emails caen en spam y solo llegan al dueño de la cuenta.
+- `FRONTEND_URL` - URL del frontend (ej: https://zentra-web-one.vercel.app). Requerida en producción; se usa en los enlaces de los emails y en las URLs de retorno de Stripe.
 - `NODE_ENV` - production
 - `PORT` - Puerto (Railway lo asigna automáticamente)
 
@@ -367,7 +367,7 @@ npm run test:watch
 cd apps/api && npm run test:cov
 ```
 
-Tests actuales: **33 tests** (algoritmo de simplificación de deudas + servicio de autenticación: login, refresh tokens y verificación de email).
+Tests actuales: **34 tests** (algoritmo de simplificación de deudas + servicio de autenticación: login, refresh tokens y verificación de email).
 
 ---
 

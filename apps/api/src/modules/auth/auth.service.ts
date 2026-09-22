@@ -1,10 +1,11 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { createHash } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { EmailService } from '../../common/services/email.service';
+import { getFrontendUrl } from '../../common/utils/frontend-url';
 import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 
 const REFRESH_TOKEN_EXPIRY_DAYS = 7;
@@ -56,8 +57,7 @@ export class AuthService {
     });
 
     // Send verification email
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${getFrontendUrl()}/verify-email?token=${verificationToken}`;
     await this.emailService.sendVerificationEmail(normalizedEmail, verificationUrl);
 
     const accessToken = this.generateAccessToken(user.id, user.email);
@@ -125,7 +125,7 @@ export class AuthService {
       data: { resetToken: hashedToken, resetTokenExp },
     });
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    const resetUrl = `${getFrontendUrl()}/reset-password?token=${resetToken}`;
 
     await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
 
@@ -236,9 +236,12 @@ export class AuthService {
       data: { verificationToken },
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
-    await this.emailService.sendVerificationEmail(user.email, verificationUrl);
+    const verificationUrl = `${getFrontendUrl()}/verify-email?token=${verificationToken}`;
+    const sent = await this.emailService.sendVerificationEmail(user.email, verificationUrl);
+
+    if (!sent) {
+      throw new ServiceUnavailableException('No se pudo enviar el email de verificacion. Intenta de nuevo mas tarde.');
+    }
 
     return { message: 'Si el email esta registrado, se ha enviado un enlace de verificacion.' };
   }

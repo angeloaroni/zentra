@@ -20,6 +20,11 @@ const envValidationSchema = Joi.object({
   JWT_EXPIRES_IN: Joi.string().default('7d'),
   RESEND_API_KEY: Joi.string().optional(),
   SMTP_FROM: Joi.string().optional(),
+  FRONTEND_URL: Joi.string().uri().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
   NEXT_PUBLIC_APP_URL: Joi.string().optional(),
   STRIPE_SECRET_KEY: Joi.string().optional(),
   STRIPE_WEBHOOK_SECRET: Joi.string().optional(),

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { getFrontendUrl } from '../../common/utils/frontend-url';
 
 @Injectable()
 export class SubscriptionsService {
@@ -70,8 +71,8 @@ export class SubscriptionsService {
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/settings?billing=success`,
-      cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/settings?billing=cancel`,
+      success_url: `${getFrontendUrl()}/dashboard/settings?billing=success`,
+      cancel_url: `${getFrontendUrl()}/dashboard/settings?billing=cancel`,
       metadata: { userId },
     });
 
@@ -88,7 +89,7 @@ export class SubscriptionsService {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: subscription.stripeCustomerId,
-      return_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/settings`,
+      return_url: `${getFrontendUrl()}/dashboard/settings`,
     });
 
     return { url: session.url };

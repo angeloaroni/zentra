@@ -7,12 +7,11 @@ export class EmailService {
   private resend: any = null;
   private readonly fromEmail: string;
   private readonly appName: string;
-  private readonly frontendUrl: string;
 
   constructor(private config: ConfigService) {
-    this.fromEmail = this.config.get('SMTP_FROM', 'Zentra <onboarding@resend.dev>');
+    const configuredFrom = this.config.get<string>('SMTP_FROM');
+    this.fromEmail = configuredFrom || 'Zentra <onboarding@resend.dev>';
     this.appName = this.config.get('APP_NAME', 'Zentra');
-    this.frontendUrl = this.config.get('FRONTEND_URL', 'http://localhost:3000');
 
     const apiKey = this.config.get('RESEND_API_KEY');
     if (apiKey) {
@@ -22,9 +21,20 @@ export class EmailService {
     } else {
       this.logger.warn('RESEND_API_KEY not set. Emails will be logged to console only.');
     }
+
+    if (this.isProduction && (!configuredFrom || configuredFrom.includes('resend.dev'))) {
+      this.logger.error(
+        'SMTP_FROM is not configured with a verified domain. Emails will likely fail or land in spam. ' +
+          'Set SMTP_FROM to a verified sender, e.g. "Zentra <noreply@tudominio.com>".',
+      );
+    }
   }
 
-  async sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
+  private get isProduction(): boolean {
+    return process.env.NODE_ENV === 'production';
+  }
+
+  async sendPasswordResetEmail(to: string, resetUrl: string): Promise<boolean> {
     if (this.resend) {
       try {
         await this.resend.emails.send({
@@ -34,15 +44,18 @@ export class EmailService {
           html: this.buildResetHtml(resetUrl),
         });
         this.logger.log(`Password reset email sent to ${to}`);
+        return true;
       } catch (err) {
         this.logger.error(`Failed to send email to ${to}: ${err.message}`);
+        return false;
       }
     } else {
       this.logger.warn(`[DEV] Password reset for ${to}: ${resetUrl}`);
+      return !this.isProduction;
     }
   }
 
-  async sendSplitInviteEmail(to: string, inviterName: string, groupName: string, inviteUrl: string): Promise<void> {
+  async sendSplitInviteEmail(to: string, inviterName: string, groupName: string, inviteUrl: string): Promise<boolean> {
     if (this.resend) {
       try {
         await this.resend.emails.send({
@@ -52,15 +65,18 @@ export class EmailService {
           html: this.buildSplitInviteHtml(inviterName, groupName, inviteUrl),
         });
         this.logger.log(`Split invite email sent to ${to}`);
+        return true;
       } catch (err) {
         this.logger.error(`Failed to send split invite email to ${to}: ${err.message}`);
+        return false;
       }
     } else {
       this.logger.warn(`[DEV] Split invite for ${to}: ${inviteUrl}`);
+      return !this.isProduction;
     }
   }
 
-  async sendVerificationEmail(to: string, verificationUrl: string): Promise<void> {
+  async sendVerificationEmail(to: string, verificationUrl: string): Promise<boolean> {
     if (this.resend) {
       try {
         await this.resend.emails.send({
@@ -70,11 +86,14 @@ export class EmailService {
           html: this.buildVerificationHtml(verificationUrl),
         });
         this.logger.log(`Verification email sent to ${to}`);
+        return true;
       } catch (err) {
         this.logger.error(`Failed to send verification email to ${to}: ${err.message}`);
+        return false;
       }
     } else {
       this.logger.warn(`[DEV] Email verification for ${to}: ${verificationUrl}`);
+      return !this.isProduction;
     }
   }
 

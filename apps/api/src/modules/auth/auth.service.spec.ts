@@ -1,4 +1,4 @@
-import { UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { UnauthorizedException, ConflictException, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 
@@ -44,8 +44,8 @@ describe('AuthService', () => {
 
     jwt = { sign: jest.fn().mockReturnValue('access-token') };
     email = {
-      sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
-      sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+      sendVerificationEmail: jest.fn().mockResolvedValue(true),
+      sendPasswordResetEmail: jest.fn().mockResolvedValue(true),
     };
 
     service = new AuthService(prisma, jwt, email);
@@ -215,6 +215,16 @@ describe('AuthService', () => {
         }),
       );
       expect(email.sendVerificationEmail).toHaveBeenCalled();
+    });
+
+    it('throws ServiceUnavailableException when the email cannot be sent', async () => {
+      prisma.user.findFirst.mockResolvedValue(baseUser);
+      prisma.user.update.mockResolvedValue({});
+      email.sendVerificationEmail.mockResolvedValue(false);
+
+      await expect(service.resendVerificationEmail('test@test.com')).rejects.toThrow(
+        ServiceUnavailableException,
+      );
     });
   });
 });
