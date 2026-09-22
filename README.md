@@ -25,7 +25,7 @@ Zentra es una aplicación web de finanzas personales que permite gestionar tus f
 | **Backend** | NestJS, Prisma ORM, TypeScript |
 | **Base de datos** | PostgreSQL (Railway) |
 | **Autenticación** | JWT + bcrypt |
-| **Email** | Resend |
+| **Email** | Brevo |
 | **Pagos** | Stripe |
 | **Gráficos** | Recharts (dynamic import) |
 | **Estado** | Zustand, React Query |
@@ -42,7 +42,7 @@ Zentra es una aplicación web de finanzas personales que permite gestionar tus f
 
 - Node.js >= 18
 - PostgreSQL (o usar Railway)
-- Cuenta en Resend (para emails)
+- Cuenta en Brevo (para emails)
 - Cuenta en Stripe (para pagos, opcional)
 
 ### Pasos
@@ -286,8 +286,8 @@ Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requi
 - **Valor:** es el plan para hogares: en lugar de multiplicar cuentas con registros duplicados, toda la casa ve los mismos números en tiempo real, con permisos claros (admin/miembro) y la posibilidad de seguir usando tu vista personal cuando quieras.
 
 ### Autenticación
-- Login y registro con JWT (access token de 15 min + refresh token de 7 días con rotación), reset de contraseña por email (Resend), categorías por defecto al registrarse.
-- Verificación de email por token (Resend) con endpoint de reenvío y banner recordatorio en el panel.
+- Login y registro con JWT (access token de 15 min + refresh token de 7 días con rotación), reset de contraseña por email (Brevo), categorías por defecto al registrarse.
+- Verificación de email por token (Brevo) con endpoint de reenvío y banner recordatorio en el panel.
 - Política de contraseñas: mínimo 8 caracteres, una mayúscula y un número.
 - Rate limiting en endpoints de auth (registro, login, forgot/reset password, refresh).
 
@@ -343,10 +343,8 @@ Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requi
 - `DATABASE_URL` - URL de PostgreSQL
 - `JWT_SECRET` - Secret para JWT (mínimo 16 caracteres)
 - `JWT_EXPIRES_IN` - Duración por defecto del token (los access tokens usan 15m y los refresh tokens 7d)
-- `SENDGRID_API_KEY` - API key de SendGrid (**recomendado**). Envía por HTTPS (puerto 443), por lo que funciona en Railway. Requiere verificar un remitente individual (Single Sender) en SendGrid.
-- `RESEND_API_KEY` - API key de Resend (alternativa). Para enviar a terceros requiere un dominio verificado.
-- `SMTP_FROM` - Email remitente (ej: `Zentra <tu-email@gmail.com>`). Debe estar verificado en el proveedor.
-- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` - SMTP opcional (ej: Gmail). **Railway bloquea la salida SMTP (puertos 25/465/587) en planes no-Pro**, así que SMTP no funciona en Railway salvo plan Pro.
+- `BREVO_API_KEY` - API key de Brevo (https://www.brevo.com). Envía por HTTPS (puerto 443), por lo que funciona en Railway. Plan gratuito: 300 emails/día sin límite de tiempo. Requiere verificar un remitente en Brevo.
+- `EMAIL_FROM` - Email remitente (ej: `Zentra <tu-email@gmail.com>`). Debe estar verificado en Brevo.
 - `FRONTEND_URL` - URL del frontend (ej: https://zentra-web-one.vercel.app). Requerida en producción; se usa en los enlaces de los emails y en las URLs de retorno de Stripe.
 - `NODE_ENV` - production
 - `PORT` - Puerto (Railway lo asigna automáticamente)
@@ -369,7 +367,7 @@ npm run test:watch
 cd apps/api && npm run test:cov
 ```
 
-Tests actuales: **42 tests** (algoritmo de simplificación de deudas + servicio de autenticación + servicio de email).
+Tests actuales: **38 tests** (algoritmo de simplificación de deudas + servicio de autenticación + servicio de email).
 
 ---
 

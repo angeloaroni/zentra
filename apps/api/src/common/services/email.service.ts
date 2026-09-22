@@ -14,61 +14,24 @@ function parseFrom(from: string): { email: string; name?: string } {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private resend: any = null;
-  private smtpTransport: any = null;
-  private sendgridApiKey: string | null = null;
+  private readonly apiKey: string | null;
   private readonly fromEmail: string;
   private readonly appName: string;
 
   constructor(private config: ConfigService) {
-    const configuredFrom = this.config.get<string>('SMTP_FROM');
-    this.fromEmail = configuredFrom || 'Zentra <onboarding@resend.dev>';
+    this.apiKey = this.config.get<string>('BREVO_API_KEY') || null;
+    this.fromEmail = this.config.get<string>('EMAIL_FROM') || 'Zentra <no-reply@zentra.app>';
     this.appName = this.config.get('APP_NAME', 'Zentra');
 
-    this.sendgridApiKey = this.config.get<string>('SENDGRID_API_KEY') || null;
-    if (this.sendgridApiKey) {
-      this.logger.log('SendGrid email API configured');
+    if (this.apiKey) {
+      this.logger.log('Brevo email API configured');
+    } else {
+      this.logger.warn('BREVO_API_KEY not set. Emails will be logged to console only.');
     }
 
-    const smtpHost = this.config.get<string>('SMTP_HOST');
-    const smtpUser = this.config.get<string>('SMTP_USER');
-    const smtpPass = this.config.get<string>('SMTP_PASS');
-
-    if (!this.sendgridApiKey && smtpHost && smtpUser && smtpPass) {
-      const port = Number(this.config.get('SMTP_PORT', 587));
-      const nodemailer = require('nodemailer');
-      this.smtpTransport = nodemailer.createTransport({
-        host: smtpHost,
-        port,
-        secure: port === 465,
-        auth: { user: smtpUser, pass: smtpPass },
-        connectionTimeout: 10_000,
-      });
-      this.logger.log(`SMTP email transport configured (${smtpHost}:${port})`);
-    }
-
-    const apiKey = this.config.get('RESEND_API_KEY');
-    if (!this.sendgridApiKey && !this.smtpTransport && apiKey) {
-      const { Resend } = require('resend');
-      this.resend = new Resend(apiKey);
-      this.logger.log('Resend email service configured');
-    }
-
-    if (!this.sendgridApiKey && !this.smtpTransport && !apiKey) {
-      this.logger.warn(
-        'No email provider configured (SENDGRID_API_KEY, SMTP_HOST or RESEND_API_KEY). Emails will be logged to console only.',
-      );
-    }
-
-    if (
-      this.isProduction &&
-      !this.sendgridApiKey &&
-      !this.smtpTransport &&
-      (!configuredFrom || configuredFrom.includes('resend.dev'))
-    ) {
+    if (this.isProduction && !this.apiKey) {
       this.logger.error(
-        'SMTP_FROM is not configured with a verified sender. Emails will likely fail or land in spam. ' +
-          'Set SMTP_FROM to a verified sender (e.g. "Zentra <noreply@tudominio.com>") or configure SENDGRID_API_KEY.',
+        'BREVO_API_KEY is not set in production. Password reset, email verification and split invites will not be delivered.',
       );
     }
   }
@@ -78,71 +41,40 @@ export class EmailService {
   }
 
   private async deliver(to: string, subject: string, html: string, devHint?: string): Promise<boolean> {
-    if (this.sendgridApiKey) {
-      return this.sendViaSendGrid(to, subject, html);
+    if (!this.apiKey) {
+      this.logger.warn(`[DEV] Email for ${to}: ${subject}${devHint ? ` - ${devHint}` : ''}`);
+      return !this.isProduction;
     }
 
-    if (this.smtpTransport) {
-      try {
-        await this.smtpTransport.sendMail({ from: this.fromEmail, to, subject, html });
-        this.logger.log(`Email sent to ${to} via SMTP`);
-        return true;
-      } catch (err) {
-        this.logger.error(`Failed to send email to ${to} via SMTP: ${err.message}`);
-        return false;
-      }
-    }
-
-    if (this.resend) {
-      try {
-        const { error } = await this.resend.emails.send({ from: this.fromEmail, to, subject, html });
-        if (error) {
-          this.logger.error(
-            `Failed to send email to ${to} via Resend: ${error.message || JSON.stringify(error)}`,
-          );
-          return false;
-        }
-        this.logger.log(`Email sent to ${to} via Resend`);
-        return true;
-      } catch (err) {
-        this.logger.error(`Failed to send email to ${to} via Resend: ${err.message}`);
-        return false;
-      }
-    }
-
-    this.logger.warn(`[DEV] Email for ${to}: ${subject}${devHint ? ` - ${devHint}` : ''}`);
-    return !this.isProduction;
-  }
-
-  private async sendViaSendGrid(to: string, subject: string, html: string): Promise<boolean> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);
     try {
-      const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${this.sendgridApiKey}`,
+          'api-key': this.apiKey,
           'Content-Type': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify({
-          personalizations: [{ to: [{ email: to }] }],
-          from: parseFrom(this.fromEmail),
+          sender: parseFrom(this.fromEmail),
+          to: [{ email: to }],
           subject,
-          content: [{ type: 'text/html', value: html }],
+          htmlContent: html,
         }),
         signal: controller.signal,
       });
 
       if (!res.ok) {
         const text = await res.text().catch(() => '');
-        this.logger.error(`Failed to send email to ${to} via SendGrid (${res.status}): ${text}`);
+        this.logger.error(`Failed to send email to ${to} via Brevo (${res.status}): ${text}`);
         return false;
       }
 
-      this.logger.log(`Email sent to ${to} via SendGrid`);
+      this.logger.log(`Email sent to ${to} via Brevo`);
       return true;
     } catch (err) {
-      this.logger.error(`Failed to send email to ${to} via SendGrid: ${err.message}`);
+      this.logger.error(`Failed to send email to ${to} via Brevo: ${err.message}`);
       return false;
     } finally {
       clearTimeout(timeout);

@@ -17,7 +17,7 @@ npm run db:studio      # Abrir Prisma Studio
 - **apps/api**: Backend NestJS, prefijo global `/api`
 - **apps/web**: Frontend Next.js 14
 - **Base de datos**: PostgreSQL via Prisma ORM (Railway)
-- **Email**: API Resend para emails transaccionales
+- **Email**: API Brevo para emails transaccionales
 - **Auth**: JWT (`@nestjs/jwt`, `bcrypt`)
 
 ## Despliegue en Produccion
@@ -35,7 +35,7 @@ npm run db:studio      # Abrir Prisma Studio
 
 ### Variables de Entorno
 
-**Backend (Railway)**: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `RESEND_API_KEY`, `SMTP_FROM`, `FRONTEND_URL`, `NODE_ENV`, `PORT`
+**Backend (Railway)**: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `BREVO_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL`, `NODE_ENV`, `PORT`
 
 **Frontend (Vercel)**: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`, `NEXT_PUBLIC_STRIPE_FAMILY_PRICE_ID`
 
@@ -71,7 +71,7 @@ npm run db:studio      # Abrir Prisma Studio
 - Login/register con JWT + bcrypt
 - Categorias por defecto al registrarse
 - Auto-crear registro `Subscription` al registrar (plan: free)
-- Olvidar password + resetear password con email via Resend
+- Olvidar password + resetear password con email via Brevo
 - Rate limited: 3 req/min register, 5 req/min login, 3 req/min forgot-password
 
 ### Transacciones
@@ -180,10 +180,10 @@ npm run db:studio      # Abrir Prisma Studio
 - **Dynamic imports**: Recharts cargado dinamicamente (reduce bundle inicial)
 - **staleTime**: React Query con `staleTime` para reducir requests redundantes
 
-### Email (Resend)
-- `EmailService` en `common/services/`
-- `sendPasswordResetEmail()` con link de reset
-- Cuando `RESEND_API_KEY` no esta configurado, loguea la URL de reset en consola (modo dev)
+### Email (Brevo)
+- `EmailService` en `common/services/` (API HTTPS de Brevo, sin SMTP)
+- `sendPasswordResetEmail()`, `sendVerificationEmail()`, `sendSplitInviteEmail()`
+- Cuando `BREVO_API_KEY` no esta configurado, loguea la URL en consola (modo dev)
 
 ## Estructura del Frontend
 
@@ -247,7 +247,7 @@ npm run db:studio      # Abrir Prisma Studio
 ## Stack Tecnico
 
 - Frontend: Next.js 14, TypeScript, TailwindCSS, Recharts (dynamic import), Zustand, React Query (staleTime), Radix UI, Lucide, next-themes, framer-motion
-- Backend: NestJS, Prisma, class-validator, Swagger, Resend, helmet, throttler, Joi (validacion de env), compression (gzip)
+- Backend: NestJS, Prisma, class-validator, Swagger, Brevo, helmet, throttler, Joi (validacion de env), compression (gzip)
 - DB: PostgreSQL (Neon) + indexes optimizados
 - Deploy: Vercel (frontend), Railway (backend), Railway (database)
 
