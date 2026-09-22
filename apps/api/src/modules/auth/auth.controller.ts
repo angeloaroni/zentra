@@ -1,12 +1,9 @@
-import { Controller, Post, Body, Get, Query, UseGuards, Req, Res } from '@nestjs/common';
-import { Response } from 'express';
+import { Controller, Post, Body, Get, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-
-const isProduction = process.env.NODE_ENV === 'production';
 
 @ApiTags('auth')
 @Controller('auth')

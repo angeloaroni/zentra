@@ -81,8 +81,8 @@ function LoginForm() {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${data.token}`,
             },
-            credentials: "include",
           })
           const inviteData = await inviteRes.json()
           if (inviteData.groupId) {
@@ -150,11 +150,11 @@ function LoginForm() {
           <Input
             id="password"
             type="password"
-            placeholder="Minimo 6 caracteres"
+            placeholder="Minimo 8 caracteres, 1 mayuscula y 1 numero"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            minLength={6}
+            minLength={8}
           />
         </div>
 

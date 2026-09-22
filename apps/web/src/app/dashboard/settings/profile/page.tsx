@@ -96,8 +96,8 @@ export default function ProfilePage() {
       setError("Ingresa tu contraseña actual")
       return
     }
-    if (newPassword.length < 6) {
-      setError("La nueva contraseña debe tener al menos 6 caracteres")
+    if (newPassword.length < 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/.test(newPassword)) {
+      setError("La contraseña debe tener al menos 8 caracteres, una mayuscula y un numero")
       return
     }
     if (newPassword !== confirmPassword) {
@@ -190,7 +190,7 @@ export default function ProfilePage() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Minimo 6 caracteres"
+                placeholder="Minimo 8 caracteres, 1 mayuscula y 1 numero"
                 className="mt-1"
               />
             </div>

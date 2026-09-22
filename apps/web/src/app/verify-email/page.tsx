@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { getUser, setUser } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle, Loader2 } from "lucide-react"
@@ -26,6 +27,8 @@ function VerifyEmailContent() {
         if (res.ok) {
           setStatus("success")
           setMessage(data.message || "Email verificado correctamente")
+          const stored = getUser()
+          if (stored) setUser({ ...stored, emailVerified: true })
         } else {
           setStatus("error")
           setMessage(data.message || "Error al verificar el email")

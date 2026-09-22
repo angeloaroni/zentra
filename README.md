@@ -286,7 +286,10 @@ Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requi
 - **Valor:** es el plan para hogares: en lugar de multiplicar cuentas con registros duplicados, toda la casa ve los mismos números en tiempo real, con permisos claros (admin/miembro) y la posibilidad de seguir usando tu vista personal cuando quieras.
 
 ### Autenticación
-- Login y registro con JWT, reset de contraseña por email (Resend), categorías por defecto al registrarse.
+- Login y registro con JWT (access token de 15 min + refresh token de 7 días con rotación), reset de contraseña por email (Resend), categorías por defecto al registrarse.
+- Verificación de email por token (Resend) con endpoint de reenvío y banner recordatorio en el panel.
+- Política de contraseñas: mínimo 8 caracteres, una mayúscula y un número.
+- Rate limiting en endpoints de auth (registro, login, forgot/reset password, refresh).
 
 ### Notificaciones
 - In-app con redirección: invitaciones, gastos, settlements y alertas de presupuesto.
@@ -339,7 +342,7 @@ Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requi
 **Backend (Railway):**
 - `DATABASE_URL` - URL de PostgreSQL
 - `JWT_SECRET` - Secret para JWT (mínimo 16 caracteres)
-- `JWT_EXPIRES_IN` - Duración del token (ej: 7d)
+- `JWT_EXPIRES_IN` - Duración por defecto del token (los access tokens usan 15m y los refresh tokens 7d)
 - `RESEND_API_KEY` - API key de Resend para emails
 - `SMTP_FROM` - Email remitente (ej: Zentra <noreply@tu-dominio.com>)
 - `FRONTEND_URL` - URL del frontend (ej: https://zentra-web-one.vercel.app)
@@ -364,7 +367,7 @@ npm run test:watch
 cd apps/api && npm run test:cov
 ```
 
-Tests actuales: **19 tests** del algoritmo de simplificación de deudas.
+Tests actuales: **33 tests** (algoritmo de simplificación de deudas + servicio de autenticación: login, refresh tokens y verificación de email).
 
 ---
 
