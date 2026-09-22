@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { FadeIn } from "@/components/ui/fade-in"
 import { Skeleton } from "@/components/ui/skeleton"
+import { LockedPreview } from "@/components/ui/locked-preview"
 import {
   TrendingUp,
   TrendingDown,
@@ -22,7 +23,6 @@ import {
   ArrowDownRight,
   Download,
   Crown,
-  Lock,
 } from "lucide-react"
 import Link from "next/link"
 const CashflowChart = dynamic(() => import("./components/CashflowChart"), {
@@ -219,6 +219,12 @@ export default function DashboardPage() {
     ? Math.ceil((new Date(subscription!.trialEndsAt!).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : 0
 
+  const TRIAL_TOTAL_DAYS = 14
+  const trialProgress = isTrialActive
+    ? Math.min(100, Math.round(((TRIAL_TOTAL_DAYS - trialDaysLeft) / TRIAL_TOTAL_DAYS) * 100))
+    : 0
+  const trialUrgent = isTrialActive && trialDaysLeft <= 3
+
   const pieData = (byCategory || []).map((item, i) => ({
     name: item.name || "Otro",
     value: item.amount,
@@ -318,19 +324,47 @@ export default function DashboardPage() {
       </div>
 
       {isTrialActive && (
-        <div className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Crown className="h-5 w-5 shrink-0" />
-            <div>
-              <p className="font-semibold">Pro (trial) — {trialDaysLeft} dias restantes</p>
-              <p className="text-sm text-blue-100">Disfruta de todas las funciones Pro gratis.</p>
+        <div
+          className={`rounded-xl p-4 text-white shadow-lg ${
+            trialUrgent
+              ? "bg-gradient-to-r from-amber-500 to-rose-500 shadow-rose-500/20"
+              : "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                <Crown className="h-5 w-5 text-amber-300" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="font-semibold">
+                  {trialUrgent
+                    ? `Ultimos ${trialDaysLeft} dias de Pro`
+                    : `Pro (trial) — ${trialDaysLeft} dias restantes`}
+                </p>
+                <p className={`text-sm ${trialUrgent ? "text-white/90" : "text-blue-100"}`}>
+                  Disfruta de todas las funciones Pro gratis.
+                </p>
+              </div>
+            </div>
+            <Link href="/dashboard/settings/billing">
+              <Button variant="secondary" size="sm" className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border-0 shrink-0">
+                Aprovecha Pro ahora
+              </Button>
+            </Link>
+          </div>
+          <div className="mt-3">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+              <div className="h-full rounded-full bg-white/80 transition-all" style={{ width: `${trialProgress}%` }} />
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {["Presupuestos", "Metas", "Eventos", "Dividir"].map((benefit) => (
+                <span key={benefit} className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-medium">
+                  {benefit}
+                </span>
+              ))}
             </div>
           </div>
-          <Link href="/dashboard/settings/billing">
-            <Button variant="secondary" size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0 shrink-0">
-              Upgrade ahora
-            </Button>
-          </Link>
         </div>
       )}
 
@@ -548,17 +582,32 @@ export default function DashboardPage() {
 
       {/* Health Score */}
       {healthError && (
-  <Card className="border-0 shadow-sm">
-    <CardContent className="py-8 text-center">
-      <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-      <p className="font-semibold text-sm">Plan Pro requerido</p>
-      <p className="text-xs text-muted-foreground mt-1">Mejora a Pro para ver tu score de salud.</p>
-      <Link href="/dashboard/settings/billing">
-        <Button variant="outline" size="sm" className="mt-3">Ver planes</Button>
-      </Link>
-    </CardContent>
-  </Card>
-)}
+        <LockedPreview
+          title="Salud financiera"
+          description="Mira tu score 0-100 y como mejorarlo."
+        >
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Salud financiera</p>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-3xl font-bold text-emerald-600">82</span>
+                    <span className="text-sm text-gray-400">/100</span>
+                    <span className="text-sm font-medium text-emerald-600">Excelente</span>
+                  </div>
+                </div>
+                <div className="h-16 w-16 relative">
+                  <svg className="h-16 w-16 -rotate-90" viewBox="0 0 36 36">
+                    <path className="text-gray-200 dark:text-gray-700" stroke="currentColor" strokeWidth="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path className="text-emerald-500" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="82, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  </svg>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </LockedPreview>
+      )}
       {healthScore && (
         <FadeIn>
           <Card className="border-0 shadow-sm">
@@ -665,20 +714,39 @@ export default function DashboardPage() {
 
       {/* Insights */}
       {insightsError && (
-  <div>
-    <h3 className="text-sm font-medium text-muted-foreground mb-3">Insights</h3>
-    <Card className="border-0 shadow-sm">
-      <CardContent className="py-8 text-center">
-        <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-        <p className="font-semibold text-sm">Plan Pro requerido</p>
-        <p className="text-xs text-muted-foreground mt-1">Mejora a Pro para ver insights financieros.</p>
-        <Link href="/dashboard/settings/billing">
-          <Button variant="outline" size="sm" className="mt-3">Ver planes</Button>
-        </Link>
-      </CardContent>
-    </Card>
-  </div>
-)}
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">Insights</h3>
+          <LockedPreview
+            title="Insights inteligentes"
+            description="Detecta anomalias de gasto y tendencias."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg" aria-hidden="true">📈</span>
+                    <div>
+                      <p className="font-medium text-sm">Gasto en Ocio +34%</p>
+                      <p className="text-xs text-gray-500 mt-1">Has gastado mas que el mes pasado.</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg" aria-hidden="true">💡</span>
+                    <div>
+                      <p className="font-medium text-sm">Ahorro proyectado</p>
+                      <p className="text-xs text-gray-500 mt-1">A este ritmo ahorraras 240 € este mes.</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </LockedPreview>
+        </div>
+      )}
       {insights && insights.length > 0 && (
         <FadeIn>
           <div>
@@ -713,17 +781,35 @@ export default function DashboardPage() {
 
       {/* Net Worth Chart */}
       {netWorthError && (
-  <Card className="border-0 shadow-sm">
-    <CardContent className="py-8 text-center">
-      <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-      <p className="font-semibold text-sm">Plan Pro requerido</p>
-      <p className="text-xs text-muted-foreground mt-1">Mejora a Pro para ver tu patrimonio neto.</p>
-      <Link href="/dashboard/settings/billing">
-        <Button variant="outline" size="sm" className="mt-3">Ver planes</Button>
-      </Link>
-    </CardContent>
-  </Card>
-)}
+        <LockedPreview
+          title="Patrimonio neto"
+          description="Sigue la evolucion de tu balance en el tiempo."
+        >
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <h3 className="text-sm font-medium text-muted-foreground mb-4">Patrimonio neto</h3>
+              <svg viewBox="0 0 300 80" className="h-[120px] w-full" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity="0.3" />
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M0,60 L40,52 L80,55 L120,40 L160,44 L200,28 L240,32 L280,18 L300,22 L300,80 L0,80 Z"
+                  fill="url(#nwFill)"
+                />
+                <path
+                  d="M0,60 L40,52 L80,55 L120,40 L160,44 L200,28 L240,32 L280,18 L300,22"
+                  fill="none"
+                  stroke="#3B82F6"
+                  strokeWidth="2"
+                />
+              </svg>
+            </CardContent>
+          </Card>
+        </LockedPreview>
+      )}
       {netWorth && netWorth.length > 1 && (
         <FadeIn>
           <Card className="border-0 shadow-sm">
