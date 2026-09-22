@@ -352,6 +352,28 @@ Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requi
 **Frontend (Vercel):**
 - `NEXT_PUBLIC_API_URL` - URL del backend + /api (ej: https://zentra-api-production-dee5.up.railway.app/api)
 
+### Email (Brevo)
+
+Todos los emails transaccionales (recuperación de contraseña, verificación de email e invitaciones a grupos de gastos) se envían con **Brevo** a través de su **API HTTPS** (`POST https://api.brevo.com/v3/smtp/email`).
+
+**¿Por qué Brevo y no otro?**
+- **Railway bloquea la salida SMTP** (puertos 25/465/587) en planes no-Pro, así que cualquier SMTP (Gmail incluido) se queda colgado hasta el timeout. Una API por HTTPS (puerto 443) no se ve afectada.
+- **SendGrid eliminó su plan gratuito permanente** en 2025 (solo 60 días de prueba).
+- **Brevo** ofrece **300 emails/día gratis sin límite de tiempo** y permite enviar desde un email remitente verificado **sin necesidad de dominio**.
+
+**Configuración:**
+1. Crear cuenta gratis en https://www.brevo.com (sin tarjeta).
+2. Verificar el remitente en **Senders, Domains & Dedicated IPs → Senders → Add a sender** (Brevo envía un email de confirmación).
+3. Generar una API key en **SMTP & API → API Keys**.
+4. En Railway: definir `BREVO_API_KEY` y `EMAIL_FROM` (el mismo email verificado).
+
+**Comportamiento del servicio (`apps/api/src/common/services/email.service.ts`):**
+- Si `BREVO_API_KEY` está definida, envía por HTTPS con un timeout de 10 s.
+- Si falta en desarrollo, registra el enlace en consola (modo dev).
+- Si falta en producción, registra un error y devuelve `false` (no falla en silencio).
+- `POST /auth/resend-verification` responde `503` si el envío falla, para que el frontend muestre un error real.
+- El cliente del frontend aplica timeouts (20 s normal, 60 s uploads) para no quedarse en "Enviando...".
+
 ---
 
 ## Testing

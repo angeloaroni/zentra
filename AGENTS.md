@@ -181,9 +181,12 @@ npm run db:studio      # Abrir Prisma Studio
 - **staleTime**: React Query con `staleTime` para reducir requests redundantes
 
 ### Email (Brevo)
-- `EmailService` en `common/services/` (API HTTPS de Brevo, sin SMTP)
+- `EmailService` en `common/services/` (API HTTPS de Brevo `POST /v3/smtp/email`, sin SMTP)
 - `sendPasswordResetEmail()`, `sendVerificationEmail()`, `sendSplitInviteEmail()`
+- Variables: `BREVO_API_KEY` y `EMAIL_FROM` (remitente verificado en Brevo)
 - Cuando `BREVO_API_KEY` no esta configurado, loguea la URL en consola (modo dev)
+- **Railway bloquea SMTP (25/465/587) en planes no-Pro** -> por eso se usa API HTTPS, no SMTP
+- `resendVerificationEmail` lanza `ServiceUnavailableException` si el envio falla (evita falso exito)
 
 ## Estructura del Frontend
 
