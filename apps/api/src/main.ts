@@ -19,6 +19,7 @@ const envValidationSchema = Joi.object({
   JWT_SECRET: Joi.string().required().min(16),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
   RESEND_API_KEY: Joi.string().optional(),
+  SENDGRID_API_KEY: Joi.string().optional(),
   SMTP_FROM: Joi.string().optional(),
   SMTP_HOST: Joi.string().optional(),
   SMTP_PORT: Joi.number().optional(),

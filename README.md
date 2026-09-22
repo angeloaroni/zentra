@@ -343,12 +343,10 @@ Resumen de qué puedes hacer en cada sección, para qué sirve y qué plan requi
 - `DATABASE_URL` - URL de PostgreSQL
 - `JWT_SECRET` - Secret para JWT (mínimo 16 caracteres)
 - `JWT_EXPIRES_IN` - Duración por defecto del token (los access tokens usan 15m y los refresh tokens 7d)
-- `RESEND_API_KEY` - API key de Resend para emails (alternativa a SMTP)
-- `SMTP_FROM` - Email remitente. Con Resend **debe usar un dominio verificado** (SPF/DKIM/DMARC); si se usa `onboarding@resend.dev` los emails caen en spam y solo llegan al dueño de la cuenta.
-- `SMTP_HOST` - Host SMTP (ej: `smtp.gmail.com`). Si se define (junto con `SMTP_USER` y `SMTP_PASS`), se usa SMTP en lugar de Resend.
-- `SMTP_PORT` - Puerto SMTP (ej: `587`; usa `465` para SSL)
-- `SMTP_USER` - Usuario SMTP (para Gmail, tu dirección de Gmail)
-- `SMTP_PASS` - Contraseña de aplicación de Gmail (16 caracteres, requiere 2FA)
+- `SENDGRID_API_KEY` - API key de SendGrid (**recomendado**). Envía por HTTPS (puerto 443), por lo que funciona en Railway. Requiere verificar un remitente individual (Single Sender) en SendGrid.
+- `RESEND_API_KEY` - API key de Resend (alternativa). Para enviar a terceros requiere un dominio verificado.
+- `SMTP_FROM` - Email remitente (ej: `Zentra <tu-email@gmail.com>`). Debe estar verificado en el proveedor.
+- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` - SMTP opcional (ej: Gmail). **Railway bloquea la salida SMTP (puertos 25/465/587) en planes no-Pro**, así que SMTP no funciona en Railway salvo plan Pro.
 - `FRONTEND_URL` - URL del frontend (ej: https://zentra-web-one.vercel.app). Requerida en producción; se usa en los enlaces de los emails y en las URLs de retorno de Stripe.
 - `NODE_ENV` - production
 - `PORT` - Puerto (Railway lo asigna automáticamente)
@@ -371,7 +369,7 @@ npm run test:watch
 cd apps/api && npm run test:cov
 ```
 
-Tests actuales: **40 tests** (algoritmo de simplificación de deudas + servicio de autenticación + servicio de email).
+Tests actuales: **42 tests** (algoritmo de simplificación de deudas + servicio de autenticación + servicio de email).
 
 ---
 

@@ -1,11 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+function parseFrom(from: string): { email: string; name?: string } {
+  const match = from.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+  if (match) {
+    const name = match[1].trim();
+    const email = match[2].trim();
+    return name ? { email, name } : { email };
+  }
+  return { email: from.trim() };
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private resend: any = null;
   private smtpTransport: any = null;
+  private sendgridApiKey: string | null = null;
   private readonly fromEmail: string;
   private readonly appName: string;
 
@@ -14,11 +25,16 @@ export class EmailService {
     this.fromEmail = configuredFrom || 'Zentra <onboarding@resend.dev>';
     this.appName = this.config.get('APP_NAME', 'Zentra');
 
+    this.sendgridApiKey = this.config.get<string>('SENDGRID_API_KEY') || null;
+    if (this.sendgridApiKey) {
+      this.logger.log('SendGrid email API configured');
+    }
+
     const smtpHost = this.config.get<string>('SMTP_HOST');
     const smtpUser = this.config.get<string>('SMTP_USER');
     const smtpPass = this.config.get<string>('SMTP_PASS');
 
-    if (smtpHost && smtpUser && smtpPass) {
+    if (!this.sendgridApiKey && smtpHost && smtpUser && smtpPass) {
       const port = Number(this.config.get('SMTP_PORT', 587));
       const nodemailer = require('nodemailer');
       this.smtpTransport = nodemailer.createTransport({
@@ -26,31 +42,33 @@ export class EmailService {
         port,
         secure: port === 465,
         auth: { user: smtpUser, pass: smtpPass },
+        connectionTimeout: 10_000,
       });
       this.logger.log(`SMTP email transport configured (${smtpHost}:${port})`);
     }
 
     const apiKey = this.config.get('RESEND_API_KEY');
-    if (!this.smtpTransport && apiKey) {
+    if (!this.sendgridApiKey && !this.smtpTransport && apiKey) {
       const { Resend } = require('resend');
       this.resend = new Resend(apiKey);
       this.logger.log('Resend email service configured');
     }
 
-    if (!this.smtpTransport && !apiKey) {
+    if (!this.sendgridApiKey && !this.smtpTransport && !apiKey) {
       this.logger.warn(
-        'No email provider configured (SMTP_HOST or RESEND_API_KEY). Emails will be logged to console only.',
+        'No email provider configured (SENDGRID_API_KEY, SMTP_HOST or RESEND_API_KEY). Emails will be logged to console only.',
       );
     }
 
     if (
       this.isProduction &&
+      !this.sendgridApiKey &&
       !this.smtpTransport &&
       (!configuredFrom || configuredFrom.includes('resend.dev'))
     ) {
       this.logger.error(
-        'SMTP_FROM is not configured with a verified domain. Emails will likely fail or land in spam. ' +
-          'Set SMTP_FROM to a verified sender (e.g. "Zentra <noreply@tudominio.com>") or configure SMTP_HOST.',
+        'SMTP_FROM is not configured with a verified sender. Emails will likely fail or land in spam. ' +
+          'Set SMTP_FROM to a verified sender (e.g. "Zentra <noreply@tudominio.com>") or configure SENDGRID_API_KEY.',
       );
     }
   }
@@ -60,6 +78,10 @@ export class EmailService {
   }
 
   private async deliver(to: string, subject: string, html: string, devHint?: string): Promise<boolean> {
+    if (this.sendgridApiKey) {
+      return this.sendViaSendGrid(to, subject, html);
+    }
+
     if (this.smtpTransport) {
       try {
         await this.smtpTransport.sendMail({ from: this.fromEmail, to, subject, html });
@@ -90,6 +112,41 @@ export class EmailService {
 
     this.logger.warn(`[DEV] Email for ${to}: ${subject}${devHint ? ` - ${devHint}` : ''}`);
     return !this.isProduction;
+  }
+
+  private async sendViaSendGrid(to: string, subject: string, html: string): Promise<boolean> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.sendgridApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          personalizations: [{ to: [{ email: to }] }],
+          from: parseFrom(this.fromEmail),
+          subject,
+          content: [{ type: 'text/html', value: html }],
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        this.logger.error(`Failed to send email to ${to} via SendGrid (${res.status}): ${text}`);
+        return false;
+      }
+
+      this.logger.log(`Email sent to ${to} via SendGrid`);
+      return true;
+    } catch (err) {
+      this.logger.error(`Failed to send email to ${to} via SendGrid: ${err.message}`);
+      return false;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   async sendPasswordResetEmail(to: string, resetUrl: string): Promise<boolean> {

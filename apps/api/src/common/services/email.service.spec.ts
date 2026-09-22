@@ -91,6 +91,45 @@ describe('EmailService', () => {
     });
   });
 
+  describe('SendGrid API', () => {
+    it('returns true when SendGrid responds 202', async () => {
+      const fetchMock = jest.fn().mockResolvedValue({ ok: true, status: 202, text: async () => '' });
+      (global as any).fetch = fetchMock;
+
+      const service = new EmailService(
+        makeConfig({ SENDGRID_API_KEY: 'SG.test', SMTP_FROM: 'Zentra <me@gmail.com>' }),
+      );
+
+      const result = await service.sendVerificationEmail('user@test.com', 'https://app/verify');
+
+      expect(result).toBe(true);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.sendgrid.com/v3/mail/send',
+        expect.objectContaining({ method: 'POST' }),
+      );
+      const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+      expect(body.personalizations[0].to[0].email).toBe('user@test.com');
+      expect(body.from).toEqual({ name: 'Zentra', email: 'me@gmail.com' });
+    });
+
+    it('returns false when SendGrid responds with an error', async () => {
+      const fetchMock = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        text: async () => '{"errors":[{"message":"bad api key"}]}',
+      });
+      (global as any).fetch = fetchMock;
+
+      const service = new EmailService(
+        makeConfig({ SENDGRID_API_KEY: 'SG.bad', SMTP_FROM: 'Zentra <me@gmail.com>' }),
+      );
+
+      const result = await service.sendPasswordResetEmail('other@test.com', 'https://app/reset');
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('no provider configured', () => {
     it('returns true in development (console fallback)', async () => {
       const original = process.env.NODE_ENV;

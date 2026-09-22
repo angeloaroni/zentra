@@ -79,6 +79,25 @@ function redirectToLogin() {
   window.location.href = "/login"
 }
 
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs = 20000,
+): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...options, signal: controller.signal })
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      throw new Error("La solicitud tardo demasiado. Intenta de nuevo.")
+    }
+    throw err
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit = {}
@@ -92,7 +111,7 @@ export async function api<T>(
     headers["Authorization"] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetchWithTimeout(`${API_URL}${path}`, {
     ...options,
     headers,
   })
@@ -106,7 +125,7 @@ export async function api<T>(
         ...(options.headers as Record<string, string>),
       }
       if (newToken) retryHeaders["Authorization"] = `Bearer ${newToken}`
-      const retryRes = await fetch(`${API_URL}${path}`, {
+      const retryRes = await fetchWithTimeout(`${API_URL}${path}`, {
         ...options,
         headers: retryHeaders,
       })
@@ -147,11 +166,11 @@ export async function uploadFile<T>(
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetchWithTimeout(`${API_URL}${path}`, {
     method: 'POST',
     headers,
     body: formData,
-  })
+  }, 60000)
 
   if (res.status === 401) {
     const refreshed = await tryRefresh()
@@ -159,11 +178,11 @@ export async function uploadFile<T>(
       const newToken = getToken()
       const retryHeaders: Record<string, string> = {}
       if (newToken) retryHeaders['Authorization'] = `Bearer ${newToken}`
-      const retryRes = await fetch(`${API_URL}${path}`, {
+      const retryRes = await fetchWithTimeout(`${API_URL}${path}`, {
         method: 'POST',
         headers: retryHeaders,
         body: formData,
-      })
+      }, 60000)
       const data = await retryRes.json()
       if (!retryRes.ok) throw new Error(data.message || 'Upload error')
       return data as T
