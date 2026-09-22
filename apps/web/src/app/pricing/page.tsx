@@ -71,6 +71,30 @@ const PRICE_MAP: Record<string, string> = {
   family: process.env.NEXT_PUBLIC_STRIPE_FAMILY_PRICE_ID || "",
 }
 
+const COMPARISON: { feature: string; free: string | boolean; pro: string | boolean; family: string | boolean }[] = [
+  { feature: "Transacciones", free: "50/mes", pro: "Ilimitadas", family: "Ilimitadas" },
+  { feature: "Cuentas", free: "2", pro: "Ilimitadas", family: "Ilimitadas" },
+  { feature: "Presupuestos", free: "3", pro: "Ilimitados", family: "Ilimitados" },
+  { feature: "Metas de ahorro", free: "3", pro: "Ilimitadas", family: "Ilimitadas" },
+  { feature: "Eventos con presupuesto", free: false, pro: true, family: true },
+  { feature: "Dividir gastos", free: "1 grupo", pro: "Ilimitado", family: "Ilimitado" },
+  { feature: "Division por % y monto exacto", free: false, pro: true, family: true },
+  { feature: "Gastos compartidos recurrentes", free: false, pro: true, family: true },
+  { feature: "Exportar a CSV", free: false, pro: true, family: true },
+  { feature: "Miembros de familia", free: false, pro: false, family: "Hasta 6" },
+]
+
+function CellValue({ value }: { value: string | boolean }) {
+  if (value === true) return <Check className="mx-auto h-4 w-4 text-emerald-500" aria-label="Incluido" />
+  if (value === false)
+    return (
+      <span className="text-gray-300 dark:text-gray-600" aria-label="No incluido">
+        —
+      </span>
+    )
+  return <span className="text-gray-700 dark:text-gray-300">{value}</span>
+}
+
 export default function PricingPage() {
   const [currentPlan, setCurrentPlan] = useState<string>("free")
   const [loading, setLoading] = useState<string | null>(null)
@@ -157,7 +181,7 @@ export default function PricingPage() {
                 key={plan.id}
                 className={`relative rounded-2xl border-2 p-6 flex flex-col ${
                   plan.popular
-                    ? "border-blue-500 dark:border-blue-400 shadow-xl shadow-blue-500/10"
+                    ? "border-blue-500 dark:border-blue-400 shadow-2xl shadow-blue-500/25 ring-1 ring-blue-500/20"
                     : "border-gray-200 dark:border-gray-700"
                 } ${isCurrent ? "bg-blue-50 dark:bg-blue-950/30" : "bg-white dark:bg-gray-900"}`}
               >
@@ -225,6 +249,48 @@ export default function PricingPage() {
               </div>
             )
           })}
+        </div>
+
+        <div className="mt-14">
+          <h2 className="mb-6 text-center text-xl font-semibold text-gray-900 dark:text-white">
+            Comparativa de planes
+          </h2>
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-gray-800">
+                  <th scope="col" className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                    Caracteristica
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
+                    Gratis
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-center font-semibold text-blue-600 dark:text-blue-400">
+                    Pro
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-center font-medium text-purple-600 dark:text-purple-400">
+                    Familia
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON.map((row) => (
+                  <tr key={row.feature} className="border-b border-gray-50 last:border-0 dark:border-gray-800/50">
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{row.feature}</td>
+                    <td className="px-4 py-3 text-center">
+                      <CellValue value={row.free} />
+                    </td>
+                    <td className="bg-blue-50/40 px-4 py-3 text-center dark:bg-blue-950/10">
+                      <CellValue value={row.pro} />
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <CellValue value={row.family} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="mt-12 text-center">

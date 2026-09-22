@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/toast"
 import { SkeletonBudgetRow } from "@/components/ui/skeleton"
 import { ConfirmAction } from "@/components/ui/confirm-dialog"
+import { ProGate } from "@/components/ui/pro-gate"
 import {
   Select,
   SelectContent,
@@ -69,7 +70,7 @@ export default function BudgetsPage() {
     amount: "",
   })
 
-  const { data: budgets, isLoading } = useQuery<Budget[]>({
+  const { data: budgets, isLoading, isError } = useQuery<Budget[]>({
     queryKey: ["budgets-summary", activeFamilyId],
     queryFn: () => {
       const params = new URLSearchParams()
@@ -190,6 +191,26 @@ export default function BudgetsPage() {
         <SkeletonBudgetRow />
         <SkeletonBudgetRow />
         <SkeletonBudgetRow />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl sm:text-2xl font-semibold">Presupuestos</h1>
+        </div>
+        <ProGate
+          variant="page"
+          title="Presupuestos"
+          description="Pon limites por categoria y controla tu gasto."
+          features={[
+            "Presupuestos ilimitados",
+            "Alertas al 80% y 100%",
+            "Progreso gastado vs limite",
+          ]}
+        />
       </div>
     )
   }

@@ -226,7 +226,10 @@ function BillingContent() {
         </div>
       )}
 
-      <Card className="border-0 shadow-sm">
+      <Card className="border-0 shadow-sm overflow-hidden">
+        {currentPlan !== "free" && (
+          <div className={`h-1.5 w-full bg-gradient-to-r ${currentPlanData.color}`} />
+        )}
         <CardHeader>
           <CardTitle className="text-sm">Plan actual</CardTitle>
         </CardHeader>
@@ -331,7 +334,7 @@ function BillingContent() {
                   isCurrent
                     ? "border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950/20"
                     : plan.popular
-                    ? "border-blue-500/30 dark:border-blue-400/30"
+                    ? "border-blue-500/40 dark:border-blue-400/40 shadow-lg shadow-blue-500/15"
                     : "border-gray-200 dark:border-gray-700"
                 } bg-white dark:bg-gray-900`}
               >

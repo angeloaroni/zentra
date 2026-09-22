@@ -8,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Users, Lock, UserPlus, Trash2 } from "lucide-react"
+import { Plus, Users, UserPlus, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { ConfirmAction } from "@/components/ui/confirm-dialog"
+import { ProGate } from "@/components/ui/pro-gate"
 
 interface SplitGroupMember {
   user: { id: string; name: string; avatar?: string }
@@ -120,18 +121,17 @@ export default function SplitsPage() {
             <h1 className="text-xl sm:text-2xl font-semibold">Dividir gastos</h1>
           </div>
         </div>
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Lock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="font-semibold">Error al cargar grupos</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Ha ocurrido un error. Intenta de nuevo mas tarde.
-            </p>
-            <Link href="/dashboard/settings/billing">
-              <Button className="mt-4">Ver planes</Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <ProGate
+          variant="page"
+          title="Dividir gastos"
+          description="Comparte gastos y salda deudas sin complicaciones."
+          features={[
+            "Grupos ilimitados",
+            "Division por %, monto exacto o igual",
+            "Balances optimos y liquidaciones",
+            "Recurrentes, tickets y plantillas",
+          ]}
+        />
       </div>
     )
   }

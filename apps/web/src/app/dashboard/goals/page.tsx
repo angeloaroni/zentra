@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label"
 import { SkeletonCard } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/toast"
 import { ConfirmAction } from "@/components/ui/confirm-dialog"
-import { Plus, Trash2, Target, Lock } from "lucide-react"
+import { ProGate } from "@/components/ui/pro-gate"
+import { Plus, Trash2, Target } from "lucide-react"
 import { Modal } from "@/components/ui/modal"
 import Link from "next/link"
 
@@ -147,18 +148,16 @@ export default function GoalsPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl sm:text-2xl font-semibold">Metas</h1>
         </div>
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Lock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="font-semibold">Plan Pro requerido</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Las metas estan disponibles en el plan Pro y superior.
-            </p>
-            <Link href="/dashboard/settings/billing">
-              <Button className="mt-4">Ver planes</Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <ProGate
+          variant="page"
+          title="Metas de ahorro"
+          description="Crea objetivos, aporta fondos y sigue tu progreso."
+          features={[
+            "Metas ilimitadas",
+            "Contribuciones con seguimiento",
+            "Fecha limite y progreso visual",
+          ]}
+        />
       </div>
     )
   }

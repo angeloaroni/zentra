@@ -39,7 +39,7 @@ export function LockedPreview({
         <p className="max-w-xs text-xs text-gray-600 dark:text-gray-300">{description}</p>
         <Link
           href={href}
-          className="mt-1 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-blue-500/25 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+          className="pro-cta mt-1 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-blue-500/25 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           {ctaLabel}
         </Link>

@@ -3,8 +3,9 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { getUser, clearToken } from "@/lib/api"
+import { api, getUser, clearToken } from "@/lib/api"
 import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -25,17 +26,18 @@ import { ThemeToggle } from "./theme-toggle"
 import { FamilySwitcher } from "./family-switcher"
 import { NotificationBell } from "./notification-bell"
 import { HelpButton } from "./help-button"
+import { ProBadge } from "@/components/ui/pro-badge"
 import { getHelpSection } from "@/lib/help-content"
 
 const navItems = [
-  { href: "/dashboard", label: "Panel", icon: LayoutDashboard },
-  { href: "/dashboard/accounts", label: "Cuentas", icon: Wallet },
-  { href: "/dashboard/transactions", label: "Registros", icon: ArrowLeftRight },
-  { href: "/dashboard/categories", label: "Categorias", icon: Tag },
-  { href: "/dashboard/budgets", label: "Presupuestos", icon: PiggyBank },
-  { href: "/dashboard/goals", label: "Metas", icon: Target },
-  { href: "/dashboard/events", label: "Eventos", icon: PartyPopper },
-  { href: "/dashboard/splits", label: "Dividir", icon: Users },
+  { href: "/dashboard", label: "Panel", icon: LayoutDashboard, pro: false },
+  { href: "/dashboard/accounts", label: "Cuentas", icon: Wallet, pro: false },
+  { href: "/dashboard/transactions", label: "Registros", icon: ArrowLeftRight, pro: false },
+  { href: "/dashboard/categories", label: "Categorias", icon: Tag, pro: false },
+  { href: "/dashboard/budgets", label: "Presupuestos", icon: PiggyBank, pro: true },
+  { href: "/dashboard/goals", label: "Metas", icon: Target, pro: true },
+  { href: "/dashboard/events", label: "Eventos", icon: PartyPopper, pro: true },
+  { href: "/dashboard/splits", label: "Dividir", icon: Users, pro: true },
 ]
 
 export function TopNav() {
@@ -49,6 +51,19 @@ export function TopNav() {
     setUser(getUser())
     setMounted(true)
   }, [])
+
+  const { data: subscription } = useQuery<{ plan: string; trialEndsAt?: string }>({
+    queryKey: ["subscription"],
+    queryFn: () => api("/subscriptions"),
+    staleTime: 300_000,
+    enabled: mounted && !!user,
+  })
+
+  const isPro =
+    !!subscription &&
+    (subscription.plan !== "free" ||
+      (!!subscription.trialEndsAt && new Date(subscription.trialEndsAt) > new Date()))
+  const showProBadge = mounted && !!user && !isPro
 
   useEffect(() => {
     setMobileOpen(false)
@@ -102,13 +117,14 @@ export function TopNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                   isActive
                     ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
                 )}
               >
                 {item.label}
+                {item.pro && showProBadge && <ProBadge />}
               </Link>
             )
           })}
@@ -202,6 +218,7 @@ export function TopNav() {
                 >
                   <item.icon className="h-5 w-5" />
                   {item.label}
+                  {item.pro && showProBadge && <ProBadge className="ml-auto" />}
                 </Link>
               )
             })}

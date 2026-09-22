@@ -95,6 +95,23 @@
   font-variant-numeric: tabular-nums;
 }
 
+@keyframes pro-shine {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.pro-cta {
+  background-size: 200% 200%;
+  animation: pro-shine 4s ease infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

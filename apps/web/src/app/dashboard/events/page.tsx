@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SkeletonCard } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/toast"
+import { ProGate } from "@/components/ui/pro-gate"
 import { Plus, PartyPopper } from "lucide-react"
 import { Modal } from "@/components/ui/modal"
 import Link from "next/link"
@@ -85,7 +86,7 @@ export default function EventsPage() {
     budget: "",
   })
 
-  const { data: tags, isLoading } = useQuery<TagWithStats[]>({
+  const { data: tags, isLoading, isError } = useQuery<TagWithStats[]>({
     queryKey: ["tags", activeFamilyId],
     queryFn: () => {
       const params = activeFamilyId ? `?familyId=${activeFamilyId}` : ""
@@ -138,6 +139,29 @@ export default function EventsPage() {
             <SkeletonCard key={i} />
           ))}
         </div>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <PartyPopper className="h-7 w-7 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-semibold">Eventos</h1>
+          </div>
+        </div>
+        <ProGate
+          variant="page"
+          title="Eventos con presupuesto"
+          description="Agrupa gastos por evento y controla su presupuesto."
+          features={[
+            "Eventos ilimitados",
+            "Presupuesto por evento",
+            "Alertas al 80% y 100%",
+          ]}
+        />
       </div>
     )
   }
