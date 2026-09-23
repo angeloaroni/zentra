@@ -367,7 +367,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                       </div>
                       <span className={`text-sm font-semibold ${tx.type === "INCOME" ? "text-emerald-600" : "text-red-600"}`}>
                         {tx.type === "INCOME" ? "+" : "-"}
-                        {formatMoney(tx.amount, tx.currency || currency)}
+                        {formatMoney(tx.amount, currency)}
                       </span>
                     </div>
                   ))}

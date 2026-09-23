@@ -331,7 +331,7 @@ export default function AccountsPage() {
                   </div>
                 </div>
                 <p className="text-2xl font-bold mt-3">
-                  {formatMoney(acc.balance, acc.currency || currency)}
+                  {formatMoney(acc.balance, currency)}
                 </p>
               </CardContent>
             </Card>

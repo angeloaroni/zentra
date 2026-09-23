@@ -865,7 +865,7 @@ export default function DashboardPage() {
                           tx.type === "INCOME" ? "text-emerald-600" : "text-red-600"
                         }`}
                       >
-                       {tx.type === "INCOME" ? "+" : "-"}{formatMoney(tx.amount, tx.currency || currency)}
+                       {tx.type === "INCOME" ? "+" : "-"}{formatMoney(tx.amount, currency)}
                      </span>
                    </div>
                 ))}

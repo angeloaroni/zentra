@@ -647,7 +647,7 @@ export default function TransactionsPage() {
                     escapeCSV(tx.title),
                     escapeCSV(tx.category?.name || ""),
                     tx.amount,
-                    tx.currency || currency,
+                    currency,
                     escapeCSV(tx.description || ""),
                   ].join(",")
                 ).join("\n")
@@ -815,7 +815,7 @@ export default function TransactionsPage() {
                     <div className="flex items-center gap-1 shrink-0">
                       <span className={`text-sm font-semibold whitespace-nowrap ${tx.type === "INCOME" ? "text-emerald-600" : "text-red-600"}`}>
                         {tx.type === "INCOME" ? "+" : "-"}
-                        {formatMoney(tx.amount, tx.currency || currency)}
+                        {formatMoney(tx.amount, currency)}
                       </span>
                       <button
                         onClick={() => startEdit(tx)}
