@@ -13,6 +13,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { FadeIn } from "@/components/ui/fade-in"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LockedPreview } from "@/components/ui/locked-preview"
+import { Modal } from "@/components/ui/modal"
+import { useDashboardPrefs, DASHBOARD_WIDGETS } from "@/lib/dashboard-prefs"
+import { cn } from "@/lib/utils"
 import {
   TrendingUp,
   TrendingDown,
@@ -23,6 +26,7 @@ import {
   ArrowDownRight,
   Download,
   Crown,
+  SlidersHorizontal,
 } from "lucide-react"
 import Link from "next/link"
 const CashflowChart = dynamic(() => import("./components/CashflowChart"), {
@@ -119,6 +123,9 @@ export default function DashboardPage() {
   const [user, setUser] = useState<{ id: string; name: string; email: string; role?: string } | null>(null)
   const [mounted, setMounted] = useState(false)
   const [animatedScore, setAnimatedScore] = useState(0)
+  const { hidden, toggle: toggleWidget } = useDashboardPrefs()
+  const [showCustomize, setShowCustomize] = useState(false)
+  const isHidden = (id: string) => hidden.includes(id)
 
   const [dateRange, setDateRange] = useState({
     startDate: "",
@@ -247,6 +254,7 @@ export default function DashboardPage() {
   const totalIncome = summary?.totalIncome || 0
   const totalExpense = summary?.totalExpense || 0
   const activeGoals = (goals || []).filter(g => g.currentAmount < g.targetAmount)
+  const visibleChartCount = ["categoryChart", "topCategories", "goals"].filter((id) => !isHidden(id)).length
 
   if (!mounted || !hydrated) {
     return (
@@ -331,6 +339,9 @@ export default function DashboardPage() {
             URL.revokeObjectURL(url)
           }} className="hidden sm:flex h-9">
             <Download className="h-4 w-4 mr-1" />Exportar
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowCustomize(true)} className="hidden sm:flex h-9" aria-label="Personalizar panel">
+            <SlidersHorizontal className="h-4 w-4 mr-1" />Personalizar
           </Button>
           <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
@@ -482,7 +493,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {upcoming && upcoming.length > 0 && (
+      {!isHidden("upcoming") && upcoming && upcoming.length > 0 && (
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
@@ -522,118 +533,126 @@ export default function DashboardPage() {
       )}
 
       {/* Cashflow Chart */}
-      <Card className="border-0 shadow-sm">
-        <CardContent className="p-6">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Flujo de caja - Ultimos 6 meses</h3>
-          {!cashflow?.length ? (
-              <p className="text-muted-foreground text-sm text-center py-8">Sin datos</p>
-          ) : (
-            <CashflowChart data={cashflow} formatMoney={formatMoney} currency={currency} />
-          )}
-        </CardContent>
-      </Card>
+      {!isHidden("cashflow") && (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Flujo de caja - Ultimos 6 meses</h3>
+            {!cashflow?.length ? (
+                <p className="text-muted-foreground text-sm text-center py-8">Sin datos</p>
+            ) : (
+              <CashflowChart data={cashflow} formatMoney={formatMoney} currency={currency} />
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className={cn("grid grid-cols-1 gap-6", visibleChartCount === 3 ? "lg:grid-cols-3" : visibleChartCount === 2 ? "lg:grid-cols-2" : "lg:grid-cols-1")}>
         {/* Category Breakdown */}
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Gastos por categoria</h3>
-            <CategoryChart data={pieData} formatMoney={formatMoney} currency={currency} />
-          </CardContent>
-        </Card>
+        {!isHidden("categoryChart") && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Gastos por categoria</h3>
+              <CategoryChart data={pieData} formatMoney={formatMoney} currency={currency} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Top 3 Expense Categories */}
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Donde va tu dinero</h3>
-            {pieData.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">Sin datos</p>
-            ) : (
-              <div className="space-y-4">
-                {pieData.slice(0, 3).map((item, i) => {
-                  const pct = totalExpense > 0 ? (item.value / totalExpense) * 100 : 0
-                  return (
-                    <div key={item.name}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2">
-                           <span className="text-xs font-bold text-muted-foreground w-4">{i + 1}</span>
-                          <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.name}</span>
+        {!isHidden("topCategories") && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Donde va tu dinero</h3>
+              {pieData.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-8">Sin datos</p>
+              ) : (
+                <div className="space-y-4">
+                  {pieData.slice(0, 3).map((item, i) => {
+                    const pct = totalExpense > 0 ? (item.value / totalExpense) * 100 : 0
+                    return (
+                      <div key={item.name}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                             <span className="text-xs font-bold text-muted-foreground w-4">{i + 1}</span>
+                            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.name}</span>
+                          </div>
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {formatMoney(item.value, currency)}
+                          </span>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {formatMoney(item.value, currency)}
-                        </span>
+                        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 ml-6">
+                          <div
+                            className="h-2 rounded-full transition-all"
+                            style={{ width: `${pct}%`, backgroundColor: item.color }}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground ml-6 mt-1">{pct.toFixed(1)}% del total</p>
                       </div>
-                      <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 ml-6">
-                        <div
-                          className="h-2 rounded-full transition-all"
-                          style={{ width: `${pct}%`, backgroundColor: item.color }}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground ml-6 mt-1">{pct.toFixed(1)}% del total</p>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Goals Summary */}
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Metas de ahorro</h3>
-              <Link href="/dashboard/goals" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
-                Ver todas
-              </Link>
-            </div>
-            {activeGoals.length === 0 ? (
-              <div className="text-center py-6">
-                <Target className="h-10 w-10 mx-auto text-gray-300 mb-2" />
-                <p className="text-muted-foreground text-sm">Sin metas activas</p>
-                <Link href="/dashboard/goals" className="text-xs text-indigo-600 hover:underline mt-1 inline-block">
-                  Crear meta
+        {!isHidden("goals") && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Metas de ahorro</h3>
+                <Link href="/dashboard/goals" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+                  Ver todas
                 </Link>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {activeGoals.slice(0, 4).map((goal) => {
-                  const pct = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0
-                  return (
-                    <div key={goal.id}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="h-3 w-3 rounded-full"
-                            style={{ backgroundColor: goal.color || "#6366F1" }}
-                          />
-                          <span className="text-sm font-medium text-gray-700">{goal.name}</span>
+              {activeGoals.length === 0 ? (
+                <div className="text-center py-6">
+                  <Target className="h-10 w-10 mx-auto text-gray-300 mb-2" />
+                  <p className="text-muted-foreground text-sm">Sin metas activas</p>
+                  <Link href="/dashboard/goals" className="text-xs text-indigo-600 hover:underline mt-1 inline-block">
+                    Crear meta
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activeGoals.slice(0, 4).map((goal) => {
+                    const pct = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0
+                    return (
+                      <div key={goal.id}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="h-3 w-3 rounded-full"
+                              style={{ backgroundColor: goal.color || "#6366F1" }}
+                            />
+                            <span className="text-sm font-medium text-gray-700">{goal.name}</span>
+                          </div>
+                           <span className="text-xs text-muted-foreground">{pct.toFixed(0)}%</span>
                         </div>
-                         <span className="text-xs text-muted-foreground">{pct.toFixed(0)}%</span>
+                         <div className="w-full bg-gray-100 rounded-full h-2">
+                           <div
+                             className="h-2 rounded-full transition-all"
+                             style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: goal.color || "#3B82F6" }}
+                           />
+                         </div>
+                        <div className="flex justify-between mt-1">
+                          <span className="text-xs text-muted-foreground">{formatMoney(goal.currentAmount, currency)}</span>
+                           <span className="text-xs text-muted-foreground">{formatMoney(goal.targetAmount, currency)}</span>
+                        </div>
                       </div>
-                       <div className="w-full bg-gray-100 rounded-full h-2">
-                         <div
-                           className="h-2 rounded-full transition-all"
-                           style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: goal.color || "#3B82F6" }}
-                         />
-                       </div>
-                      <div className="flex justify-between mt-1">
-                        <span className="text-xs text-muted-foreground">{formatMoney(goal.currentAmount, currency)}</span>
-                         <span className="text-xs text-muted-foreground">{formatMoney(goal.targetAmount, currency)}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Health Score */}
-      {healthError && (
+      {!isHidden("health") && healthError && (
         <LockedPreview
           title="Salud financiera"
           description="Mira tu score 0-100 y como mejorarlo."
@@ -660,7 +679,7 @@ export default function DashboardPage() {
           </Card>
         </LockedPreview>
       )}
-      {healthScore && (
+      {!isHidden("health") && healthScore && (
         <FadeIn>
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
@@ -697,7 +716,7 @@ export default function DashboardPage() {
         </FadeIn>
       )}
 
-      {overallBalance && (overallBalance.owedToUser > 0 || overallBalance.userOwes > 0) && (
+      {!isHidden("splits") && overallBalance && (overallBalance.owedToUser > 0 || overallBalance.userOwes > 0) && (
         <FadeIn>
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
@@ -765,7 +784,7 @@ export default function DashboardPage() {
       )}
 
       {/* Insights */}
-      {insightsError && (
+      {!isHidden("insights") && insightsError && (
         <div>
           <h3 className="text-sm font-medium text-muted-foreground mb-3">Insights</h3>
           <LockedPreview
@@ -799,7 +818,7 @@ export default function DashboardPage() {
           </LockedPreview>
         </div>
       )}
-      {insights && insights.length > 0 && (
+      {!isHidden("insights") && insights && insights.length > 0 && (
         <FadeIn>
           <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-3">Insights</h3>
@@ -832,7 +851,7 @@ export default function DashboardPage() {
       )}
 
       {/* Net Worth Chart */}
-      {netWorthError && (
+      {!isHidden("netWorth") && netWorthError && (
         <LockedPreview
           title="Patrimonio neto"
           description="Sigue la evolucion de tu balance en el tiempo."
@@ -862,7 +881,7 @@ export default function DashboardPage() {
           </Card>
         </LockedPreview>
       )}
-      {netWorth && netWorth.length > 1 && (
+      {!isHidden("netWorth") && netWorth && netWorth.length > 1 && (
         <FadeIn>
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
@@ -874,58 +893,77 @@ export default function DashboardPage() {
       )}
 
       {/* Recent Transactions */}
-      <Card className="border-0 shadow-sm">
-        <CardContent className="p-0">
-          <div className="flex items-center justify-between p-4 pb-0">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Ultimos registros</h3>
-            <Link href="/dashboard/transactions" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-              Ver todo
-            </Link>
-          </div>
-          <div className="mt-3">
-            {!txData?.transactions?.length ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground text-sm mb-3">Sin transacciones</p>
-                <Link
-                  href="/dashboard/transactions"
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-all"
-                >
-                  <Plus className="h-4 w-4" />
-                  Agregar primera transaccion
-                </Link>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                {txData.transactions.map((tx) => (
-<div key={tx.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors gap-2">
-                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                       <div
-                         className="h-10 w-10 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0"
-                         style={{ backgroundColor: tx.category?.color || "#6b7280" }}
-                       >
-                         {tx.category?.icon?.charAt(0)?.toUpperCase() || "$"}
+      {!isHidden("recent") && (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between p-4 pb-0">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Ultimos registros</h3>
+              <Link href="/dashboard/transactions" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                Ver todo
+              </Link>
+            </div>
+            <div className="mt-3">
+              {!txData?.transactions?.length ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground text-sm mb-3">Sin transacciones</p>
+                  <Link
+                    href="/dashboard/transactions"
+                    className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-all"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Agregar primera transaccion
+                  </Link>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {txData.transactions.map((tx) => (
+  <div key={tx.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors gap-2">
+                       <div className="flex items-center gap-3 min-w-0 flex-1">
+                         <div
+                           className="h-10 w-10 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0"
+                           style={{ backgroundColor: tx.category?.color || "#6b7280" }}
+                         >
+                           {tx.category?.icon?.charAt(0)?.toUpperCase() || "$"}
+                         </div>
+                         <div className="min-w-0">
+                           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{tx.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                              {tx.category?.name} · {formatDate(tx.date)}
+                            </p>
+                         </div>
                        </div>
-                       <div className="min-w-0">
-                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{tx.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                            {tx.category?.name} · {formatDate(tx.date)}
-                          </p>
-                       </div>
+                        <span
+                          className={`text-sm font-semibold shrink-0 ${
+                            tx.type === "INCOME" ? "text-emerald-600" : "text-red-600"
+                          }`}
+                        >
+                         {tx.type === "INCOME" ? "+" : "-"}{formatMoney(tx.amount, currency)}
+                       </span>
                      </div>
-                      <span
-                        className={`text-sm font-semibold shrink-0 ${
-                          tx.type === "INCOME" ? "text-emerald-600" : "text-red-600"
-                        }`}
-                      >
-                       {tx.type === "INCOME" ? "+" : "-"}{formatMoney(tx.amount, currency)}
-                     </span>
-                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Modal open={showCustomize} onClose={() => setShowCustomize(false)} title="Personalizar panel" maxWidth="sm:max-w-md">
+        <div className="space-y-1 p-4 sm:p-5">
+          <p className="mb-2 text-sm text-muted-foreground">Elige que tarjetas quieres ver en tu panel.</p>
+          {DASHBOARD_WIDGETS.map((widget) => (
+            <label key={widget.id} className="flex cursor-pointer items-center justify-between gap-3 py-2">
+              <span className="text-sm text-gray-700 dark:text-gray-300">{widget.label}</span>
+              <input
+                type="checkbox"
+                checked={!isHidden(widget.id)}
+                onChange={() => toggleWidget(widget.id)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            </label>
+          ))}
+        </div>
+      </Modal>
     </div>
   )
 }
