@@ -2,7 +2,9 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { getUser } from "@/lib/api"
+import { useQuery } from "@tanstack/react-query"
+import { getUser, api } from "@/lib/api"
+import { useSettings } from "@/lib/settings"
 import { TopNav } from "@/components/layout/top-nav"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
@@ -15,6 +17,17 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const { setCurrency } = useSettings()
+
+  const { data: profile } = useQuery<{ currency?: string }>({
+    queryKey: ["profile"],
+    queryFn: () => api("/users/profile"),
+    staleTime: Infinity,
+  })
+
+  useEffect(() => {
+    if (profile?.currency) setCurrency(profile.currency)
+  }, [profile?.currency, setCurrency])
 
   useEffect(() => {
     const user = getUser()

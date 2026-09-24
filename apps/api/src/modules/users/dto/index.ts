@@ -1,5 +1,7 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'MXN', 'COP', 'ARS', 'CLP', 'PEN', 'BRL', 'VES'];
 
 export class UpdateProfileDto {
   @ApiProperty({ required: false, example: 'Juan García' })
@@ -11,6 +13,11 @@ export class UpdateProfileDto {
   @IsString()
   @IsOptional()
   avatar?: string;
+
+  @ApiProperty({ required: false, example: 'EUR' })
+  @IsOptional()
+  @IsIn(CURRENCIES)
+  currency?: string;
 }
 
 export class ChangePasswordDto {

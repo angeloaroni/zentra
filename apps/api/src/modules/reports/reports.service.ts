@@ -53,7 +53,7 @@ export class ReportsService implements OnModuleInit {
     const year = prev.getFullYear()
 
     const report = await this.generatePDF(userId, month, year)
-    const currency = await this.getDominantCurrency(userId)
+    const currency = user.currency || 'EUR'
 
     const sent = await this.emailService.sendMonthlySummaryEmail(user.email, {
       monthLabel: `${MONTHS_ES[prev.getMonth()]} ${year}`,
@@ -72,17 +72,6 @@ export class ReportsService implements OnModuleInit {
     }
 
     return { message: `Resumen de ${MONTHS_ES[prev.getMonth()]} ${year} enviado a ${user.email}` }
-  }
-
-  private async getDominantCurrency(userId: string): Promise<string> {
-    const grouped = await this.prisma.transaction.groupBy({
-      by: ['currency'],
-      where: { userId },
-      _count: { currency: true },
-      orderBy: { _count: { currency: 'desc' } },
-      take: 1,
-    })
-    return grouped[0]?.currency || 'EUR'
   }
 
   async getWeeklyDigest(userId: string) {

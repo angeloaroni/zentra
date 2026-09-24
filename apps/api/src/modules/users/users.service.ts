@@ -8,6 +8,7 @@ const userSelect = {
   name: true,
   avatar: true,
   role: true,
+  currency: true,
   familyId: true,
   createdAt: true,
   updatedAt: true,
@@ -24,7 +25,7 @@ export class UsersService {
     });
   }
 
-  updateProfile(id: string, data: Partial<{ name: string; avatar: string }>) {
+  updateProfile(id: string, data: Partial<{ name: string; avatar: string; currency: string }>) {
     return this.prisma.user.update({
       where: { id },
       data,

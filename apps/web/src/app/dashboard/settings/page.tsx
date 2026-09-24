@@ -12,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getUser } from "@/lib/api"
+import { getUser, api } from "@/lib/api"
+import { useQueryClient } from "@tanstack/react-query"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Users, User, CreditCard } from "lucide-react"
 import Link from "next/link"
@@ -24,6 +25,14 @@ export default function SettingsPage() {
   const mounted = useMounted()
   const { activeFamilyId, activeFamilyName } = useFamilyStore()
   const [user, setUser] = useState<any>(null)
+  const queryClient = useQueryClient()
+
+  function handleCurrencyChange(value: string) {
+    setCurrency(value)
+    api("/users/profile", { method: "PATCH", body: JSON.stringify({ currency: value }) })
+      .then(() => queryClient.setQueryData(["profile"], (old: any) => ({ ...(old || {}), currency: value })))
+      .catch(() => {})
+  }
 
   useEffect(() => {
     setUser(getUser())
@@ -72,7 +81,7 @@ export default function SettingsPage() {
           </p>
           <div className="max-w-xs">
             <Label>Moneda</Label>
-            <Select value={currency} onValueChange={setCurrency}>
+            <Select value={currency} onValueChange={handleCurrencyChange}>
               <SelectTrigger className="mt-1">
                 <SelectValue />
               </SelectTrigger>
