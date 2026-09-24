@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Req, Query } from '@nestjs/common'
+import { Controller, Get, Post, UseGuards, Req, Query } from '@nestjs/common'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { ReportsService } from './reports.service'
 
@@ -6,6 +6,11 @@ import { ReportsService } from './reports.service'
 @UseGuards(JwtAuthGuard)
 export class ReportsController {
   constructor(private reportsService: ReportsService) {}
+
+  @Post('monthly-digest/send')
+  sendMonthlyDigest(@Req() req: any) {
+    return this.reportsService.sendMonthlySummary(req.user.id)
+  }
 
   @Get('weekly-digest')
   getWeeklyDigest(@Req() req: any) {

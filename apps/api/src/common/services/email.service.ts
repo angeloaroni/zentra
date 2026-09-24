@@ -108,6 +108,99 @@ export class EmailService {
     );
   }
 
+  async sendMonthlySummaryEmail(
+    to: string,
+    data: {
+      monthLabel: string;
+      currency: string;
+      totalIncome: number;
+      totalExpenses: number;
+      balance: number;
+      savingsRate: number;
+      topCategories: { name: string; amount: number }[];
+    },
+  ): Promise<boolean> {
+    return this.deliver(
+      to,
+      `${this.appName} - Tu resumen de ${data.monthLabel}`,
+      this.buildMonthlySummaryHtml(data),
+    );
+  }
+
+  private formatMoney(amount: number, currency: string): string {
+    try {
+      return new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    } catch {
+      return `${amount.toFixed(2)} ${currency}`;
+    }
+  }
+
+  private buildMonthlySummaryHtml(data: {
+    monthLabel: string;
+    currency: string;
+    totalIncome: number;
+    totalExpenses: number;
+    balance: number;
+    savingsRate: number;
+    topCategories: { name: string; amount: number }[];
+  }): string {
+    const balanceColor = data.balance >= 0 ? '#10B981' : '#EF4444';
+    const categoryRows = data.topCategories.length
+      ? data.topCategories
+          .map(
+            (cat) => `
+        <tr>
+          <td style="padding:8px 0;color:#374151;font-size:14px;">${cat.name}</td>
+          <td style="padding:8px 0;text-align:right;color:#111827;font-size:14px;font-weight:600;">${this.formatMoney(cat.amount, data.currency)}</td>
+        </tr>`,
+          )
+          .join('')
+      : `<tr><td colspan="2" style="padding:8px 0;color:#6b7280;font-size:14px;">Sin gastos registrados este mes.</td></tr>`;
+
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #3B82F6, #6366F1); padding: 32px; border-radius: 12px 12px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">${this.appName}</h1>
+          <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0;">Tu resumen de ${data.monthLabel}</p>
+        </div>
+        <div style="padding: 32px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+            <tr>
+              <td style="padding: 12px; background: #f9fafb; border-radius: 8px;">
+                <p style="margin: 0; color: #6b7280; font-size: 12px;">Ingresos</p>
+                <p style="margin: 4px 0 0; color: #10B981; font-size: 18px; font-weight: 700;">${this.formatMoney(data.totalIncome, data.currency)}</p>
+              </td>
+              <td style="width: 12px;"></td>
+              <td style="padding: 12px; background: #f9fafb; border-radius: 8px;">
+                <p style="margin: 0; color: #6b7280; font-size: 12px;">Gastos</p>
+                <p style="margin: 4px 0 0; color: #EF4444; font-size: 18px; font-weight: 700;">${this.formatMoney(data.totalExpenses, data.currency)}</p>
+              </td>
+            </tr>
+          </table>
+          <p style="margin: 0 0 4px; color: #6b7280; font-size: 12px;">Balance del mes</p>
+          <p style="margin: 0 0 4px; color: ${balanceColor}; font-size: 28px; font-weight: 700;">${this.formatMoney(data.balance, data.currency)}</p>
+          <p style="margin: 0 0 24px; color: #6b7280; font-size: 13px;">Tasa de ahorro: ${data.savingsRate.toFixed(0)}%</p>
+
+          <h2 style="margin: 0 0 8px; color: #111827; font-size: 16px;">Top categorias de gasto</h2>
+          <table style="width: 100%; border-collapse: collapse; border-top: 1px solid #e5e7eb;">
+            ${categoryRows}
+          </table>
+
+          <div style="text-align: center; margin: 28px 0 8px;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" style="background: linear-gradient(135deg, #3B82F6, #6366F1); color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+              Ver mi panel
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   private buildResetHtml(resetUrl: string): string {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

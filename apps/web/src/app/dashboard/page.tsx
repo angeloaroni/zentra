@@ -2,8 +2,9 @@
 
 import dynamic from "next/dynamic"
 import { useState, useEffect, useRef } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { api, getUser } from "@/lib/api"
+import { useToast } from "@/components/ui/toast"
 import { useSettings, formatMoney, formatDateShort, formatMonthYear, useHasHydrated } from "@/lib/settings"
 import { useFamilyStore } from "@/lib/family"
 import { escapeCSV } from "@/lib/format"
@@ -27,6 +28,7 @@ import {
   Download,
   Crown,
   SlidersHorizontal,
+  Mail,
 } from "lucide-react"
 import Link from "next/link"
 const CashflowChart = dynamic(() => import("./components/CashflowChart"), {
@@ -120,12 +122,19 @@ export default function DashboardPage() {
   const { currency } = useSettings()
   const hydrated = useHasHydrated()
   const { activeFamilyId } = useFamilyStore()
+  const { addToast } = useToast()
   const [user, setUser] = useState<{ id: string; name: string; email: string; role?: string } | null>(null)
   const [mounted, setMounted] = useState(false)
   const [animatedScore, setAnimatedScore] = useState(0)
   const { hidden, toggle: toggleWidget } = useDashboardPrefs()
   const [showCustomize, setShowCustomize] = useState(false)
   const isHidden = (id: string) => hidden.includes(id)
+
+  const sendSummary = useMutation({
+    mutationFn: () => api<{ message?: string }>("/reports/monthly-digest/send", { method: "POST" }),
+    onSuccess: (res) => addToast({ title: "Resumen enviado", description: res?.message, variant: "success" }),
+    onError: (err: Error) => addToast({ title: "Error", description: err.message, variant: "error" }),
+  })
 
   const [dateRange, setDateRange] = useState({
     startDate: "",
@@ -339,6 +348,9 @@ export default function DashboardPage() {
             URL.revokeObjectURL(url)
           }} className="hidden sm:flex h-9">
             <Download className="h-4 w-4 mr-1" />Exportar
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => sendSummary.mutate()} disabled={sendSummary.isPending} className="hidden sm:flex h-9" aria-label="Enviar resumen mensual por email">
+            <Mail className="h-4 w-4 mr-1" />{sendSummary.isPending ? "Enviando..." : "Resumen"}
           </Button>
           <Button variant="outline" size="sm" onClick={() => setShowCustomize(true)} className="hidden sm:flex h-9" aria-label="Personalizar panel">
             <SlidersHorizontal className="h-4 w-4 mr-1" />Personalizar
