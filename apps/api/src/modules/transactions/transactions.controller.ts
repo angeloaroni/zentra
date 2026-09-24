@@ -114,6 +114,15 @@ export class TransactionsController {
     return this.transactionsService.getOverview(req.user.id, familyId, startDate, endDate, accountId);
   }
 
+  @Get('upcoming')
+  getUpcoming(
+    @Req() req: any,
+    @Query('familyId') familyId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.transactionsService.getUpcoming(req.user.id, familyId, limit ? parseInt(limit) : 5);
+  }
+
   @Get(':id')
   findById(@Param('id') id: string, @Req() req: any) {
     return this.transactionsService.findById(id, req.user.id);

@@ -7,6 +7,7 @@ import { TopNav } from "@/components/layout/top-nav"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { EmailVerificationBanner } from "@/components/email-verification-banner"
+import { QuickAddTransaction } from "@/components/quick-add-transaction"
 
 export default function DashboardLayout({
   children,
@@ -32,6 +33,7 @@ export default function DashboardLayout({
         <EmailVerificationBanner />
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>
+      <QuickAddTransaction />
       <BottomNav />
     </div>
   )

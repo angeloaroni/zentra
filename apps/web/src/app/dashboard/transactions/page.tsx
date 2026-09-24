@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton, SkeletonTransactionRow } from "@/components/ui/skeleton"
 import { ConfirmAction } from "@/components/ui/confirm-dialog"
-import { Plus, Trash2, Repeat, Filter, X, Pencil, ArrowLeftRight, Search } from "lucide-react"
+import { Plus, Trash2, Repeat, Filter, X, Pencil, ArrowLeftRight, Search, Copy } from "lucide-react"
 import { Modal } from "@/components/ui/modal"
 import { TagInput } from "@/components/ui/tag-input"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
@@ -299,10 +299,7 @@ export default function TransactionsPage() {
     )
   }
 
-  function startEdit(tx: Transaction) {
-    setEditingId(tx.id)
-    setShowForm(false)
-    setFormError("")
+  function fillFormFrom(tx: Transaction) {
     setForm({
       type: tx.type,
       title: tx.title,
@@ -316,6 +313,20 @@ export default function TransactionsPage() {
       recurringFreq: tx.recurringFreq || "MONTHLY",
       tagIds: tx.tags?.map((t) => t.id) || [],
     })
+  }
+
+  function startEdit(tx: Transaction) {
+    setEditingId(tx.id)
+    setShowForm(false)
+    setFormError("")
+    fillFormFrom(tx)
+  }
+
+  function startDuplicate(tx: Transaction) {
+    setEditingId(null)
+    setShowForm(true)
+    setFormError("")
+    fillFormFrom(tx)
   }
 
   function startCreate() {
@@ -817,6 +828,13 @@ export default function TransactionsPage() {
                         {tx.type === "INCOME" ? "+" : "-"}
                         {formatMoney(tx.amount, currency)}
                       </span>
+                      <button
+                        onClick={() => startDuplicate(tx)}
+                        className="text-muted-foreground hover:text-indigo-500 transition-colors shrink-0 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        aria-label="Duplicar transaccion"
+                      >
+                        <Copy className="h-4 w-4" aria-hidden="true" />
+                      </button>
                       <button
                         onClick={() => startEdit(tx)}
                         className="text-muted-foreground hover:text-blue-500 transition-colors shrink-0 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"

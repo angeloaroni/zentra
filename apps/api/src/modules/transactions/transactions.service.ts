@@ -559,6 +559,55 @@ export class TransactionsService {
     });
   }
 
+  async getUpcoming(userId: string, familyId?: string, limit = 5) {
+    const userIds = await getScopeUserIds(this.prisma, userId, familyId);
+
+    const recurring = await this.prisma.transaction.findMany({
+      where: {
+        userId: { in: userIds },
+        ...(familyId ? { familyId } : { familyId: null }),
+        isRecurring: true,
+      },
+      include: {
+        category: { select: { id: true, name: true, color: true, icon: true } },
+      },
+    });
+
+    const now = new Date();
+    return recurring
+      .map((tx) => ({
+        ...tx,
+        nextDate: this.nextOccurrence(new Date(tx.date), tx.recurringFreq || 'MONTHLY', now),
+      }))
+      .filter((tx) => tx.nextDate)
+      .sort((a, b) => (a.nextDate as Date).getTime() - (b.nextDate as Date).getTime())
+      .slice(0, limit);
+  }
+
+  private nextOccurrence(lastDate: Date, freq: string, now: Date): Date | null {
+    const next = new Date(lastDate);
+    for (let i = 0; i < 60; i++) {
+      switch (freq) {
+        case 'DAILY':
+          next.setDate(next.getDate() + 1);
+          break;
+        case 'WEEKLY':
+          next.setDate(next.getDate() + 7);
+          break;
+        case 'MONTHLY':
+          next.setMonth(next.getMonth() + 1);
+          break;
+        case 'YEARLY':
+          next.setFullYear(next.getFullYear() + 1);
+          break;
+        default:
+          return null;
+      }
+      if (next > now) return next;
+    }
+    return null;
+  }
+
   async getOverview(userId: string, familyId?: string, startDate?: string, endDate?: string, accountId?: string) {
     const userIds = await getScopeUserIds(this.prisma, userId, familyId)
     const now = new Date()

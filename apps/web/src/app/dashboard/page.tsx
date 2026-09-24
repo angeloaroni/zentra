@@ -210,6 +210,19 @@ export default function DashboardPage() {
     staleTime: 300_000,
   })
 
+  const { data: upcoming } = useQuery<Array<{
+    id: string
+    title: string
+    amount: number
+    type: string
+    nextDate: string
+    category?: { name: string; color: string; icon: string }
+  }>>({
+    queryKey: ["upcoming", activeFamilyId],
+    queryFn: () => api(`/transactions/upcoming${activeFamilyId ? `?familyId=${activeFamilyId}` : ""}`),
+    staleTime: 300_000,
+  })
+
   const { data: subscription } = useQuery<{ plan: string; trialEndsAt?: string }>({
     queryKey: ["subscription"],
     queryFn: () => api("/subscriptions"),
@@ -468,6 +481,45 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {upcoming && upcoming.length > 0 && (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Proximos pagos</h3>
+              <Link href="/dashboard/transactions" className="text-xs font-medium text-indigo-600 hover:text-indigo-700">
+                Ver recurrentes
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {upcoming.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white"
+                      style={{ backgroundColor: item.category?.color || "#6b7280" }}
+                    >
+                      {item.category?.icon?.charAt(0)?.toUpperCase() || "$"}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{formatDateShort(item.nextDate)}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 text-sm font-semibold ${
+                      item.type === "INCOME" ? "text-emerald-600" : "text-red-600"
+                    }`}
+                  >
+                    {item.type === "INCOME" ? "+" : "-"}
+                    {formatMoney(item.amount, currency)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Cashflow Chart */}
       <Card className="border-0 shadow-sm">
